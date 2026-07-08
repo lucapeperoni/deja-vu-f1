@@ -15,6 +15,16 @@ Le finestre di neutralizzazione (SC/VSC) vanno passate già espresse in
 numero di giro (start_lap, end_lap): la conversione dai timestamp OpenF1
 di neutralization_events.py al numero di giro è compito della pipeline
 (vedi build_all.py, task 2.1 della roadmap), non di questo modulo.
+
+Un'attenzione in più per i giri sotto neutralizzazione: durante una SC/VSC
+TUTTI i piloti rallentano, non solo chi si ferma ai box. Se si confronta il
+giro di entrata/uscita di un pilota fermo sotto SC con il SUO ritmo normale
+di gara, il rallentamento imposto dalla Safety Car all'intero gruppo verrebbe
+scambiato per costo del pit stop, gonfiandolo enormemente. Per questo, per i
+giri dentro una finestra di neutralizzazione il termine di paragone non è la
+baseline personale del pilota, ma il ritmo del gruppo in quello stesso giro
+(la mediana dei tempi di chi non si è fermato in quel giro) — cioè "quanto
+avrebbe impiegato quel giro anche restando in pista, sotto la stessa SC/VSC".
 """
 
 from typing import List, Dict, Optional, Set, Tuple
@@ -27,6 +37,7 @@ BASELINE_MIN_CLEAN_LAPS = 3
 JUST_BEFORE_MAX_LAPS = 3
 JUST_AFTER_MAX_LAPS = 2
 MIN_GREEN_STOPS_FOR_CONFIDENCE = 4
+FIELD_REFERENCE_MIN_SAMPLES = 3
 
 CONTEXT_GREEN = "GREEN"
 CONTEXT_UNDER_VSC = "UNDER_VSC"
@@ -176,15 +187,69 @@ def compute_baseline(
     return statistics.median(clean)
 
 
+def compute_field_reference_by_lap(
+    lap_times_by_driver: Dict[str, Dict[int, float]],
+    pit_affected_laps_by_driver: Dict[str, Set[int]],
+    laps_to_cover: Set[int],
+) -> Dict[int, float]:
+    """
+    Per ogni giro sotto neutralizzazione, il ritmo "del gruppo" in quel
+    giro: la mediana dei tempi di chi ha percorso quel giro SENZA fermarsi
+    (in-lap o out-lap di un proprio pit stop escluso, per non contaminare
+    il riferimento con un rallentamento dovuto a un pit stop altrui).
+
+    Se in un giro restano meno di FIELD_REFERENCE_MIN_SAMPLES piloti non
+    fermi, quel giro non ha un riferimento di gruppo affidabile e va
+    lasciato fuori dal risultato: chi lo userà ricadrà sulla baseline
+    personale del pilota (vedi _lap_reference_ms).
+    """
+    reference_by_lap: Dict[int, float] = {}
+    for lap in laps_to_cover:
+        samples = [
+            times[lap]
+            for driver_id, times in lap_times_by_driver.items()
+            if lap in times and lap not in pit_affected_laps_by_driver.get(driver_id, set())
+        ]
+        if len(samples) >= FIELD_REFERENCE_MIN_SAMPLES:
+            reference_by_lap[lap] = statistics.median(samples)
+    return reference_by_lap
+
+
+def _lap_reference_ms(
+    lap: int,
+    personal_baseline_ms: float,
+    neutralized_laps: Set[int],
+    field_reference_by_lap: Dict[int, float],
+) -> float:
+    """
+    Termine di paragone per un singolo giro: il ritmo del gruppo in quel
+    giro se il giro è sotto neutralizzazione (e il riferimento è
+    disponibile), altrimenti la baseline personale del pilota.
+    """
+    if lap in neutralized_laps:
+        field_ref = field_reference_by_lap.get(lap)
+        if field_ref is not None:
+            return field_ref
+    return personal_baseline_ms
+
+
 def _effective_pit_loss_seconds(
-    driver_lap_times_ms: Dict[int, float], pit_lap: int, baseline_ms: Optional[float]
+    driver_lap_times_ms: Dict[int, float],
+    pit_lap: int,
+    baseline_ms: Optional[float],
+    neutralized_laps: Set[int],
+    field_reference_by_lap: Dict[int, float],
 ) -> Optional[float]:
     """
-    costo effettivo = (tempo giro entrata + tempo giro uscita) - 2 * baseline
+    costo effettivo = (giro entrata - riferimento) + (giro uscita - riferimento)
+
+    Il riferimento è la baseline personale del pilota nei giri normali, ma
+    diventa il ritmo del gruppo nei giri sotto SC/VSC (vedi _lap_reference_ms):
+    così il rallentamento imposto a tutti dalla neutralizzazione non viene
+    scambiato per costo del pit stop.
 
     Se il giro di uscita non esiste (es. pit stop nell'ultimo giro di
-    gara), si usa la sola perdita sul giro di entrata rispetto alla
-    baseline, raddoppiata coerentemente con la formula.
+    gara), si usa la sola perdita sul giro di entrata.
     """
     if baseline_ms is None:
         return None
@@ -193,11 +258,15 @@ def _effective_pit_loss_seconds(
     if in_lap_ms is None:
         return None
 
-    out_lap_ms = driver_lap_times_ms.get(pit_lap + 1)
-    if out_lap_ms is None:
-        out_lap_ms = baseline_ms  # nessuna perdita aggiuntiva stimabile sul giro mancante
+    in_ref_ms = _lap_reference_ms(pit_lap, baseline_ms, neutralized_laps, field_reference_by_lap)
+    loss_ms = in_lap_ms - in_ref_ms
 
-    return ((in_lap_ms + out_lap_ms) - 2 * baseline_ms) / 1000.0
+    out_lap_ms = driver_lap_times_ms.get(pit_lap + 1)
+    if out_lap_ms is not None:
+        out_ref_ms = _lap_reference_ms(pit_lap + 1, baseline_ms, neutralized_laps, field_reference_by_lap)
+        loss_ms += out_lap_ms - out_ref_ms
+
+    return loss_ms / 1000.0
 
 
 def calculate_pit_cost(
@@ -235,6 +304,16 @@ def calculate_pit_cost(
 
     neutralized_laps = _neutralized_laps(windows)
 
+    # Giri di entrata/uscita di OGNI pilota (non solo quello in esame): servono
+    # a non usare, come riferimento "di gruppo" sotto neutralizzazione, un giro
+    # già rallentato dal pit stop di qualcun altro.
+    pit_affected_laps_by_driver: Dict[str, Set[int]] = {
+        driver_id: _pit_affected_laps(pit_laps) for driver_id, pit_laps in pit_laps_by_driver.items()
+    }
+    field_reference_by_lap = compute_field_reference_by_lap(
+        lap_times_by_driver, pit_affected_laps_by_driver, neutralized_laps
+    )
+
     # Double stack: due piloti dello stesso team fermi nello stesso giro
     stops_by_lap_team: Dict[Tuple[int, str], List[Dict]] = {}
     for p in pit_stops:
@@ -261,7 +340,9 @@ def calculate_pit_cost(
             pit_lap,
             total_laps,
         )
-        effective_loss = _effective_pit_loss_seconds(driver_lap_times, pit_lap, baseline_ms)
+        effective_loss = _effective_pit_loss_seconds(
+            driver_lap_times, pit_lap, baseline_ms, neutralized_laps, field_reference_by_lap
+        )
         context, event_id = classify_pit_context(pit_lap, windows)
 
         team_id = p.get("team_id")

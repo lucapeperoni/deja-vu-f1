@@ -7,11 +7,13 @@ from app.metrics.effective_pit_loss import (
     CONTEXT_GREEN,
     CONTEXT_JUST_AFTER,
     CONTEXT_JUST_BEFORE,
+    CONTEXT_UNDER_SC,
     CONTEXT_UNDER_VSC,
     NeutralizationWindow,
     calculate_pit_cost,
     classify_pit_context,
     compute_baseline,
+    compute_field_reference_by_lap,
 )
 
 VSC_WINDOW = [NeutralizationWindow(event_id="vsc-1", type="VSC", start_lap=6, end_lap=7)]
@@ -221,3 +223,103 @@ def test_calculate_pit_cost_double_stack_flag():
     assert by_driver["10"].double_stack is True
     assert by_driver["11"].double_stack is True
     assert by_driver["20"].double_stack is False
+
+
+# ---------------------------------------------------------------------------
+# compute_field_reference_by_lap — il ritmo del gruppo sotto neutralizzazione
+# ---------------------------------------------------------------------------
+#
+# Bug reale trovato validando la pipeline sulla gara campione (Singapore
+# 2023): confrontare il giro di un pilota fermo sotto Safety Car con il SUO
+# ritmo normale gonfiava il costo a dismisura, perché sotto SC rallenta
+# TUTTO il gruppo, non solo chi si ferma. Il riferimento giusto per quei
+# giri è il ritmo di chi resta in pista nello stesso giro.
+
+def test_compute_field_reference_by_lap_excludes_pitting_drivers():
+    lap_times_by_driver = {
+        "B": {4: 130_000, 5: 130_000},
+        "C": {4: 130_000, 5: 130_000},
+        "D": {4: 130_000, 5: 130_000},
+        # "A" si ferma proprio ai giri 4 e 5: il suo tempo (rallentato anche
+        # dal pit stop, non solo dalla SC) non deve inquinare il riferimento
+        "A": {4: 200_000, 5: 200_000},
+    }
+    pit_affected = {"A": {4, 5}}
+
+    reference = compute_field_reference_by_lap(lap_times_by_driver, pit_affected, laps_to_cover={4, 5})
+
+    assert reference == {4: 130_000, 5: 130_000}
+
+
+def test_compute_field_reference_by_lap_skips_laps_below_min_samples():
+    # solo 2 piloti disponibili per il giro 4, sotto la soglia di 3
+    lap_times_by_driver = {"B": {4: 130_000}, "C": {4: 130_000}}
+    reference = compute_field_reference_by_lap(lap_times_by_driver, {}, laps_to_cover={4})
+    assert reference == {}
+
+
+def test_calculate_pit_cost_under_sc_uses_field_pace_not_personal_baseline():
+    """
+    Gara sintetica di 10 giri, SC ai giri 6-7. Tre piloti (B, C, D) restano
+    in pista e sotto SC rallentano tutti a 130s/giro (contro i 90s normali).
+    Il pilota A si ferma proprio durante la SC: il suo costo effettivo deve
+    riflettere il pit stop, non il rallentamento imposto dalla SC a tutti.
+    """
+    neutralizations = [{"event_id": "sc-1", "type": "SC", "start_lap": 6, "end_lap": 7}]
+
+    laps = []
+    for driver in ["B", "C", "D"]:
+        for lap in range(1, 11):
+            value = 130_000 if lap in (6, 7) else 90_000
+            laps.append({"driver_id": driver, "lap": lap, "milliseconds": value})
+
+    laps += [
+        {"driver_id": "A", "lap": 1, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 2, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 3, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 4, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 5, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 6, "milliseconds": 140_000},  # in-lap, sotto SC
+        {"driver_id": "A", "lap": 7, "milliseconds": 135_000},  # out-lap, sotto SC
+        {"driver_id": "A", "lap": 8, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 9, "milliseconds": 90_000},
+        {"driver_id": "A", "lap": 10, "milliseconds": 90_000},
+    ]
+
+    # E: pit in verde, lontano dalla SC, serve da prezzo di listino
+    laps += [
+        {"driver_id": "E", "lap": 1, "milliseconds": 112_000},
+        {"driver_id": "E", "lap": 2, "milliseconds": 100_000},
+        {"driver_id": "E", "lap": 3, "milliseconds": 90_000},
+        {"driver_id": "E", "lap": 4, "milliseconds": 90_000},
+        {"driver_id": "E", "lap": 5, "milliseconds": 90_000},
+        {"driver_id": "E", "lap": 6, "milliseconds": 130_000},
+        {"driver_id": "E", "lap": 7, "milliseconds": 130_000},
+        {"driver_id": "E", "lap": 8, "milliseconds": 90_000},
+        {"driver_id": "E", "lap": 9, "milliseconds": 90_000},
+        {"driver_id": "E", "lap": 10, "milliseconds": 90_000},
+    ]
+
+    pit_stops = [
+        {"driver_id": "A", "lap": 6},
+        {"driver_id": "E", "lap": 1},
+    ]
+
+    results = calculate_pit_cost(laps, pit_stops, neutralizations)
+    by_driver = {r.driver_id: r for r in results}
+
+    assert by_driver["A"].context == CONTEXT_UNDER_SC
+    # la baseline personale di A resta il suo ritmo verde (90s)...
+    assert by_driver["A"].baseline_lap_ms == 90_000
+    # ...ma il costo effettivo usa il ritmo del gruppo sotto SC (130s) come
+    # riferimento per i giri 6 e 7, non i 90s abituali di A:
+    # (140000-130000) + (135000-130000) = 15000ms
+    assert by_driver["A"].effective_pit_loss_seconds == 15.0
+
+    # il pit in verde di E non e' toccato dal riferimento di gruppo
+    assert by_driver["E"].effective_pit_loss_seconds == 32.0
+
+    # ora lo sconto e' positivo: fermarsi sotto SC costa MENO del prezzo
+    # di listino, come atteso dalla sezione 5.3 della specifica
+    assert by_driver["A"].discount_seconds == 17.0
+    assert by_driver["A"].discount_seconds > 0

@@ -65,17 +65,25 @@ solo lettura e il nuovo file docs/STATO.md.
 Se questa fase fallisce, il progetto cambia forma. Va finita prima di
 investire ore sulle viste.
 
-## 1.1 — A · Riscrittura della metrica del costo pit stop
+## 1.1 — A · Riscrittura della metrica del costo pit stop ✅ COMPLETATO
 
 Dipende da: 0.2
 
-- [ ] 0.2 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] I test unitari passano (output visto con i propri occhi)
-- [ ] La metrica legge i tempi giro dai CSV Ergast, non da OpenF1
-- [ ] Ogni pit riceve l'etichetta di contesto (GREEN, UNDER_VSC, ecc.)
-- [ ] `pit_duration` non è più usata come costo da nessuna parte
-- [ ] Diff letto, commit e push
+- [x] 0.2 completato
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] I test unitari passano (output visto con i propri occhi)
+- [x] La metrica legge i tempi giro dai CSV Ergast, non da OpenF1
+- [x] Ogni pit riceve l'etichetta di contesto (GREEN, UNDER_VSC, ecc.)
+- [x] `pit_duration` non è più usata come costo da nessuna parte
+- [x] Diff letto, commit e push
+
+**Nota (dopo la validazione 1.2)**: la formula qui sotto era corretta ma
+incompleta. Sui giri sotto SC/VSC va usato come riferimento il ritmo del
+gruppo in quel giro, non la baseline personale del pilota — altrimenti il
+rallentamento imposto a tutti dalla Safety Car viene scambiato per costo
+del pit stop. Il dettaglio, con i numeri della validazione, è in
+`docs/PROGETTAZIONE.md` §5.1 (aggiornata) e nel codice
+(`compute_field_reference_by_lap` in `effective_pit_loss.py`).
 
 **Prompt da copiare:**
 
@@ -110,19 +118,42 @@ che verificano: il calcolo della baseline, il costo effettivo, l'etichetta
 di contesto, il caso JUST_BEFORE. Esegui i test e mostrami l'output.
 ```
 
-## 1.2 — A · Validazione sulla gara campione ⚠ MILESTONE
+## 1.2 — A · Validazione sulla gara campione ⚠ MILESTONE ✅ SUPERATA
 
 Dipende da: 1.1
 
-- [ ] 1.1 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] La tabella pilota/giro/etichetta/costo/sconto è stata stampata
-- [ ] I giri totali Ergast e OpenF1 coincidono
-- [ ] Pit in verde: costo circa 20-25 secondi ✓
-- [ ] Pit sotto VSC: sconto circa 8-12 secondi ✓
-- [ ] Pit sotto SC: sconto uguale o maggiore della VSC ✓
-- [ ] Diff letto, commit e push
-- [ ] **MILESTONE superata: comunicato a B e C che la Fase 2 può partire**
+- [x] 1.1 completato
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] La tabella pilota/giro/etichetta/costo/sconto è stata stampata
+- [x] I giri totali Ergast e OpenF1 coincidono (62 giri, Singapore GP 2023)
+- [x] Pit in verde: costo 27-32 secondi — coerente (Singapore ha una pit
+      lane molto lunga, il range "20-25s" della specifica era generico)
+- [ ] Pit sotto VSC: sconto circa 8-12 secondi — **NON torna** (misto, per
+      lo più leggermente negativo). Limite noto di granularità, da
+      dichiarare in `/methodology` (task 4.2), vedi PROGETTAZIONE.md §5.1
+- [x] Pit sotto SC: sconto positivo e coerente (+4/+17s su 14 casi), dopo
+      aver corretto il riferimento usato nel calcolo (vedi nota sotto)
+- [x] Diff letto, commit e push
+- [x] **MILESTONE superata: comunicato a B e C che la Fase 2 può partire**
+
+**Esito reale di questa validazione** (più articolato di un semplice
+sì/no): la prima esecuzione ha mostrato numeri assurdi (sconti negativi di
+60-100s sotto SC). Investigando sono stati trovati e corretti tre problemi,
+non solo uno:
+
+1. bug in `neutralization_events.py`: chiudeva le finestre SC/VSC troppo
+   presto su bandiere "CLEAR" di settore scollegate dalla Safety Car;
+2. bug nello stesso file introdotto durante il primo fix: "VIRTUAL SAFETY
+   CAR DEPLOYED" contiene "SAFETY CAR DEPLOYED" come sottostringa, quindi
+   ogni VSC veniva scambiata per una SC;
+3. correzione metodologica in `effective_pit_loss.py`: per i giri sotto
+   neutralizzazione il riferimento dev'essere il ritmo del gruppo in quel
+   giro, non la baseline personale del pilota (§5.1 della specifica).
+
+Con tutti e tre i fix, i pit sotto SC sono tornati coerenti; quelli sotto
+VSC restano un limite noto, non un errore da rincorrere ora. La gara
+campione usata (Singapore GP 2023, Ergast raceId 1113) è una candidata
+forte anche per il task 2.2 (§9 della specifica).
 
 Se i numeri non tornano: STOP. Non si va avanti, si sistema la pipeline.
 

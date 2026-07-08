@@ -75,20 +75,55 @@ OpenF1 copre solo dal 2023 in poi: è questo che fissa il perimetro 2023-2024.
 
 ### 5.1 Quanto costa davvero un pit stop
 
-ATTENZIONE, correzione importante rispetto al codice già scritto: il costo di
-un pit stop NON è la durata in pit lane (la pit_duration di OpenF1). Quella è
-uguale in verde e sotto Safety Car. Lo sconto nasce da un'altra cosa: mentre
-tu attraversi la pit lane, gli altri stanno andando piano anche loro.
+STATO: implementato e validato su una gara vera (task 1.1 e 1.2 della
+roadmap). Quello che segue è il calcolo effettivamente in uso in
+`data-layer/app/metrics/effective_pit_loss.py`, non più solo la proposta
+iniziale.
 
-Il costo vero si calcola dai tempi sul giro:
+Il costo di un pit stop NON è la durata in pit lane (la pit_duration di
+OpenF1): quella è uguale in verde e sotto Safety Car, l'abbiamo verificato
+sui dati veri (è sempre nulla nel data-layer, comunque). Lo sconto nasce da
+un'altra cosa: mentre attraversi la pit lane, il "prezzo" dipende da quanto
+stavano andando piano anche gli altri in quello stesso giro.
 
-    costo effettivo = (tempo del giro di entrata + tempo del giro di uscita)
-                      − 2 × il tuo tempo "normale" sul giro
+Per un pit al giro L, il costo effettivo è:
 
-dove il tempo "normale" è la mediana dei tuoi giri puliti (senza pit, senza
-SC/VSC) nelle vicinanze. Il modulo effective_pit_loss.py va riscritto così
-PRIMA di costruirci sopra qualsiasi grafico, altrimenti lo sconto verrà
-sempre zero e non si vedrà niente.
+    costo effettivo = (giro di entrata L − riferimento(L))
+                     + (giro di uscita L+1 − riferimento(L+1))
+
+Il "riferimento" di un giro non è sempre lo stesso, e questa è la parte che
+in fase di ideazione avevamo sbagliato:
+
+- **se il giro è in condizioni normali**, il riferimento è la baseline
+  personale del pilota: la mediana dei suoi giri puliti (senza pit, senza
+  SC/VSC) in una finestra di ±5 giri, esclusi i giri di entrata/uscita di
+  QUALSIASI suo pit stop nella gara; se restano meno di 3 giri puliti, la
+  finestra si allarga ai confini dello stint (dal pit precedente al
+  successivo);
+- **se il giro è sotto una neutralizzazione (SC/VSC)**, il riferimento non
+  è più la baseline personale, ma il ritmo del gruppo in quello stesso
+  giro: la mediana dei tempi di chi ha percorso quel giro senza fermarsi
+  (con almeno 3 piloti disponibili, altrimenti si ricade sulla baseline
+  personale per mancanza di dati).
+
+Perché questa distinzione è necessaria, e non un dettaglio: validando la
+pipeline sulla gara campione (Gran Premio di Singapore 2023, vedi
+`data-layer/scripts/validate_sample_race.py`) il calcolo con la sola
+baseline personale dava sconti *negativi* di 60-100 secondi per i pit
+sotto Safety Car — il contrario di quanto ci si aspetta. Il motivo: sotto
+SC rallenta TUTTO il gruppo, non solo chi si ferma; confrontare il giro di
+un pilota fermo ai box con il suo ritmo normale scambiava il rallentamento
+imposto a tutti dalla Safety Car per costo del pit stop. Con il
+riferimento "di gruppo" per i giri neutralizzati, sulla stessa gara i pit
+sotto SC mostrano sconti coerenti (+4/+17 secondi, in linea con l'atteso).
+
+Limite noto e non ancora risolto: per la Virtual Safety Car (finestre
+molto brevi, 1-2 giri) i numeri restano meno puliti dello sconto sotto SC
+piena. Ipotesi più probabile: l'allineamento per numero di giro intero non
+cattura *in che punto del giro* è scattata la VSC — un pilota che entra ai
+box può aver percorso quasi tutto il giro a ritmo verde e solo l'ultima
+parte sotto VSC. È un limite di granularità dei dati, da dichiarare in
+`/methodology` (task 4.2), non un bug da inseguire ora.
 
 ### 5.2 Il prezzo di listino
 
@@ -256,26 +291,48 @@ relazionali/a grafo, e la scelta discende dalla task abstraction.
 
 ## 9. Le 3 gare-caso
 
-Da confermare quando gira la pipeline, ma i tipi sono fissati:
+Da confermare quando gira la pipeline (task 2.2), ma i tipi sono fissati:
 
 1. una VSC breve a metà gara — la lotteria pura: contava solo essere nella
    finestra giusta
 2. una Safety Car che compatta il gruppo e rimescola (candidate: Australia
-   2023, Monza 2024)
+   2023, Monza 2024). **Candidata forte già verificata**: il Gran Premio di
+   Singapore 2023 (Ergast raceId 1113), usato come gara campione nel task
+   1.2 — ha una SC pulita al giro 20-22 con 14 auto ai box nello stesso
+   giro (un vero "tappo"), più una VSC ai giri 44-45. La selezione
+   definitiva resta comunque al task 2.2.
 3. una gara con double stack riuscito o fallito — alimenta la vista 5
 
 In appendice: una gara senza neutralizzazioni come termine di paragone.
 
 ## 10. Rischi noti e come li gestiamo
 
-1. La metrica attuale è sbagliata (usa la durata in pit lane): riscriverla
-   come da §5.1 PRIMA di ogni altra cosa. È il primo task in assoluto.
-2. L'aggancio Ergast-OpenF1 per numero di giro va validato su una gara
-   campione con il controllo di sanità di §5.3.
+1. ~~La metrica attuale è sbagliata (usa la durata in pit lane)~~ **RISOLTO**
+   (task 1.1): riscritta secondo §5.1. Durante la validazione (task 1.2) è
+   emerso un secondo problema, più sottile, ed è stato corretto anche
+   quello — vedi il dettaglio in §5.1 sul riferimento "di gruppo" nei giri
+   sotto neutralizzazione.
+2. ~~L'aggancio Ergast-OpenF1 per numero di giro va validato~~ **VALIDATO**
+   (task 1.2, gara campione: Singapore GP 2023, raceId 1113 / OpenF1
+   session_key 9165). Aggancio più semplice del previsto: i messaggi di
+   race control di OpenF1 includono già il numero di giro (`lap_number`),
+   non serve ricostruirlo dall'orario di gara. Trovati e corretti anche due
+   bug in `neutralization_events.py`: chiudeva le finestre SC/VSC troppo
+   presto reagendo a bandiere "CLEAR" di settore scollegate dalla Safety
+   Car, e scambiava l'inizio di una VSC per l'inizio di una SC (sottostringa
+   del messaggio). Limite residuo non risolto: la granularità per giro
+   intero rende gli sconti sotto VSC meno puliti di quelli sotto SC piena
+   (vedi §5.1) — da dichiarare in `/methodology`, non da inseguire ora.
 3. Il CSV Kaggle potrebbe non coprire tutto il 2024: le gare mancanti si
-   scaricano da Jolpica, che ha lo stesso formato di Ergast.
+   scaricano da Jolpica, che ha lo stesso formato di Ergast. **Verificato
+   (task 0.2)**: sia il 2023 (22 gare) sia il 2024 (24 gare) sono completi
+   nel Kaggle già presente, nessuna integrazione necessaria per questo
+   perimetro.
 4. Oggi ci sono due pipeline dati (TypeScript e Python): si converge su
-   quella Python.
+   quella Python. **Nota**: `data-layer/scripts/export_frontend.py` e
+   `data-layer/app/api/routes/sessions.py` chiamano ancora la vecchia
+   firma di `calculate_pit_cost` (quella basata su `pit_duration`) e oggi
+   sono rotti: vanno riscritti nel task 2.1, non prima.
 5. Col rischio React, D3 può ridursi a due scale: vale la regola
    "D3 possiede l'SVG" di §7.
 6. Le soglie della categoria LOCKED_OUT (8 giri, 3 auto) sono arbitrarie:

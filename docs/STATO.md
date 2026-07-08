@@ -4,6 +4,14 @@ Scritto leggendo il codice e i dati presenti, senza modificare nulla.
 Serve come punto di partenza per la Fase 1 della roadmap (`docs/ROADMAP.md`).
 Riferimento: `docs/PROGETTAZIONE.md`.
 
+> **Aggiornamento**: questo documento è una fotografia del repository
+> *prima* dei task 1.1 e 1.2. Il punto #1 della sezione 4 qui sotto
+> ("da riscrivere in ordine di priorità: effective_pit_loss.py") è stato
+> completato e validato su una gara vera — vedi `docs/ROADMAP.md` (task
+> 1.1/1.2) e `docs/PROGETTAZIONE.md` §5.1 per lo stato attuale reale. Il
+> resto della fotografia (frontend su dati incompleti, doppia pipeline,
+> pagine rivalry da riconvertire) è ancora accurato.
+
 ---
 
 ## 1. Frontend: cosa esiste e cosa gira su dati veri o finti

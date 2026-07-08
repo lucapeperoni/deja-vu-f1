@@ -1,0 +1,13 @@
+{
+  "endpoint": "laps",
+  "url": "https://api.openf1.org/v1/laps?session_key=9165",
+  "year": 2023,
+  "meeting_key": 1219,
+  "session_key": 9165,
+  "requested_at": "2026-07-08T17:09:20.859608Z",
+  "status_code": 200,
+  "record_count": 1091,
+  "checksum": "365a40837589a3bd4b9c42f4300b9b283d6da5b4b19c14a0681920e7593d382e",
+  "file_path": "./data/raw/2023/1219/9165/laps_session_key-9165.json",
+  "completed": true
+}
