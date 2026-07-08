@@ -1,0 +1,13 @@
+{
+  "endpoint": "sessions",
+  "url": "https://api.openf1.org/v1/sessions?session_key=9158",
+  "year": 0,
+  "meeting_key": 0,
+  "session_key": 0,
+  "requested_at": "2026-07-08T15:46:58.702270Z",
+  "status_code": 200,
+  "record_count": 1,
+  "checksum": "b32b0830a58a2f027e42e703b0206f33a4746b55595ce0b843e9f236150bd2bb",
+  "file_path": "./data/raw/0/0/0/sessions_session_key-9158.json",
+  "completed": true
+}

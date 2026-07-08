@@ -1,0 +1,99 @@
+{
+  "raceId": "2021-22",
+  "raceName": "Abu Dhabi Grand Prix",
+  "season": 2021,
+  "round": 22,
+  "totalLaps": 58,
+  "neutralizations": [
+    {
+      "eventId": "vsc-01",
+      "type": "Virtual Safety Car",
+      "startLap": 36,
+      "endLap": 38,
+      "startTime": 2160,
+      "endTime": 2280,
+      "durationSeconds": 120,
+      "impact": "medium"
+    },
+    {
+      "eventId": "sc-01",
+      "type": "Safety Car",
+      "startLap": 53,
+      "endLap": 57,
+      "startTime": 3180,
+      "endTime": 3420,
+      "durationSeconds": 240,
+      "impact": "extreme"
+    }
+  ],
+  "drivers": [
+    { "id": "VER", "name": "Max Verstappen", "color": "#0600EF", "team": "Red Bull" },
+    { "id": "HAM", "name": "Lewis Hamilton", "color": "#00D2BE", "team": "Mercedes" },
+    { "id": "PER", "name": "Sergio Perez", "color": "#0600EF", "team": "Red Bull" },
+    { "id": "SAI", "name": "Carlos Sainz", "color": "#DC0000", "team": "Ferrari" }
+  ],
+  "pitStops": [
+    {
+      "driverId": "VER",
+      "lap": 13,
+      "eventId": null,
+      "expectedGreenLoss": 22.5,
+      "observedLoss": 22.5,
+      "neutralizationDiscount": 0,
+      "positionsBefore": 2,
+      "positionsAfter": 5,
+      "eligibility": "Green"
+    },
+    {
+      "driverId": "HAM",
+      "lap": 14,
+      "eventId": null,
+      "expectedGreenLoss": 22.5,
+      "observedLoss": 22.2,
+      "neutralizationDiscount": 0.3,
+      "positionsBefore": 1,
+      "positionsAfter": 2,
+      "eligibility": "Green"
+    },
+    {
+      "driverId": "VER",
+      "lap": 36,
+      "eventId": "vsc-01",
+      "expectedGreenLoss": 22.5,
+      "observedLoss": 13.8,
+      "neutralizationDiscount": 8.7,
+      "positionsBefore": 2,
+      "positionsAfter": 2,
+      "eligibility": "Eligible"
+    },
+    {
+      "driverId": "VER",
+      "lap": 53,
+      "eventId": "sc-01",
+      "expectedGreenLoss": 22.5,
+      "observedLoss": 10.5,
+      "neutralizationDiscount": 12.0,
+      "positionsBefore": 2,
+      "positionsAfter": 2,
+      "eligibility": "Eligible"
+    }
+  ],
+  "opportunityWindows": [
+    {
+      "eventId": "sc-01",
+      "driverId": "HAM",
+      "eligibility": "Passed Pit Entry",
+      "estimatedSecondsToPit": -2.5,
+      "gapToBehind": 11.2,
+      "action": "Stayed Out"
+    },
+    {
+      "eventId": "sc-01",
+      "driverId": "VER",
+      "eligibility": "Eligible",
+      "estimatedSecondsToPit": 8.4,
+      "gapToBehind": 35.0,
+      "action": "Pitted"
+    }
+  ]
+}
