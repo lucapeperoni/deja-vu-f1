@@ -1,7 +1,30 @@
 import Link from 'next/link';
 import { ArrowRight, Activity, Crosshair, Flag } from 'lucide-react';
+import fs from 'fs';
+import path from 'path';
 
-export default function Home() {
+export default async function Home() {
+  // Read all race JSONs
+  const racesDir = path.join(process.cwd(), 'public', 'data', 'races');
+  let availableRaces: any[] = [];
+  
+  if (fs.existsSync(racesDir)) {
+    const files = fs.readdirSync(racesDir).filter(f => f.endsWith('.json'));
+    availableRaces = files.map(filename => {
+      const filePath = path.join(racesDir, filename);
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(fileData);
+      return {
+        id: filename.replace('.json', ''),
+        country: data.country,
+        season: data.season,
+        name: data.raceName,
+        totalLaps: data.totalLaps,
+        neutralizations: data.neutralizations?.length || 0,
+      };
+    });
+  }
+
   return (
     <main className="flex-1 flex flex-col bg-background min-h-screen">
       {/* Hero Section */}
@@ -27,49 +50,76 @@ export default function Home() {
             Il risultato finale mostra dove sono arrivati i piloti. Race Dynamics mostra come la gara è stata trasformata. 
             Esplora l'impatto reale di Safety Car, Virtual Safety Car e l'arte dei pit stop strategici.
           </p>
-          
-          <div className="pt-10">
-            <Link 
-              href="/race/2021-22"
-              className="inline-flex items-center gap-3 bg-racing-red text-white px-8 py-4 font-condensed uppercase tracking-widest font-bold hover:bg-white hover:text-racing-red transition-all duration-300"
-            >
-              Esplora una Gara <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Modules Overview */}
-      <section className="px-6 py-20 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12">
+      {/* Available Races Section */}
+      <section className="px-6 py-20 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-4 mb-10">
+          <Flag className="text-racing-red w-8 h-8" />
+          <h3 className="font-condensed text-4xl font-bold uppercase text-white">Gare Disponibili</h3>
+        </div>
         
-        {/* Race Dynamics Module */}
-        <div className="bg-panel border border-graphite p-8 hover:border-racing-red transition-colors group">
-          <div className="w-12 h-12 bg-racing-red/10 rounded-full flex items-center justify-center mb-6">
-            <Activity className="text-racing-red w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {availableRaces.map((race) => (
+            <Link 
+              key={race.id} 
+              href={`/race/${race.id}`}
+              className="group block bg-panel border border-graphite hover:border-racing-red hover:shadow-[0_0_30px_rgba(220,0,0,0.15)] transition-all duration-300 relative overflow-hidden"
+            >
+              {/* Hover gradient effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-racing-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              
+              <div className="p-6 relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-xs font-bold text-racing-red tracking-widest uppercase bg-racing-red/10 px-2 py-1 rounded-sm">
+                    {race.season}
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-neutral-gray group-hover:text-racing-red group-hover:-rotate-45 transition-all duration-300" />
+                </div>
+                
+                <h4 className="font-condensed text-3xl text-white font-bold uppercase tracking-tight mb-1 group-hover:translate-x-1 transition-transform">
+                  {race.country}
+                </h4>
+                <div className="text-text-secondary text-sm mb-6 uppercase tracking-wider">{race.name}</div>
+                
+                <div className="flex gap-4 border-t border-graphite/50 pt-4">
+                  <div>
+                    <div className="text-[10px] text-neutral-gray uppercase tracking-widest">Giri</div>
+                    <div className="text-white font-condensed font-bold">{race.totalLaps || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-neutral-gray uppercase tracking-widest">Neutralizzazioni</div>
+                    <div className="text-white font-condensed font-bold">{race.neutralizations}</div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+          {availableRaces.length === 0 && (
+            <div className="col-span-full text-center py-12 text-neutral-gray border border-graphite border-dashed">
+              Nessun dato gara trovato in public/data/races/
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Teammate Dynamics Module Link */}
+      <section className="px-6 pb-20 max-w-7xl mx-auto w-full">
+        <div className="bg-panel border border-graphite p-8 hover:border-white transition-colors group flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <Crosshair className="text-white w-6 h-6" />
+              <h3 className="font-condensed text-3xl font-bold uppercase text-white">Teammate Dynamics</h3>
+            </div>
+            <p className="text-text-secondary leading-relaxed max-w-2xl">
+              Esplora il modulo storico per isolare il talento del pilota dalla performance della vettura. Confronta i compagni di squadra e scopri i veri rapporti di forza.
+            </p>
           </div>
-          <h3 className="font-condensed text-3xl font-bold uppercase text-white mb-4">Race Anatomy</h3>
-          <p className="text-text-secondary mb-6 leading-relaxed">
-            Una timeline interattiva per scoprire chi ha sfruttato le finestre di opportunità (Opportunity Window) create dalle neutralizzazioni, misurando lo "sconto" reale sui pit stop (Neutralization Discount).
-          </p>
-          <Link href="/race/2021-22" className="text-racing-red font-condensed uppercase tracking-widest text-sm flex items-center gap-2 group-hover:gap-4 transition-all">
-            Analizza VSC & SC <ArrowRight className="w-4 h-4" />
+          <Link href="/grid" className="shrink-0 bg-white text-background px-8 py-4 font-condensed uppercase tracking-widest font-bold hover:bg-neutral-gray transition-colors flex items-center gap-3">
+            Esplora Rivalità <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
-
-        {/* Teammate Dynamics Module */}
-        <div className="bg-panel border border-graphite p-8 hover:border-white transition-colors group">
-          <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-6">
-            <Crosshair className="text-white w-6 h-6" />
-          </div>
-          <h3 className="font-condensed text-3xl font-bold uppercase text-white mb-4">Teammate Dynamics</h3>
-          <p className="text-text-secondary mb-6 leading-relaxed">
-            Il modulo storico per isolare il talento del pilota dalla performance della vettura. Confronta i compagni di squadra, scopri le "Macchine Illegali" e i "Distruttori" di compagni attraverso il Teammate Dominance Index (TDI).
-          </p>
-          <Link href="/grid" className="text-white font-condensed uppercase tracking-widest text-sm flex items-center gap-2 group-hover:gap-4 transition-all">
-            Esplora le Rivalità <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
       </section>
     </main>
   );

@@ -105,6 +105,12 @@ class OpenF1Client:
         
         logger.info(f"Fetching from API: {url}", params=params)
         response = await self.client.get(url, params=params)
+        
+        # Handle "No results found" gracefully (OpenF1 returns 404 or 400 for empty queries)
+        if response.status_code in [404, 400] and "No results found" in response.text:
+            logger.warning(f"No results found from API: {url}", params=params)
+            return []
+            
         response.raise_for_status()
         
         data = response.json()

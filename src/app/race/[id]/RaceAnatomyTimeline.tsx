@@ -9,10 +9,13 @@ interface Props {
 }
 
 export default function RaceAnatomyTimeline({ data, selectedEventId, onSelectEvent }: Props) {
-  const { totalLaps, neutralizations, pitStops, drivers } = data;
+  const totalLaps = data?.totalLaps || 0;
+  const neutralizations = data?.neutralizations || [];
+  const pitStops = data?.pitStops || [];
+  const drivers = data?.drivers || [];
 
   return (
-    <div className="bg-panel border border-graphite p-8 relative overflow-x-auto">
+    <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-8 relative overflow-x-auto hide-scrollbar">
       <div className="min-w-[1000px] h-64 relative">
         
         {/* Lap grid lines */}
@@ -37,9 +40,9 @@ export default function RaceAnatomyTimeline({ data, selectedEventId, onSelectEve
               key={n.eventId}
               onClick={() => onSelectEvent(n.eventId)}
               className={clsx(
-                "absolute top-0 bottom-0 z-10 transition-all focus:outline-none group cursor-pointer border-x",
-                n.type === 'Safety Car' ? "bg-yellow-500/20 hover:bg-yellow-500/30 border-yellow-500/50" : "bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 border-dashed",
-                isSelected ? "border-yellow-500 ring-2 ring-yellow-500/50 ring-offset-2 ring-offset-panel" : ""
+                "absolute top-0 bottom-0 z-10 transition-all duration-300 focus:outline-none group cursor-pointer border-x",
+                n.type === 'Safety Car' ? "bg-yellow-500/10 hover:bg-yellow-500/30 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.1)]" : "bg-yellow-500/5 hover:bg-yellow-500/15 border-yellow-500/30 border-dashed",
+                isSelected ? "border-yellow-500 ring-1 ring-yellow-500/50 bg-yellow-500/20" : ""
               )}
               style={{ left: `${leftPerc}%`, width: `${widthPerc}%` }}
             >
@@ -62,11 +65,11 @@ export default function RaceAnatomyTimeline({ data, selectedEventId, onSelectEve
           return (
             <div 
               key={idx}
-              className="absolute w-4 h-4 rounded-full border-2 border-panel z-20 group -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${leftPerc}%`, top: `${topPerc}%`, backgroundColor: driver.color }}
+              className="absolute w-4 h-4 rounded-full border border-black z-20 group -translate-x-1/2 -translate-y-1/2 shadow-lg hover:scale-150 hover:z-40 transition-all duration-300 cursor-pointer"
+              style={{ left: `${leftPerc}%`, top: `${topPerc}%`, backgroundColor: driver.color, boxShadow: `0 0 10px ${driver.color}80` }}
             >
-              <div className="absolute opacity-0 group-hover:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-graphite border border-white/10 px-2 py-1 text-xs whitespace-nowrap z-30 transition-opacity">
-                <span className="font-bold text-white">{driver.name}</span> (L{pit.lap})
+              <div className="absolute opacity-0 group-hover:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-3 bg-black/80 backdrop-blur-md border border-white/20 rounded-md px-3 py-2 text-xs whitespace-nowrap z-50 transition-all duration-300 shadow-xl pointer-events-none translate-y-2 group-hover:translate-y-0">
+                <span className="font-bold text-white">{driver.name}</span> (Lap {pit.lap})
               </div>
             </div>
           );

@@ -45,7 +45,8 @@ export default function RaceAnatomyClient({ data }: { data: any }) {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
           
           {/* Opportunity Window (Left) */}
-          <div className="bg-panel border border-graphite p-6">
+          <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-6 shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-racing-red/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
             <h3 className="font-condensed text-xl font-bold uppercase text-white mb-2 flex items-center gap-2">
               <div className={clsx("w-3 h-3 rounded-full", selectedEvent.type === 'Safety Car' ? 'bg-yellow-500' : 'bg-yellow-500/50')} />
               Opportunity Window
@@ -57,7 +58,8 @@ export default function RaceAnatomyClient({ data }: { data: any }) {
           </div>
 
           {/* Pit Cost Dumbbell (Right) */}
-          <div className="bg-panel border border-graphite p-6">
+          <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-6 shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
             <h3 className="font-condensed text-xl font-bold uppercase text-white mb-2">
               Neutralization Discount
             </h3>
@@ -69,10 +71,10 @@ export default function RaceAnatomyClient({ data }: { data: any }) {
           
         </section>
       ) : (
-        <section className="h-64 border border-graphite border-dashed flex flex-col items-center justify-center text-neutral-gray">
-          <Info className="w-8 h-8 mb-4 opacity-50" />
-          <h3 className="font-condensed text-xl uppercase tracking-widest">Seleziona un Evento</h3>
-          <p className="text-sm">Clicca su una banda gialla nella timeline per esplorare la neutralizzazione.</p>
+        <section className="h-64 rounded-xl border border-white/10 border-dashed bg-black/20 backdrop-blur-md flex flex-col items-center justify-center text-neutral-gray transition-all hover:border-white/30 hover:bg-black/30 cursor-default">
+          <Info className="w-10 h-10 mb-4 opacity-40 text-yellow-500/50" />
+          <h3 className="font-condensed text-2xl uppercase tracking-widest text-white/70">Seleziona un Evento</h3>
+          <p className="text-sm mt-2 opacity-70">Clicca su una banda gialla nella timeline per esplorare la neutralizzazione.</p>
         </section>
       )}
     </div>

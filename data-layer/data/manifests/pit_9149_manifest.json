@@ -1,0 +1,13 @@
+{
+  "endpoint": "pit",
+  "url": "https://api.openf1.org/v1/pit?session_key=9149",
+  "year": 2023,
+  "meeting_key": 1217,
+  "session_key": 9149,
+  "requested_at": "2026-07-08T16:00:15.680023Z",
+  "status_code": 200,
+  "record_count": 101,
+  "checksum": "18b4a2cb501bbf097150e3e8ecc8e0a9aae74ef1275d88cca7fecedf46f94565",
+  "file_path": "./data/raw/2023/1217/9149/pit_session_key-9149.json",
+  "completed": true
+}

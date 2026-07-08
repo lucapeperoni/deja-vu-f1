@@ -11,7 +11,7 @@ export default function Header() {
           </span>
         </Link>
         <nav className="flex gap-8 text-sm font-condensed tracking-widest uppercase">
-          <Link href="/race/2021-22" className="text-sm font-medium text-racing-red hover:text-white uppercase tracking-wider transition-colors">
+          <Link href="/race/9165" className="text-sm font-medium text-racing-red hover:text-white uppercase tracking-wider transition-colors">
             Race Anatomy
           </Link>
           <div className="w-[1px] h-4 bg-graphite my-auto mx-2" />

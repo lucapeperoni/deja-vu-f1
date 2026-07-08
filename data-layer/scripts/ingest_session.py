@@ -18,7 +18,7 @@ def safe_parse_date(date_str):
     except:
         return None
 
-async def ingest_session(session_key: int, year: int):
+async def ingest_session(session_key: int, year: int, skip_heavy: bool = True):
     # Ensure tables exist
     Base.metadata.create_all(bind=engine)
     
@@ -101,7 +101,7 @@ async def ingest_session(session_key: int, year: int):
         db.commit()
 
         # 4. Fetch Laps
-        if not args.skip_heavy:
+        if not skip_heavy:
             logger.info("Fetching Laps...")
             laps_data = await client.get_laps(session_key=session_key, meeting_key=meeting_key, year=year)
             db.query(Lap).filter_by(session_key=session_key).delete()
@@ -169,4 +169,4 @@ if __name__ == "__main__":
     parser.add_argument("--skip-heavy", action="store_true", help="Skip heavy endpoints like laps, intervals, and positions")
     args = parser.parse_args()
     
-    asyncio.run(ingest_session(args.session_key, args.year))
+    asyncio.run(ingest_session(args.session_key, args.year, skip_heavy=args.skip_heavy))

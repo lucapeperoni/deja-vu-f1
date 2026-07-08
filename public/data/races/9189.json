@@ -1,0 +1,331 @@
+{
+  "session_key": 9189,
+  "meeting_key": 1225,
+  "season": 2023,
+  "raceName": "Race",
+  "country": "United States",
+  "neutralizations": [
+    {
+      "eventId": "neut-1",
+      "type": "Red Flag",
+      "startLap": null,
+      "endLap": null,
+      "durationSeconds": 117.0,
+      "startTime": "2023-11-19T06:05:49",
+      "endTime": "2023-11-19T06:07:46"
+    },
+    {
+      "eventId": "neut-2",
+      "type": "Red Flag",
+      "startLap": null,
+      "endLap": null,
+      "durationSeconds": 12.0,
+      "startTime": "2023-11-19T06:07:46",
+      "endTime": "2023-11-19T06:07:58"
+    },
+    {
+      "eventId": "neut-3",
+      "type": "Red Flag",
+      "startLap": null,
+      "endLap": null,
+      "durationSeconds": 376.0,
+      "startTime": "2023-11-19T06:09:27",
+      "endTime": "2023-11-19T06:15:43"
+    },
+    {
+      "eventId": "neut-4",
+      "type": "Red Flag",
+      "startLap": null,
+      "endLap": null,
+      "durationSeconds": 0.0,
+      "startTime": "2023-11-19T06:51:24",
+      "endTime": "2023-11-19T06:51:24"
+    }
+  ],
+  "pit_stops": [
+    {
+      "driverNumber": 11,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 14,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 77,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 18,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 55,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 22,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 27,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 20,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 63,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 2,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 1,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 23,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 81,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 10,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 3,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 44,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 31,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 16,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 22,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 77,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 11,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 1,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 18,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 63,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 55,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 14,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 24,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 20,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 27,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 44,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    },
+    {
+      "driverNumber": 81,
+      "lapNumber": null,
+      "pitDuration": null,
+      "neutralizationType": null,
+      "neutralizationDiscount": null,
+      "baselineCost": 20.0,
+      "date": null
+    }
+  ],
+  "totalLaps": 43,
+  "stats": {
+    "total_neutralizations": 4,
+    "total_pit_stops": 31
+  }
+}
