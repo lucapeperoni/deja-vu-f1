@@ -30,6 +30,14 @@
 // rows/colorMode: cambiare colonna colore è una riconfigurazione esplicita,
 // non un hover) è separato dall'effect di evidenziazione (dipende solo da
 // highlightedDriverId) — l'hover non ricalcola barre e posizioni.
+//
+// Task successivo (leggibilità): con più neutralizzazioni nella stessa gara
+// la vista era un'unica lista lunga di righe (team × evento) che ripeteva
+// "team · evento" su ogni riga — scorrendola si perdeva il confine tra un
+// evento e l'altro. Ora le righe sono raggruppate sotto un'intestazione di
+// evento condivisa (mostrata una sola volta per gruppo, non per riga), e un
+// filtro sopra il grafico permette di isolare un solo evento quando i team
+// coinvolti sono troppi per leggerli tutti insieme.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
@@ -85,14 +93,17 @@ interface TooltipState {
 const MARGIN = { top: 12, right: 20, bottom: 12, left: 20 };
 const WIDTH = 900;
 const ROW_HEIGHT = 120;
-const ROW_GAP = 14;
+const ROW_GAP = 10; // tra due righe (team) dello STESSO evento
+const GROUP_GAP = 22; // spazio extra prima dell'intestazione di un NUOVO evento
+const HEADER_HEIGHT = 34; // altezza riservata all'intestazione di evento, una volta per gruppo
 const BAR_HEIGHT = 14;
 const MAX_BAR_LEN = 190; // lunghezza massima di ciascuna mezza-barra, dal centro verso l'esterno
 
-// Coordinate verticali (row-local) del blocco di testo sopra la barra: ogni
-// riga di testo ha bisogno di piu' spazio del previsto rispetto alla
-// successiva, altrimenti ascendenti/discendenti dei font si sovrappongono
-// (era il bug: 6px di distanza tra baseline con font da 11-12px).
+// Coordinate verticali (row-local, relative all'origine di OGNI riga team,
+// non dell'intestazione) del blocco di testo sopra la barra: ogni riga di
+// testo ha bisogno di piu' spazio del previsto rispetto alla successiva,
+// altrimenti ascendenti/discendenti dei font si sovrappongono (era il bug:
+// 6px di distanza tra baseline con font da 11-12px).
 const TEAM_LABEL_Y = 14;
 const DRIVER_LABEL_Y = 34;
 const PIT_LABEL_Y = 48;
@@ -139,6 +150,11 @@ function buildRows(raceData: RaceData): MirrorRow[] {
         // primo; il compagno dietro fa la coda del double stack.
         if (left.pit.posBefore != null && right.pit.posBefore != null) {
           firstDriverId = left.pit.posBefore <= right.pit.posBefore ? left.driverId : right.driverId;
+        } else if (driverLeft.grid != null && driverRight.grid != null) {
+          // posBefore manca per i pit al giro 1 (non esiste un "giro prima"
+          // da cui leggere la posizione, es. SC al via): la griglia di
+          // partenza è il miglior proxy di chi era davanti in quel momento.
+          firstDriverId = driverLeft.grid <= driverRight.grid ? left.driverId : right.driverId;
         }
       }
 
@@ -154,8 +170,15 @@ function buildRows(raceData: RaceData): MirrorRow[] {
     }
   }
 
-  // Ordine di lettura: per giro dell'evento, poi per team.
-  return rows.sort((a, b) => a.event.startLap - b.event.startLap || a.team.localeCompare(b.team));
+  // Ordine di lettura: per giro dell'evento (con l'eventId come spareggio,
+  // cosi' le righe dello stesso evento restano sempre adiacenti anche nel
+  // caso limite di due eventi con lo stesso startLap), poi per team.
+  return rows.sort(
+    (a, b) =>
+      a.event.startLap - b.event.startLap ||
+      a.event.eventId.localeCompare(b.event.eventId) ||
+      a.team.localeCompare(b.team)
+  );
 }
 
 function pitLabel(side: MirrorSide): string {
@@ -166,10 +189,35 @@ function pitLabel(side: MirrorSide): string {
   return side.pit.compound ? `${base} · gomme ${side.pit.compound}` : base;
 }
 
+interface LayoutRow {
+  row: MirrorRow;
+  y: number; // offset verticale (row-local) dell'origine della riga team
+  isFirstInGroup: boolean;
+}
+
+// Calcola l'offset verticale di ogni riga, inserendo lo spazio per
+// un'intestazione di evento (una sola volta) ogni volta che l'eventId
+// cambia rispetto alla riga precedente. Le righe arrivano già ordinate per
+// evento da buildRows, quindi un cambio di eventId segna sempre un nuovo
+// gruppo, mai un evento già chiuso che si ripresenta più avanti.
+function computeLayout(rows: MirrorRow[]): { layout: LayoutRow[]; totalHeight: number } {
+  const layout: LayoutRow[] = [];
+  let y = 0;
+  rows.forEach((row, i) => {
+    const isFirstInGroup = i === 0 || row.event.eventId !== rows[i - 1].event.eventId;
+    if (i > 0) y += isFirstInGroup ? GROUP_GAP : ROW_GAP;
+    if (isFirstInGroup) y += HEADER_HEIGHT;
+    layout.push({ row, y, isFirstInGroup });
+    y += ROW_HEIGHT;
+  });
+  return { layout, totalHeight: y };
+}
+
 export default function TeammateMirror({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [colorMode, setColorMode] = useState<ColorMode>("context");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<"all" | string>("all");
   const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId } = useRaceInteraction();
 
   const lockedRef = useRef(lockedDriverId);
@@ -177,12 +225,32 @@ export default function TeammateMirror({ raceData }: Props) {
     lockedRef.current = lockedDriverId;
   }, [lockedDriverId]);
 
-  const rows = useMemo(() => buildRows(raceData), [raceData]);
-  const height = MARGIN.top + MARGIN.bottom + Math.max(rows.length, 1) * (ROW_HEIGHT + ROW_GAP);
+  const allRows = useMemo(() => buildRows(raceData), [raceData]);
+
+  // Un evento per ogni "capitolo" del filtro sopra il grafico, con quante
+  // righe (coppie team-evento) porta con sé: aiuta a capire, prima di
+  // scegliere, se un evento è "affollato" oppure no.
+  const eventOptions = useMemo(() => {
+    const byEvent = new Map<string, { event: RaceNeutralization; count: number }>();
+    for (const row of allRows) {
+      const entry = byEvent.get(row.event.eventId);
+      if (entry) entry.count += 1;
+      else byEvent.set(row.event.eventId, { event: row.event, count: 1 });
+    }
+    return [...byEvent.values()].sort((a, b) => a.event.startLap - b.event.startLap);
+  }, [allRows]);
+
+  const rows = useMemo(
+    () => (selectedEventId === "all" ? allRows : allRows.filter((r) => r.event.eventId === selectedEventId)),
+    [allRows, selectedEventId]
+  );
+
+  const { layout, totalHeight } = useMemo(() => computeLayout(rows), [rows]);
+  const height = MARGIN.top + MARGIN.bottom + Math.max(totalHeight, ROW_HEIGHT);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    const groups = ["rows-group"];
+    const groups = ["headers-group", "rows-group"];
     for (const cls of groups) {
       if (svg.select(`.${cls}`).empty()) svg.append("g").attr("class", cls);
     }
@@ -190,7 +258,7 @@ export default function TeammateMirror({ raceData }: Props) {
 
   useEffect(() => {
     setTooltip(null);
-  }, [colorMode]);
+  }, [colorMode, selectedEventId]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -213,19 +281,55 @@ export default function TeammateMirror({ raceData }: Props) {
       return barScale(Math.abs(side.pit.discount));
     }
 
+    // --- Intestazioni di evento: una per gruppo, sopra le righe team che
+    // condividono lo stesso evento. Sostituiscono la ripetizione di "team ·
+    // evento" su ogni singola riga.
+    const headersSel = svg
+      .select<SVGGElement>(".headers-group")
+      .selectAll<SVGGElement, LayoutRow>("g.event-header")
+      .data(
+        layout.filter((d) => d.isFirstInGroup),
+        (d) => d.row.event.eventId
+      )
+      .join(
+        (enter) => {
+          const g = enter.append("g").attr("class", "event-header").style("opacity", 0);
+          g.append("text").attr("class", "event-header-label").attr("font-size", 13).attr("font-weight", 700).attr("fill", NEUTRALIZATION_ACCENT_COLOR);
+          g.append("line").attr("class", "event-header-rule").attr("stroke", NEUTRALIZATION_ACCENT_COLOR).attr("stroke-width", 1).style("opacity", 0.35);
+          return g;
+        },
+        (update) => update,
+        (exit) => exit.transition().duration(200).style("opacity", 0).remove()
+      );
+
+    headersSel.transition().duration(300).style("opacity", 1);
+
+    headersSel
+      .select<SVGTextElement>("text.event-header-label")
+      .attr("x", 0)
+      .attr("y", (d) => MARGIN.top + d.y - HEADER_HEIGHT + 16)
+      .text((d) => `${d.row.event.type} · giri ${d.row.event.startLap}-${d.row.event.endLap}`);
+
+    headersSel
+      .select<SVGLineElement>("line.event-header-rule")
+      .attr("x1", 0)
+      .attr("x2", WIDTH)
+      .attr("y1", (d) => MARGIN.top + d.y - HEADER_HEIGHT + 24)
+      .attr("y2", (d) => MARGIN.top + d.y - HEADER_HEIGHT + 24);
+
     const rowsSel = svg
       .select<SVGGElement>(".rows-group")
-      .selectAll<SVGGElement, MirrorRow>("g.mirror-row")
-      .data(rows, (d) => d.key)
+      .selectAll<SVGGElement, LayoutRow>("g.mirror-row")
+      .data(layout, (d) => d.row.key)
       .join(
         (enter) => {
           const g = enter
             .append("g")
             .attr("class", "mirror-row")
             .style("opacity", 0)
-            .attr("transform", (_d, i) => `translate(0, ${MARGIN.top + i * (ROW_HEIGHT + ROW_GAP)})`);
+            .attr("transform", (d) => `translate(0, ${MARGIN.top + d.y})`);
 
-          g.append("text").attr("class", "team-label").attr("text-anchor", "middle").attr("font-size", 11);
+          g.append("text").attr("class", "team-label").attr("text-anchor", "middle").attr("font-size", 11).attr("fill", TEXT_MUTED_COLOR);
           g.append("line").attr("class", "center-line").attr("stroke", DEFAULT_LINE_COLOR).attr("stroke-width", 1);
 
           for (const side of ["left", "right"] as const) {
@@ -250,14 +354,13 @@ export default function TeammateMirror({ raceData }: Props) {
       .transition()
       .duration(300)
       .style("opacity", 1)
-      .attr("transform", (_d, i) => `translate(0, ${MARGIN.top + i * (ROW_HEIGHT + ROW_GAP)})`);
+      .attr("transform", (d) => `translate(0, ${MARGIN.top + d.y})`);
 
     rowsSel
       .select<SVGTextElement>("text.team-label")
       .attr("x", centerX)
       .attr("y", TEAM_LABEL_Y)
-      .attr("fill", NEUTRALIZATION_ACCENT_COLOR)
-      .text((d) => `${teamLabel(d.team)} · ${d.event.type} giro ${d.event.startLap}-${d.event.endLap}`);
+      .text((d) => teamLabel(d.row.team));
 
     rowsSel
       .select<SVGLineElement>("line.center-line")
@@ -278,45 +381,45 @@ export default function TeammateMirror({ raceData }: Props) {
         .attr("y", DRIVER_LABEL_Y)
         .attr("text-anchor", anchor)
         .style("cursor", "pointer")
-        .text((d) => d[side].driverId)
+        .text((d) => d.row[side].driverId)
         .on("pointerenter", (_e, d) => {
-          if (!lockedRef.current) setHoveredDriverId(d[side].driverId);
+          if (!lockedRef.current) setHoveredDriverId(d.row[side].driverId);
         })
         .on("pointerleave", () => {
           if (!lockedRef.current) setHoveredDriverId(null);
         })
-        .on("click", (_e, d) => toggleLockedDriverId(d[side].driverId));
+        .on("click", (_e, d) => toggleLockedDriverId(d.row[side].driverId));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-pit-label`)
         .attr("x", driverX)
         .attr("y", PIT_LABEL_Y)
         .attr("text-anchor", anchor)
-        .text((d) => pitLabel(d[side]));
+        .text((d) => pitLabel(d.row[side]));
 
       rowsSel
         .select<SVGRectElement>(`rect.${side}-bar`)
         .attr("y", barY)
         .style("cursor", "pointer")
         .on("pointerenter", function (event, d) {
-          if (!lockedRef.current) setHoveredDriverId(d[side].driverId);
+          if (!lockedRef.current) setHoveredDriverId(d.row[side].driverId);
           // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è
           // un portal fixed su document.body, vedi ChartTooltip.
-          setTooltip({ x: event.clientX, y: event.clientY, side: d[side], row: d });
+          setTooltip({ x: event.clientX, y: event.clientY, side: d.row[side], row: d.row });
         })
         .on("pointermove", function (event, d) {
-          setTooltip({ x: event.clientX, y: event.clientY, side: d[side], row: d });
+          setTooltip({ x: event.clientX, y: event.clientY, side: d.row[side], row: d.row });
         })
         .on("pointerleave", () => {
           if (!lockedRef.current) setHoveredDriverId(null);
           setTooltip(null);
         })
-        .on("click", (_event, d) => toggleLockedDriverId(d[side].driverId))
+        .on("click", (_event, d) => toggleLockedDriverId(d.row[side].driverId))
         .transition()
         .duration(350)
-        .attr("x", (d) => (isLeft ? centerX - barLen(d[side]) : centerX))
-        .attr("width", (d) => Math.max(barLen(d[side]), d[side].pit ? 2 : 0))
-        .attr("fill", (d) => fillFor(d, d[side]));
+        .attr("x", (d) => (isLeft ? centerX - barLen(d.row[side]) : centerX))
+        .attr("width", (d) => Math.max(barLen(d.row[side]), d.row[side].pit ? 2 : 0))
+        .attr("fill", (d) => fillFor(d.row, d.row[side]));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-discount-label`)
@@ -326,13 +429,13 @@ export default function TeammateMirror({ raceData }: Props) {
         .transition()
         .duration(350)
         .attr("x", (d) => {
-          const len = barLen(d[side]);
+          const len = barLen(d.row[side]);
           const edge = isLeft ? centerX - len : centerX + len;
           return isLeft ? edge - 6 : edge + 6;
         })
         .text((d) => {
-          const disc = d[side].pit?.discount;
-          if (disc == null) return d[side].pit ? "n/d" : "";
+          const disc = d.row[side].pit?.discount;
+          if (disc == null) return d.row[side].pit ? "n/d" : "";
           return `${disc >= 0 ? "+" : ""}${disc.toFixed(1)}s`;
         });
 
@@ -340,7 +443,7 @@ export default function TeammateMirror({ raceData }: Props) {
         .select<SVGCircleElement>(`circle.${side}-outcome-dot`)
         .attr("cx", isLeft ? driverX - 4 : driverX + 4)
         .attr("cy", barY + BAR_HEIGHT + 16)
-        .attr("fill", (d) => (d[side].outcomeCategory ? outcomeColor(d[side].outcomeCategory as string) : MUTED_FILL_COLOR));
+        .attr("fill", (d) => (d.row[side].outcomeCategory ? outcomeColor(d.row[side].outcomeCategory as string) : MUTED_FILL_COLOR));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-outcome-label`)
@@ -349,7 +452,7 @@ export default function TeammateMirror({ raceData }: Props) {
         .attr("text-anchor", anchor)
         .attr("fill", TEXT_MUTED_COLOR)
         .text((d) => {
-          const s = d[side];
+          const s = d.row[side];
           const outcomeText = s.outcomeCategory
             ? OUTCOME_LABELS[s.outcomeCategory as keyof typeof OUTCOME_LABELS] ?? s.outcomeCategory
             : "—";
@@ -366,17 +469,17 @@ export default function TeammateMirror({ raceData }: Props) {
       .attr("y2", BAR_Y + BAR_HEIGHT / 2)
       .transition()
       .duration(350)
-      .style("opacity", (d) => (d.doubleStack ? 1 : 0))
-      .attr("x1", (d) => centerX - Math.min(barLen(d.left), 14))
-      .attr("x2", (d) => centerX + Math.min(barLen(d.right), 14));
+      .style("opacity", (d) => (d.row.doubleStack ? 1 : 0))
+      .attr("x1", (d) => centerX - Math.min(barLen(d.row.left), 14))
+      .attr("x2", (d) => centerX + Math.min(barLen(d.row.right), 14));
 
     rowsSel
       .select<SVGTextElement>("text.stack-label")
       .attr("x", centerX)
       .attr("y", STACK_LABEL_Y)
-      .style("opacity", (d) => (d.doubleStack ? 1 : 0))
-      .text((d) => (d.doubleStack ? `Double stack · ${d.firstDriverId ?? "?"} entra per primo` : ""));
-  }, [rows, colorMode, setHoveredDriverId, toggleLockedDriverId]);
+      .style("opacity", (d) => (d.row.doubleStack ? 1 : 0))
+      .text((d) => (d.row.doubleStack ? `Double stack · ${d.row.firstDriverId ?? "?"} entra per primo` : ""));
+  }, [rows, layout, colorMode, setHoveredDriverId, toggleLockedDriverId]);
 
   // --- Effect di evidenziazione: solo colore/stroke/opacità sui nodi già
   // disegnati, nessun nuovo join, nessun ricalcolo di barre.
@@ -386,22 +489,22 @@ export default function TeammateMirror({ raceData }: Props) {
     for (const side of ["left", "right"] as const) {
       svg
         .select<SVGGElement>(".rows-group")
-        .selectAll<SVGTextElement, MirrorRow>(`text.${side}-driver-label`)
-        .attr("fill", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_PRIMARY_COLOR));
+        .selectAll<SVGTextElement, LayoutRow>(`text.${side}-driver-label`)
+        .attr("fill", (d) => (d.row[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_PRIMARY_COLOR));
 
       svg
         .select<SVGGElement>(".rows-group")
-        .selectAll<SVGRectElement, MirrorRow>(`rect.${side}-bar`)
-        .attr("stroke", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
+        .selectAll<SVGRectElement, LayoutRow>(`rect.${side}-bar`)
+        .attr("stroke", (d) => (d.row[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
         .attr("stroke-width", 1.5)
-        .attr("opacity", (d) => (highlightedDriverId && d[side].driverId !== highlightedDriverId ? 0.4 : 1));
+        .attr("opacity", (d) => (highlightedDriverId && d.row[side].driverId !== highlightedDriverId ? 0.4 : 1));
     }
     // rows/colorMode in dipendenza solo per ridipingere l'evidenziazione
     // dopo un redraw strutturale: il ricalcolo vero e proprio resta
     // nell'altro effect.
-  }, [highlightedDriverId, rows, colorMode]);
+  }, [highlightedDriverId, rows, layout, colorMode]);
 
-  if (rows.length === 0) {
+  if (allRows.length === 0) {
     return (
       <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 text-sm text-text-secondary italic">
         Nessun team ha un pit stop vicino a una neutralizzazione in questa gara: la vista non si applica.
@@ -411,10 +514,11 @@ export default function TeammateMirror({ raceData }: Props) {
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
         <p className="text-xs text-neutral-gray max-w-2xl">
           Una riga per ogni team davanti a una neutralizzazione in cui almeno uno dei due compagni si è fermato: a
           sinistra e a destra, a specchio, l&apos;esito di ciascuno.
+          {eventOptions.length > 1 && " Con più eventi, isola quello che ti interessa dai filtri qui sotto."}
         </p>
         <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md">
           <button
@@ -438,6 +542,36 @@ export default function TeammateMirror({ raceData }: Props) {
         </div>
       </div>
 
+      {eventOptions.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button
+            onClick={() => setSelectedEventId("all")}
+            className={clsx(
+              "px-3 py-1 text-xs font-condensed uppercase tracking-wider rounded-full border transition-colors",
+              selectedEventId === "all"
+                ? "bg-racing-red border-racing-red text-white font-bold"
+                : "border-graphite text-neutral-gray hover:text-white hover:border-neutral-gray"
+            )}
+          >
+            Tutti gli eventi ({allRows.length})
+          </button>
+          {eventOptions.map(({ event, count }) => (
+            <button
+              key={event.eventId}
+              onClick={() => setSelectedEventId(event.eventId)}
+              className={clsx(
+                "px-3 py-1 text-xs font-condensed uppercase tracking-wider rounded-full border transition-colors",
+                selectedEventId === event.eventId
+                  ? "bg-racing-red border-racing-red text-white font-bold"
+                  : "border-graphite text-neutral-gray hover:text-white hover:border-neutral-gray"
+              )}
+            >
+              {event.type} · giri {event.startLap}-{event.endLap} ({count})
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{ maxHeight: 640, overflowY: "auto" }}>
         <svg
           ref={svgRef}
@@ -445,7 +579,9 @@ export default function TeammateMirror({ raceData }: Props) {
           width="100%"
           height={height}
           role="img"
-          aria-label={`Stesso box, fortuna diversa — ${raceData.race.name} ${raceData.race.year}`}
+          aria-label={`Stesso box, fortuna diversa — ${raceData.race.name} ${raceData.race.year}${
+            selectedEventId === "all" ? "" : `, evento ${selectedEventId}`
+          }`}
         />
       </div>
 
