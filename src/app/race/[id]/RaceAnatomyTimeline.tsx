@@ -84,8 +84,23 @@ export interface RaceData {
   drivers: RaceDriver[];
 }
 
+export interface StoryStep {
+  lap: number;
+  title: string;
+  text: string;
+  eventId: string | null;
+  brushRange: { startLap: number; endLap: number } | null;
+  driverIds: string[];
+}
+
+export interface RaceStory {
+  title: string;
+  steps: StoryStep[];
+}
+
 interface Props {
   raceData: RaceData;
+  story?: RaceStory | null;
 }
 
 interface TooltipState {
@@ -96,8 +111,11 @@ interface TooltipState {
   gapLeader: number | null;
 }
 
-const MARGIN = { top: 28, right: 60, bottom: 32, left: 48 };
-const HEIGHT = 420;
+const MARGIN_BASE = { top: 28, right: 60, bottom: 32, left: 48 };
+const HEIGHT_BASE = 420;
+// Riga in più in basso per i marcatori numerati delle tappe di racconto
+// (task 5.1, sezione 9): solo le gare-caso con storia la usano.
+const STORY_ROW_HEIGHT = 34;
 const MIN_LABEL_GAP = 13;
 const HOVER_PIXEL_THRESHOLD = 28;
 const CLICK_DRAG_THRESHOLD_PX = 4;
@@ -106,12 +124,26 @@ function widthForLaps(totalLaps: number): number {
   return Math.max(900, totalLaps * 13);
 }
 
-export default function RaceAnatomyTimeline({ raceData }: Props) {
+export default function RaceAnatomyTimeline({ raceData, story }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId, clearLock, setBrushRange } =
-    useRaceInteraction();
+  const {
+    highlightedDriverId,
+    lockedDriverId,
+    storyDriverIds,
+    setHoveredDriverId,
+    toggleLockedDriverId,
+    clearLock,
+    setBrushRange,
+    setSelectedEventId,
+    setStoryDriverIds,
+    setLockedDriverId,
+  } = useRaceInteraction();
+
+  const hasStory = (story?.steps.length ?? 0) > 0;
+  const MARGIN = hasStory ? { ...MARGIN_BASE, bottom: MARGIN_BASE.bottom + STORY_ROW_HEIGHT } : MARGIN_BASE;
+  const HEIGHT = hasStory ? HEIGHT_BASE + STORY_ROW_HEIGHT : HEIGHT_BASE;
 
   // Valori "vivi" per gli handler dell'effect strutturale, che non li ha
   // tra le dipendenze (vedi commento in testa al file).
@@ -132,7 +164,16 @@ export default function RaceAnatomyTimeline({ raceData }: Props) {
   // gli eventi del mouse).
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    const groups = ["bands-group", "x-axis", "y-axis", "series-group", "pits-group", "labels-group", "brush-group"];
+    const groups = [
+      "bands-group",
+      "x-axis",
+      "y-axis",
+      "series-group",
+      "pits-group",
+      "labels-group",
+      "story-group",
+      "brush-group",
+    ];
     for (const cls of groups) {
       if (svg.select(`.${cls}`).empty()) svg.append("g").attr("class", cls);
     }
@@ -283,6 +324,69 @@ export default function RaceAnatomyTimeline({ raceData }: Props) {
       .join("title")
       .text((d) => `${d.driverId} · giro ${d.lap} · ${d.context} · sconto ${d.discount?.toFixed(1) ?? "n/d"}s`);
 
+    // --- Marcatori numerati delle tappe di racconto (task 5.1, sezione 9):
+    // una riga sotto l'asse dei giri, con una linea tratteggiata che sale
+    // fino in cima al grafico per indicare il giro esatto della tappa.
+    // Cliccare un marcatore equivale a cliccare la tappa nel pannello.
+    const steps = story?.steps ?? [];
+    const storyRowY = MARGIN.top + innerHeight + 26;
+
+    svg
+      .select<SVGGElement>(".story-group")
+      .selectAll<SVGGElement, StoryStep & { index: number }>("g.story-marker")
+      .data(
+        steps.map((s, index) => ({ ...s, index })),
+        (d) => d.index
+      )
+      .join(
+        (enter) => {
+          const g = enter.append("g").attr("class", "story-marker").style("cursor", "pointer");
+          g.append("line").attr("class", "story-guide");
+          g.append("circle").attr("class", "story-badge").attr("r", 9);
+          g.append("text").attr("class", "story-badge-label");
+          return g;
+        },
+        (update) => update,
+        (exit) => exit.remove()
+      )
+      .each(function (d) {
+        const g = d3.select(this);
+        const x = xScale(d.lap);
+        g.select(".story-guide")
+          .attr("x1", x)
+          .attr("x2", x)
+          .attr("y1", MARGIN.top)
+          .attr("y2", storyRowY - 10)
+          .attr("stroke", "#e10600")
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", "3,3")
+          .attr("opacity", 0.5);
+        g.select(".story-badge")
+          .attr("cx", x)
+          .attr("cy", storyRowY)
+          .attr("fill", "#e10600")
+          .attr("stroke", "#0a0a0a")
+          .attr("stroke-width", 1.5);
+        g.select(".story-badge-label")
+          .attr("x", x)
+          .attr("y", storyRowY)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "central")
+          .attr("font-size", 10)
+          .attr("font-weight", 700)
+          .attr("fill", "#fff")
+          .style("pointer-events", "none")
+          .text(d.index + 1);
+        g.select("title").remove();
+        g.append("title").text(`${d.index + 1}. ${d.title} (giro ${d.lap})`);
+      })
+      .on("click", (_event, d) => {
+        setBrushRange(d.brushRange ?? null);
+        if (d.eventId) setSelectedEventId(d.eventId);
+        setStoryDriverIds(d.driverIds.length > 0 ? d.driverIds : null);
+        setLockedDriverId(d.driverIds[0] ?? null);
+      });
+
     // --- Etichette dei piloti a fine linea, con separazione minima ---
     const rawLabelPoints = drivers
       .map((d) => {
@@ -424,7 +528,19 @@ export default function RaceAnatomyTimeline({ raceData }: Props) {
         setHoveredDriverId(null);
         setTooltip(null);
       });
-  }, [raceData, totalLaps, width, setHoveredDriverId, toggleLockedDriverId, clearLock, setBrushRange]);
+  }, [
+    raceData,
+    totalLaps,
+    width,
+    story,
+    setHoveredDriverId,
+    toggleLockedDriverId,
+    clearLock,
+    setBrushRange,
+    setSelectedEventId,
+    setStoryDriverIds,
+    setLockedDriverId,
+  ]);
 
   // --- Effect di evidenziazione: SOLO attributi (stroke/opacity/fill) su
   // elementi già disegnati dall'effect strutturale. Nessun ricalcolo di
@@ -432,30 +548,37 @@ export default function RaceAnatomyTimeline({ raceData }: Props) {
   // economica anche se l'hover scatta ad ogni pixel (task 4.1).
   useEffect(() => {
     const svg = d3.select(svgRef.current);
+    const storySet = new Set(storyDriverIds ?? []);
+    // Un pilota è "coinvolto" se è il pilota bloccato/in hover (evidenziazione
+    // piena, bianca) oppure fa parte della tappa di racconto attiva
+    // (evidenziazione più tenue, non deve competere col colore del
+    // pilota bloccato/hover).
+    const isPrimary = (id: string) => id === highlightedDriverId;
+    const isInvolved = (id: string) => isPrimary(id) || storySet.has(id);
 
     svg
       .select<SVGGElement>(".series-group")
       .selectAll<SVGPathElement, RaceDriver>("path.driver-line")
-      .attr("stroke", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : DEFAULT_LINE_COLOR))
-      .attr("stroke-width", (d) => (d.id === highlightedDriverId ? 3 : 1.3));
+      .attr("stroke", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? "#e10600" : DEFAULT_LINE_COLOR))
+      .attr("stroke-width", (d) => (isInvolved(d.id) ? 3 : 1.3));
 
     svg
       .select<SVGGElement>(".pits-group")
       .selectAll<SVGCircleElement, { driverId: string }>("circle.pit-marker")
-      .attr("opacity", (d) => (highlightedDriverId && d.driverId !== highlightedDriverId ? 0.35 : 1))
-      .attr("r", (d) => (d.driverId === highlightedDriverId ? 6 : 4.5));
+      .attr("opacity", (d) => (highlightedDriverId || storySet.size > 0 ? (isInvolved(d.driverId) ? 1 : 0.35) : 1))
+      .attr("r", (d) => (isInvolved(d.driverId) ? 6 : 4.5));
 
     svg
       .select<SVGGElement>(".labels-group")
       .selectAll<SVGTextElement, RaceDriver>("text.driver-label")
-      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
-      .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400));
+      .attr("fill", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? "#e10600" : "#9ca3af"))
+      .attr("font-weight", (d) => (isInvolved(d.id) ? 700 : 400));
     // raceData/totalLaps/width in dipendenza: non per ricalcolare (lo fa
     // l'altro effect), ma per ridipingere l'evidenziazione corrente sugli
     // elementi appena ricreati quando cambia la gara — altrimenti un
     // pilota bloccato "perderebbe" l'evidenziazione al primo redraw
     // strutturale successivo.
-  }, [highlightedDriverId, raceData, totalLaps, width]);
+  }, [highlightedDriverId, storyDriverIds, raceData, totalLaps, width]);
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative overflow-x-auto hide-scrollbar">

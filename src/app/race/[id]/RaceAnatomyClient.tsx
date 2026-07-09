@@ -1,10 +1,11 @@
 'use client';
 
-import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
+import RaceAnatomyTimeline, { type RaceData, type RaceStory } from './RaceAnatomyTimeline';
 import OpportunityWindow from './OpportunityWindow';
 import PitCostDumbbell from './PitCostDumbbell';
 import EventSlopeChart from './EventSlopeChart';
 import TeammateMirror from './TeammateMirror';
+import StoryPanel from './StoryPanel';
 import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 import { RaceInteractionProvider, useRaceInteraction } from './RaceInteractionContext';
 
@@ -16,21 +17,23 @@ import { RaceInteractionProvider, useRaceInteraction } from './RaceInteractionCo
 // sincronizza lo slope chart e la matrice). Centralizzato in
 // RaceInteractionContext invece che in useState qui, così ogni vista lo
 // legge/scrive direttamente senza dover far passare 6 prop per ognuna.
-export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) {
+export default function RaceAnatomyClient({ raceData, story }: { raceData: RaceData; story?: RaceStory | null }) {
   const defaultEventId = raceData.neutralizations[0]?.eventId ?? null;
 
   return (
     <RaceInteractionProvider defaultEventId={defaultEventId}>
-      <RaceAnatomyContent raceData={raceData} />
+      <RaceAnatomyContent raceData={raceData} story={story} />
     </RaceInteractionProvider>
   );
 }
 
-function RaceAnatomyContent({ raceData }: { raceData: RaceData }) {
+function RaceAnatomyContent({ raceData, story }: { raceData: RaceData; story?: RaceStory | null }) {
   const { highlightedDriverId, brushRange } = useRaceInteraction();
 
   return (
     <div className="flex flex-col gap-12">
+      {story && story.steps.length > 0 && <StoryPanel story={story} />}
+
       <section>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div>
@@ -39,6 +42,7 @@ function RaceAnatomyContent({ raceData }: { raceData: RaceData }) {
               Passa il mouse su una linea o su un nome pilota per evidenziarlo in tutte le viste della pagina,
               clicca per bloccare l&apos;evidenziazione. Trascina sull&apos;asse dei giri per selezionare un
               intervallo.
+              {story && story.steps.length > 0 && " I numeri rossi sotto l'asse sono le tappe del racconto qui sopra."}
             </p>
           </div>
           <div className="flex gap-4 flex-wrap">
@@ -51,7 +55,7 @@ function RaceAnatomyContent({ raceData }: { raceData: RaceData }) {
           </div>
         </div>
 
-        <RaceAnatomyTimeline raceData={raceData} />
+        <RaceAnatomyTimeline raceData={raceData} story={story} />
 
         {/* Altezza sempre riservata (mai montati/smontati): un paragrafo che
             appare e scompare a ogni hover sposta il layout sotto di sé,

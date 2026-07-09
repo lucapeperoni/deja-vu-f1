@@ -2,7 +2,7 @@ import RaceAnatomyClient from './RaceAnatomyClient';
 import { notFound } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
-import type { RaceData } from './RaceAnatomyTimeline';
+import type { RaceData, RaceStory } from './RaceAnatomyTimeline';
 
 export default async function RacePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -16,6 +16,15 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
 
   const fileData = fs.readFileSync(filePath, 'utf-8');
   const raceData: RaceData = JSON.parse(fileData);
+
+  // Livello narrativo delle 3 gare-caso (task 5.1, docs/PROGETTAZIONE.md
+  // sezione 9): solo queste hanno una voce in stories.json, le altre
+  // gare funzionano come prima (story resta null).
+  const storiesPath = path.join(process.cwd(), 'public', 'data', 'stories.json');
+  const stories: Record<string, RaceStory> = fs.existsSync(storiesPath)
+    ? JSON.parse(fs.readFileSync(storiesPath, 'utf-8'))
+    : {};
+  const story = stories[resolvedParams.id] ?? null;
 
   return (
     <main className="flex-1 bg-background text-foreground py-10 px-6 min-h-screen">
@@ -48,7 +57,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
           </div>
         </header>
 
-        <RaceAnatomyClient raceData={raceData} />
+        <RaceAnatomyClient raceData={raceData} story={story} />
       </div>
     </main>
   );

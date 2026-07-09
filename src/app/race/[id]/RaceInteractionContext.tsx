@@ -36,6 +36,14 @@ interface RaceInteractionValue {
   setBrushRange: (range: BrushRange | null) => void;
   selectedEventId: string | null;
   setSelectedEventId: (id: string | null) => void;
+  // Piloti coinvolti nella tappa di racconto attiva (task 5.1, sezione 9):
+  // a differenza di hoveredDriverId/lockedDriverId (un solo pilota), una
+  // tappa può coinvolgerne più di uno (es. la doppia sosta di un team).
+  // Solo la race trace li usa per evidenziare più linee insieme; le altre
+  // viste continuano a leggere solo highlightedDriverId.
+  storyDriverIds: string[] | null;
+  setStoryDriverIds: (ids: string[] | null) => void;
+  setLockedDriverId: (id: string | null) => void;
 }
 
 const RaceInteractionContext = createContext<RaceInteractionValue | null>(null);
@@ -51,6 +59,7 @@ export function RaceInteractionProvider({
   const [lockedDriverId, setLockedDriverId] = useState<string | null>(null);
   const [brushRange, setBrushRange] = useState<BrushRange | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(defaultEventId);
+  const [storyDriverIds, setStoryDriverIds] = useState<string[] | null>(null);
 
   const toggleLockedDriverId = useCallback((id: string) => {
     setLockedDriverId((current) => (current === id ? null : id));
@@ -70,8 +79,11 @@ export function RaceInteractionProvider({
       setBrushRange,
       selectedEventId,
       setSelectedEventId,
+      storyDriverIds,
+      setStoryDriverIds,
+      setLockedDriverId,
     }),
-    [hoveredDriverId, lockedDriverId, brushRange, selectedEventId, toggleLockedDriverId, clearLock]
+    [hoveredDriverId, lockedDriverId, brushRange, selectedEventId, storyDriverIds, toggleLockedDriverId, clearLock]
   );
 
   return <RaceInteractionContext.Provider value={value}>{children}</RaceInteractionContext.Provider>;
