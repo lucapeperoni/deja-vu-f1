@@ -298,19 +298,30 @@ completa e riportami: quante gare processate, quante saltate e perché,
 quante neutralizzazioni totali trovate, dimensione dei file generati.
 ```
 
-## 2.2 — A · Selezione delle 3 gare-caso
+## 2.2 — A · Selezione delle 3 gare-caso ✅ COMPLETATO
 
 Dipende da: 2.1
 
-- [ ] 2.1 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] La classifica delle gare per interesse è stata stampata
-- [ ] Scelta la gara tipo "VSC breve a metà gara"
-- [ ] Scelta la gara tipo "SC che rimescola"
-- [ ] Scelta la gara tipo "double stack"
-- [ ] Scelta la gara di controllo senza neutralizzazioni
-- [ ] Sezione 9 di PROGETTAZIONE.md aggiornata con le scelte
-- [ ] Diff letto, commit e push
+- [x] 2.1 completato
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] La classifica delle gare per interesse è stata stampata (46 gare)
+- [x] Scelta la gara tipo "VSC breve a metà gara" — **Bahrain 2023**
+- [x] Scelta la gara tipo "SC che rimescola" — **Arabia Saudita 2024 (Jeddah)**
+- [x] Scelta la gara tipo "double stack" — **Australia 2023 (Albert Park)**
+- [x] Scelta la gara di controllo senza neutralizzazioni — **Monaco 2023**
+- [x] Sezione 9 di PROGETTAZIONE.md aggiornata con le scelte
+- [x] Diff letto, commit e push
+
+**Esito reale**: la proposta meccanica dello script (basata solo sui 4
+punteggi) inizialmente indicava Cina 2024 per il tipo "VSC pura" — ma
+controllando quella gara aveva 3 eventi di neutralizzazione consecutivi
+(1 VSC + 2 SC), troppo intrecciata per raccontare l'archetipo "un solo
+momento, contava solo essere lì" in modo pulito. Sostituita con Bahrain
+2023 (un'unica VSC isolata, punteggio più basso ma narrativamente più
+chiara). Prima di accettare qualunque punteggio alto, verificato che il
+campo fosse arrivato al completo classificato in ogni gara candidata
+(altrimenti un punteggio alto potrebbe riflettere ritiri/incidenti invece
+che vera strategia di pit) — confermato per tutte e tre le gare scelte.
 
 **Prompt da copiare:**
 

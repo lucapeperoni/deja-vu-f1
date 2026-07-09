@@ -358,19 +358,39 @@ relazionali/a grafo, e la scelta discende dalla task abstraction.
 
 ## 9. Le 3 gare-caso
 
-Da confermare quando gira la pipeline (task 2.2), ma i tipi sono fissati:
+STATO: scelte (task 2.2), con `data-layer/scripts/select_case_races.py`
+che ordina le 46 gare 2023-2024 per interesse narrativo su 4 criteri
+(punteggio VSC a metà gara, punteggio SC-che-rimescola, presenza di double
+stack, varianza degli sconti). Prima di accettare la proposta meccanica
+dello script, ogni gara candidata è stata controllata a mano per escludere
+che i punteggi alti fossero gonfiati da ritiri/incidenti invece che da
+vera strategia di pit — in tutte e tre le gare scelte il campo è arrivato
+al completo classificato, il rimescolamento è genuina strategia.
 
-1. una VSC breve a metà gara — la lotteria pura: contava solo essere nella
-   finestra giusta
-2. una Safety Car che compatta il gruppo e rimescola (candidate: Australia
-   2023, Monza 2024). **Candidata forte già verificata**: il Gran Premio di
-   Singapore 2023 (Ergast raceId 1113), usato come gara campione nel task
-   1.2 — ha una SC pulita al giro 20-22 con 14 auto ai box nello stesso
-   giro (un vero "tappo"), più una VSC ai giri 44-45. La selezione
-   definitiva resta comunque al task 2.2.
-3. una gara con double stack riuscito o fallito — alimenta la vista 5
+1. **VSC breve a metà gara — Bahrain 2023.** Un'unica VSC isolata (unica
+   neutralizzazione dell'intera gara), con 6 pit stop nella finestra: la
+   lotteria pura, un solo momento, senza altri eventi a complicare la
+   lettura. Preferita a un'alternativa con punteggio più alto (Cina 2024,
+   14 pit in finestra) perché quella gara ha 3 eventi consecutivi
+   (1 VSC + 2 SC): più ricca ma meno adatta a raccontare l'archetipo
+   "un solo momento, contava solo essere lì" in modo pulito. Cina 2024
+   resta un'ottima candidata come quinta gara "bonus" se in futuro serve
+   un caso più caotico.
+2. **Safety Car che compatta il gruppo e rimescola — Arabia Saudita 2024
+   (Jeddah).** SC ai giri 7-9: 14 piloti hanno sfruttato la finestra
+   (EXPLOITED), 6 ne sono rimasti esclusi (LOCKED_OUT) — uno split netto,
+   esattamente la tensione "chi può e chi non può" al centro della domanda
+   di ricerca.
+3. **Double stack riuscito o fallito — Australia 2023 (Albert Park).**
+   Gara con 3 eventi di neutralizzazione (2 SC + 1 VSC) ed esiti opposti
+   tra un evento e l'altro (14 LOCKED_OUT/5 EXPLOITED sul primo SC, poi
+   18 EXPLOITED/1 LOCKED_OUT sul secondo). 42 pit stop in double stack,
+   distribuiti su 8 team diversi (non un artefatto concentrato su una
+   sola squadra): la gara più ricca del campione per la vista 5.
 
-In appendice: una gara senza neutralizzazioni come termine di paragone.
+In appendice: **Monaco 2023** come gara di controllo — zero
+neutralizzazioni nell'intera gara, termine di paragone per il prezzo di
+listino "puro".
 
 ## 10. Rischi noti e come li gestiamo
 
