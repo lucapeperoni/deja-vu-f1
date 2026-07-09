@@ -1,82 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import clsx from 'clsx';
-import RaceAnatomyTimeline from './RaceAnatomyTimeline';
-import PitCostDumbbell from './PitCostDumbbell';
-import OpportunityWindow from './OpportunityWindow';
-import { Info, AlertCircle } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
+import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 
-export default function RaceAnatomyClient({ data }: { data: any }) {
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+interface BrushRange {
+  startLap: number;
+  endLap: number;
+}
 
-  const selectedEvent = data.neutralizations.find((n: any) => n.eventId === selectedEventId);
+// Le viste 2 (sconti, PitCostDumbbell) e 4 (matrice della lotteria,
+// OpportunityWindow) arrivano con i task 3.2 e 3.3: qui per ora c'è solo
+// la vista 1 (race trace), completa di hover/click coordinati e brush.
+export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) {
+  const [highlightedDriverId, setHighlightedDriverId] = useState<string | null>(null);
+  const [brushRange, setBrushRange] = useState<BrushRange | null>(null);
+
+  const handleHighlightChange = useCallback((id: string | null) => {
+    setHighlightedDriverId(id);
+  }, []);
+
+  const handleBrushChange = useCallback((range: BrushRange | null) => {
+    setBrushRange(range);
+  }, []);
 
   return (
     <div className="flex flex-col gap-12">
-      {/* Overview Section - Race Timeline */}
       <section>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div>
             <h2 className="font-condensed text-2xl font-bold uppercase text-white">Race Anatomy Timeline</h2>
-            <p className="text-sm text-text-secondary">Clicca su una banda di neutralizzazione per analizzare le Opportunity Windows.</p>
+            <p className="text-sm text-text-secondary">
+              Passa il mouse su una linea o su un nome pilota per evidenziarlo, clicca per bloccare
+              l&apos;evidenziazione. Trascina sull&apos;asse dei giri per selezionare un intervallo.
+            </p>
           </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray">
-              <div className="w-3 h-3 bg-yellow-500/20 border border-yellow-500" />
-              Safety Car
-            </div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray">
-              <div className="w-3 h-3 border border-yellow-500 border-dashed" />
-              Virtual SC
-            </div>
+          <div className="flex gap-4 flex-wrap">
+            {PIT_CONTEXT_LEGEND.map((item) => (
+              <div key={item.key} className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.label}
+              </div>
+            ))}
           </div>
         </div>
-        
-        <RaceAnatomyTimeline 
-          data={data} 
-          selectedEventId={selectedEventId}
-          onSelectEvent={setSelectedEventId} 
+
+        <RaceAnatomyTimeline
+          raceData={raceData}
+          highlightedDriverId={highlightedDriverId}
+          onHighlightChange={handleHighlightChange}
+          onBrushChange={handleBrushChange}
         />
+
+        {brushRange && (
+          <p className="mt-3 text-xs text-neutral-gray">
+            Intervallo selezionato: giro {brushRange.startLap} – giro {brushRange.endLap}
+          </p>
+        )}
+        {highlightedDriverId && (
+          <p className="mt-1 text-xs text-neutral-gray">Pilota evidenziato: {highlightedDriverId}</p>
+        )}
       </section>
-
-      {/* Analysis Section - Only visible when an event is selected */}
-      {selectedEvent ? (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
-          
-          {/* Opportunity Window (Left) */}
-          <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-6 shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-racing-red/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-            <h3 className="font-condensed text-xl font-bold uppercase text-white mb-2 flex items-center gap-2">
-              <div className={clsx("w-3 h-3 rounded-full", selectedEvent.type === 'Safety Car' ? 'bg-yellow-500' : 'bg-yellow-500/50')} />
-              Opportunity Window
-            </h3>
-            <p className="text-sm text-text-secondary mb-8">
-              Chi poteva realisticamente effettuare la sosta al momento del messaggio della Direzione Gara?
-            </p>
-            <OpportunityWindow data={data} eventId={selectedEventId!} />
-          </div>
-
-          {/* Pit Cost Dumbbell (Right) */}
-          <div className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-6 shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-            <h3 className="font-condensed text-xl font-bold uppercase text-white mb-2">
-              Neutralization Discount
-            </h3>
-            <p className="text-sm text-text-secondary mb-8">
-              Confronto tra il costo atteso della sosta (Gara Verde) e il costo effettivo ottenuto sotto {selectedEvent.type}.
-            </p>
-            <PitCostDumbbell data={data} eventId={selectedEventId!} />
-          </div>
-          
-        </section>
-      ) : (
-        <section className="h-64 rounded-xl border border-white/10 border-dashed bg-black/20 backdrop-blur-md flex flex-col items-center justify-center text-neutral-gray transition-all hover:border-white/30 hover:bg-black/30 cursor-default">
-          <Info className="w-10 h-10 mb-4 opacity-40 text-yellow-500/50" />
-          <h3 className="font-condensed text-2xl uppercase tracking-widest text-white/70">Seleziona un Evento</h3>
-          <p className="text-sm mt-2 opacity-70">Clicca su una banda gialla nella timeline per esplorare la neutralizzazione.</p>
-        </section>
-      )}
     </div>
   );
 }
