@@ -5,6 +5,7 @@ import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
 import OpportunityWindow from './OpportunityWindow';
 import PitCostDumbbell from './PitCostDumbbell';
 import EventSlopeChart from './EventSlopeChart';
+import TeammateMirror from './TeammateMirror';
 import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 
 interface BrushRange {
@@ -108,6 +109,21 @@ export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) 
           </p>
         </div>
         <OpportunityWindow
+          raceData={raceData}
+          highlightedDriverId={highlightedDriverId}
+          onHighlightChange={handleHighlightChange}
+        />
+      </section>
+
+      <section>
+        <div className="mb-6">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white">Stesso box, fortuna diversa</h2>
+          <p className="text-sm text-text-secondary">
+            Due compagni di squadra davanti alla stessa neutralizzazione: chi si è fermato gratis, chi ha pagato
+            prezzo pieno o è rimasto escluso. Unica vista del sito dove è ammesso il colore team.
+          </p>
+        </div>
+        <TeammateMirror
           raceData={raceData}
           highlightedDriverId={highlightedDriverId}
           onHighlightChange={handleHighlightChange}

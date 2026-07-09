@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Activity, Crosshair, Flag } from 'lucide-react';
+import { ArrowRight, Flag } from 'lucide-react';
 import fs from 'fs';
 import path from 'path';
 
@@ -101,24 +101,6 @@ export default async function Home() {
               Nessun dato gara trovato in public/data/races/
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Teammate Dynamics Module Link */}
-      <section className="px-6 pb-20 max-w-7xl mx-auto w-full">
-        <div className="bg-panel border border-graphite p-8 hover:border-white transition-colors group flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <Crosshair className="text-white w-6 h-6" />
-              <h3 className="font-condensed text-3xl font-bold uppercase text-white">Teammate Dynamics</h3>
-            </div>
-            <p className="text-text-secondary leading-relaxed max-w-2xl">
-              Esplora il modulo storico per isolare il talento del pilota dalla performance della vettura. Confronta i compagni di squadra e scopri i veri rapporti di forza.
-            </p>
-          </div>
-          <Link href="/grid" className="shrink-0 bg-white text-background px-8 py-4 font-condensed uppercase tracking-widest font-bold hover:bg-neutral-gray transition-colors flex items-center gap-3">
-            Esplora Rivalità <ArrowRight className="w-5 h-5" />
-          </Link>
         </div>
       </section>
     </main>

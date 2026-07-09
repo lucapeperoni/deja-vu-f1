@@ -84,3 +84,48 @@ export function outcomeColor(category: string): string {
 export const OUTCOME_LEGEND: { key: PitOutcome; label: string; color: string }[] = (
   Object.keys(OUTCOME_COLORS) as PitOutcome[]
 ).map((key) => ({ key, label: OUTCOME_LABELS[key], color: OUTCOME_COLORS[key] }));
+
+// Colori team: usati SOLO dalla vista 5 (docs/PROGETTAZIONE.md, sezione 7,
+// "l'unica eccezione è la vista 5, che ha un interruttore per passare ai
+// colori team"). Da nessun'altra parte: altrove il colore codifica sempre
+// l'etichetta del pit o l'esito, mai il team. Refs come in public/data/races
+// (campo "team" di ogni pilota).
+export const TEAM_COLORS: Record<string, string> = {
+  ferrari: "#DC0000",
+  red_bull: "#3671C6",
+  mercedes: "#27F4D2",
+  mclaren: "#FF8000",
+  alpine: "#2293D1",
+  aston_martin: "#229971",
+  williams: "#64C4FF",
+  alphatauri: "#5E8FAA",
+  rb: "#6692FF",
+  alfa: "#C92D4E",
+  sauber: "#52E252",
+  haas: "#B6BABD",
+};
+
+export const TEAM_LABELS: Record<string, string> = {
+  ferrari: "Ferrari",
+  red_bull: "Red Bull",
+  mercedes: "Mercedes",
+  mclaren: "McLaren",
+  alpine: "Alpine",
+  aston_martin: "Aston Martin",
+  williams: "Williams",
+  alphatauri: "AlphaTauri",
+  rb: "RB",
+  alfa: "Alfa Romeo",
+  sauber: "Sauber",
+  haas: "Haas",
+};
+
+export function teamColor(team: string | null | undefined): string {
+  if (!team) return DEFAULT_LINE_COLOR;
+  return TEAM_COLORS[team] ?? DEFAULT_LINE_COLOR;
+}
+
+export function teamLabel(team: string | null | undefined): string {
+  if (!team) return "—";
+  return TEAM_LABELS[team] ?? team;
+}

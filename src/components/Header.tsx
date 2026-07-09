@@ -15,12 +15,6 @@ export default function Header() {
             Race Anatomy
           </Link>
           <div className="w-[1px] h-4 bg-graphite my-auto mx-2" />
-          <Link href="/grid" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
-            Rivalry Grid
-          </Link>
-          <Link href="/rankings" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
-            Classifiche
-          </Link>
           <Link href="/methodology" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
             Metodologia
           </Link>
