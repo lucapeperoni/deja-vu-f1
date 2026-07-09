@@ -54,14 +54,17 @@ export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) 
           onBrushChange={handleBrushChange}
         />
 
-        {brushRange && (
-          <p className="mt-3 text-xs text-neutral-gray">
-            Intervallo selezionato: giro {brushRange.startLap} – giro {brushRange.endLap}
-          </p>
-        )}
-        {highlightedDriverId && (
-          <p className="mt-1 text-xs text-neutral-gray">Pilota evidenziato: {highlightedDriverId}</p>
-        )}
+        {/* Altezza sempre riservata (mai montati/smontati): un paragrafo che
+            appare e scompare a ogni hover sposta il layout sotto di sé,
+            spostando anche il grafico su cui si trova il cursore — genera
+            un ciclo di hover-on/hover-off che sullo schermo si vede come
+            un tremolio. Il contenuto cambia, l'altezza no. */}
+        <p className="mt-3 text-xs text-neutral-gray h-4">
+          {brushRange ? `Intervallo selezionato: giro ${brushRange.startLap} – giro ${brushRange.endLap}` : " "}
+        </p>
+        <p className="mt-1 text-xs text-neutral-gray h-4">
+          {highlightedDriverId ? `Pilota evidenziato: ${highlightedDriverId}` : " "}
+        </p>
       </section>
 
       <section>
