@@ -4,22 +4,21 @@
 // gli sconti. Stessa convenzione delle altre viste — React possiede solo
 // il contenitore (ref, props, stato del tooltip), D3 possiede l'intero
 // <svg> dentro useEffect, redraw incrementale via selection.join.
+//
+// Task 4.1: come in RaceAnatomyTimeline, l'effect strutturale (posizione e
+// dimensione delle barre, che dipendono da raceData/brushRange) è separato
+// da un secondo effect che dipinge SOLO l'evidenziazione (stroke/opacity)
+// quando cambia highlightedDriverId — nessun ricalcolo di scale o nuovo
+// data join ad ogni hover.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { pitContextColor, HIGHLIGHT_COLOR } from "@/lib/colors";
 import type { RaceData } from "./RaceAnatomyTimeline";
-
-interface BrushRange {
-  startLap: number;
-  endLap: number;
-}
+import { useRaceInteraction } from "./RaceInteractionContext";
 
 interface Props {
   raceData: RaceData;
-  highlightedDriverId: string | null;
-  onHighlightChange: (id: string | null) => void;
-  brushRange?: BrushRange | null;
 }
 
 interface PitDatum {
@@ -62,9 +61,16 @@ function allPits(raceData: RaceData): PitDatum[] {
   );
 }
 
-export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighlightChange, brushRange }: Props) {
+export default function PitCostDumbbell({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId, brushRange } =
+    useRaceInteraction();
+
+  const lockedRef = useRef(lockedDriverId);
+  useEffect(() => {
+    lockedRef.current = lockedDriverId;
+  }, [lockedDriverId]);
 
   const pits = useMemo(() => allPits(raceData), [raceData]);
   const visiblePits = useMemo(() => {
@@ -75,7 +81,6 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
   }, [pits, brushRange]);
 
   const height = MARGIN.top + MARGIN.bottom + Math.max(visiblePits.length, 1) * (BAR_HEIGHT + BAR_GAP);
-  const clampedHeight = Math.min(height, MAX_HEIGHT);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -92,6 +97,9 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
     setTooltip(null);
   }, [brushRange]);
 
+  // --- Effect strutturale: dipende da raceData/brushRange (il brush è un
+  // filtro esplicito, non un hover: qui è corretto ricalcolare posizioni e
+  // barre). NON dipende da highlightedDriverId.
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     const innerWidth = WIDTH - MARGIN.left - MARGIN.right;
@@ -160,24 +168,25 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
       );
 
     rows
-      .on("pointerenter", (_event, d) => onHighlightChange(d.driverId))
-      .on("pointerleave", () => onHighlightChange(null))
+      .on("pointerenter", (_event, d) => {
+        if (!lockedRef.current) setHoveredDriverId(d.driverId);
+      })
+      .on("pointerleave", () => {
+        if (!lockedRef.current) setHoveredDriverId(null);
+      })
       .on("pointermove", function (event, d) {
         const [mx, my] = d3.pointer(event, svgRef.current);
         setTooltip({ x: mx, y: my, datum: d });
+      })
+      .on("click", (_event, d) => {
+        toggleLockedDriverId(d.driverId);
       });
 
-    rows
-      .transition()
-      .duration(350)
-      .style("opacity", (d) => (highlightedDriverId && d.driverId !== highlightedDriverId ? 0.4 : 1))
-      .attr("transform", (d) => `translate(0, ${yScale(d.key) ?? 0})`);
+    rows.transition().duration(350).style("opacity", 1).attr("transform", (d) => `translate(0, ${yScale(d.key) ?? 0})`);
 
     rows
       .select<SVGRectElement>("rect.pit-bar")
       .attr("fill", (d) => pitContextColor(d.context))
-      .attr("stroke", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
-      .attr("stroke-width", 1.5)
       .transition()
       .duration(350)
       .attr("x", (d) => Math.min(xScale(0), xScale(d.discount)))
@@ -185,8 +194,6 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
 
     rows
       .select<SVGTextElement>("text.pit-label")
-      .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#cbd5e1"))
-      .attr("font-weight", (d) => (d.driverId === highlightedDriverId ? 700 : 400))
       .attr("text-anchor", (d) => (d.discount >= 0 ? "start" : "end"))
       .attr("y", BAR_HEIGHT / 2)
       .transition()
@@ -200,7 +207,33 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
         const interpolate = d3.interpolateNumber(previous, d.discount);
         return (t) => `${d.driverId} ${interpolate(t) >= 0 ? "+" : ""}${interpolate(t).toFixed(1)}s`;
       });
-  }, [raceData, visiblePits, pits, highlightedDriverId, onHighlightChange, height]);
+  }, [raceData, visiblePits, pits, height, setHoveredDriverId, toggleLockedDriverId]);
+
+  // --- Effect di evidenziazione: solo stroke/opacity/colore testo sui
+  // nodi già disegnati, nessun nuovo join.
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+
+    svg
+      .select<SVGGElement>(".bars-group")
+      .selectAll<SVGGElement, PitDatum>("g.pit-row")
+      .style("opacity", (d) => (highlightedDriverId && d.driverId !== highlightedDriverId ? 0.4 : 1));
+
+    svg
+      .select<SVGGElement>(".bars-group")
+      .selectAll<SVGRectElement, PitDatum>("rect.pit-bar")
+      .attr("stroke", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
+      .attr("stroke-width", 1.5);
+
+    svg
+      .select<SVGGElement>(".bars-group")
+      .selectAll<SVGTextElement, PitDatum>("text.pit-label")
+      .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#cbd5e1"))
+      .attr("font-weight", (d) => (d.driverId === highlightedDriverId ? 700 : 400));
+    // visiblePits in dipendenza solo per ridipingere l'evidenziazione dopo
+    // un redraw strutturale (nuovo brush): il ricalcolo vero e proprio lo
+    // fa l'altro effect.
+  }, [highlightedDriverId, visiblePits]);
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
@@ -219,7 +252,7 @@ export default function PitCostDumbbell({ raceData, highlightedDriverId, onHighl
       {visiblePits.length === 0 ? (
         <p className="text-sm text-text-secondary italic">Nessun pit stop nell&apos;intervallo selezionato.</p>
       ) : (
-        <div style={{ maxHeight: MAX_HEIGHT, overflowY: clampedHeight >= MAX_HEIGHT ? "auto" : "visible" }}>
+        <div style={{ maxHeight: MAX_HEIGHT, overflowY: height >= MAX_HEIGHT ? "auto" : "visible" }}>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${WIDTH} ${height}`}

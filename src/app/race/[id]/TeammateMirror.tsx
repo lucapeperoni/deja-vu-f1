@@ -25,6 +25,11 @@
 // colore team, ed è dietro un interruttore locale che di default resta su
 // "colora per contesto" — altrove nel sito il colore codifica sempre e solo
 // l'etichetta del pit o l'esito, mai il team.
+//
+// Task 4.1: come nelle altre viste, l'effect strutturale (dipende da
+// rows/colorMode: cambiare colonna colore è una riconfigurazione esplicita,
+// non un hover) è separato dall'effect di evidenziazione (dipende solo da
+// highlightedDriverId) — l'hover non ricalcola barre e posizioni.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
@@ -39,13 +44,12 @@ import {
   HIGHLIGHT_COLOR,
 } from "@/lib/colors";
 import type { RaceData, RaceDriver, RaceNeutralization, RacePit } from "./RaceAnatomyTimeline";
+import { useRaceInteraction } from "./RaceInteractionContext";
 
 type ColorMode = "context" | "team";
 
 interface Props {
   raceData: RaceData;
-  highlightedDriverId: string | null;
-  onHighlightChange: (id: string | null) => void;
 }
 
 interface MirrorSide {
@@ -143,10 +147,16 @@ function pitLabel(side: MirrorSide): string {
   return `Giro ${side.pit.lap} · ${PIT_CONTEXT_LABELS[side.pit.context as keyof typeof PIT_CONTEXT_LABELS] ?? side.pit.context}`;
 }
 
-export default function TeammateMirror({ raceData, highlightedDriverId, onHighlightChange }: Props) {
+export default function TeammateMirror({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [colorMode, setColorMode] = useState<ColorMode>("context");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId } = useRaceInteraction();
+
+  const lockedRef = useRef(lockedDriverId);
+  useEffect(() => {
+    lockedRef.current = lockedDriverId;
+  }, [lockedDriverId]);
 
   const rows = useMemo(() => buildRows(raceData), [raceData]);
   const height = MARGIN.top + MARGIN.bottom + Math.max(rows.length, 1) * (ROW_HEIGHT + ROW_GAP);
@@ -248,14 +258,15 @@ export default function TeammateMirror({ raceData, highlightedDriverId, onHighli
         .attr("x", driverX)
         .attr("y", 18)
         .attr("text-anchor", anchor)
-        .attr("fill", (d) => {
-          const s = d[side];
-          return s.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#e5e7eb";
-        })
         .style("cursor", "pointer")
         .text((d) => d[side].driverId)
-        .on("pointerenter", (_e, d) => onHighlightChange(d[side].driverId))
-        .on("pointerleave", () => onHighlightChange(null));
+        .on("pointerenter", (_e, d) => {
+          if (!lockedRef.current) setHoveredDriverId(d[side].driverId);
+        })
+        .on("pointerleave", () => {
+          if (!lockedRef.current) setHoveredDriverId(null);
+        })
+        .on("click", (_e, d) => toggleLockedDriverId(d[side].driverId));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-pit-label`)
@@ -267,11 +278,9 @@ export default function TeammateMirror({ raceData, highlightedDriverId, onHighli
       rowsSel
         .select<SVGRectElement>(`rect.${side}-bar`)
         .attr("y", barY)
-        .attr("stroke", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
-        .attr("stroke-width", 1.5)
         .style("cursor", "pointer")
         .on("pointerenter", function (event, d) {
-          onHighlightChange(d[side].driverId);
+          if (!lockedRef.current) setHoveredDriverId(d[side].driverId);
           const [mx, my] = d3.pointer(event, svgRef.current);
           setTooltip({ x: mx, y: my, side: d[side], row: d });
         })
@@ -280,15 +289,15 @@ export default function TeammateMirror({ raceData, highlightedDriverId, onHighli
           setTooltip({ x: mx, y: my, side: d[side], row: d });
         })
         .on("pointerleave", () => {
-          onHighlightChange(null);
+          if (!lockedRef.current) setHoveredDriverId(null);
           setTooltip(null);
         })
+        .on("click", (_event, d) => toggleLockedDriverId(d[side].driverId))
         .transition()
         .duration(350)
         .attr("x", (d) => (isLeft ? centerX - barLen(d[side]) : centerX))
         .attr("width", (d) => Math.max(barLen(d[side]), d[side].pit ? 2 : 0))
-        .attr("fill", (d) => fillFor(d, d[side]))
-        .attr("opacity", (d) => (highlightedDriverId && d[side].driverId !== highlightedDriverId ? 0.4 : 1));
+        .attr("fill", (d) => fillFor(d, d[side]));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-discount-label`)
@@ -348,7 +357,30 @@ export default function TeammateMirror({ raceData, highlightedDriverId, onHighli
       .attr("y", 42 - 6)
       .style("opacity", (d) => (d.doubleStack ? 1 : 0))
       .text((d) => (d.doubleStack ? `Double stack · ${d.firstDriverId ?? "?"} entra per primo` : ""));
-  }, [rows, highlightedDriverId, onHighlightChange, colorMode]);
+  }, [rows, colorMode, setHoveredDriverId, toggleLockedDriverId]);
+
+  // --- Effect di evidenziazione: solo colore/stroke/opacità sui nodi già
+  // disegnati, nessun nuovo join, nessun ricalcolo di barre.
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+
+    for (const side of ["left", "right"] as const) {
+      svg
+        .select<SVGGElement>(".rows-group")
+        .selectAll<SVGTextElement, MirrorRow>(`text.${side}-driver-label`)
+        .attr("fill", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#e5e7eb"));
+
+      svg
+        .select<SVGGElement>(".rows-group")
+        .selectAll<SVGRectElement, MirrorRow>(`rect.${side}-bar`)
+        .attr("stroke", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "none"))
+        .attr("stroke-width", 1.5)
+        .attr("opacity", (d) => (highlightedDriverId && d[side].driverId !== highlightedDriverId ? 0.4 : 1));
+    }
+    // rows/colorMode in dipendenza solo per ridipingere l'evidenziazione
+    // dopo un redraw strutturale: il ricalcolo vero e proprio resta
+    // nell'altro effect.
+  }, [highlightedDriverId, rows, colorMode]);
 
   if (rows.length === 0) {
     return (

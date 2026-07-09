@@ -12,11 +12,21 @@
 // tooltip viene ricostruita qui rileggendo gli stessi ingredienti usati
 // da classify_outcome() in data-layer/scripts/build_all.py (soglie
 // comprese) — nessun dato nuovo, solo la stessa logica raccontata a parole.
+//
+// La colonna dell'evento cliccata sincronizza EventSlopeChart tramite
+// RaceInteractionContext (selectedEventId) — "connect: brushing and
+// linking tra le viste" (sezione 8, categorie di Yi et al.).
+//
+// Task 4.1: split tra effect strutturale (celle/etichette, dipende da
+// raceData/drivers/events) ed effect di evidenziazione (opacità per
+// pilota evidenziato + contorno della colonna sincronizzata con lo slope
+// chart) — nessun nuovo data join quando cambia solo l'hover.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { outcomeColor, OUTCOME_LEGEND, HIGHLIGHT_COLOR } from "@/lib/colors";
 import type { RaceData, RaceDriver, RaceNeutralization, RacePit } from "./RaceAnatomyTimeline";
+import { useRaceInteraction } from "./RaceInteractionContext";
 
 // Soglie dichiarate (docs/PROGETTAZIONE.md sezione 5.5 e
 // public/data/params.json): devono restare sincronizzate con
@@ -26,8 +36,6 @@ const TYRE_AGE_MIN_LAPS = 8;
 
 interface Props {
   raceData: RaceData;
-  highlightedDriverId: string | null;
-  onHighlightChange: (id: string | null) => void;
 }
 
 interface CellDatum {
@@ -129,11 +137,18 @@ function orderDrivers(raceData: RaceData): RaceDriver[] {
   });
 }
 
-export default function OpportunityWindow({ raceData, highlightedDriverId, onHighlightChange }: Props) {
+export default function OpportunityWindow({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId, selectedEventId, setSelectedEventId } =
+    useRaceInteraction();
 
-  const drivers = orderDrivers(raceData);
+  const lockedRef = useRef(lockedDriverId);
+  useEffect(() => {
+    lockedRef.current = lockedDriverId;
+  }, [lockedDriverId]);
+
+  const drivers = useMemo(() => orderDrivers(raceData), [raceData]);
   const events = raceData.neutralizations;
 
   const width = MARGIN.left + MARGIN.right + Math.max(events.length, 1) * (CELL_WIDTH + CELL_GAP);
@@ -147,6 +162,9 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
     }
   }, []);
 
+  // --- Effect strutturale: intestazioni, etichette, celle. NON dipende da
+  // highlightedDriverId né da selectedEventId (li dipinge il secondo
+  // effect).
   useEffect(() => {
     if (events.length === 0) return;
     const svg = d3.select(svgRef.current);
@@ -154,7 +172,8 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
     const yFor = (rowIndex: number) => MARGIN.top + rowIndex * (CELL_HEIGHT + CELL_GAP);
     const xFor = (colIndex: number) => MARGIN.left + colIndex * (CELL_WIDTH + CELL_GAP);
 
-    // --- Intestazioni di colonna (le neutralizzazioni) ---
+    // --- Intestazioni di colonna (le neutralizzazioni): cliccabili, per
+    // sincronizzare lo slope chart sullo stesso evento.
     svg
       .select<SVGGElement>(".column-headers")
       .selectAll<SVGTextElement, RaceNeutralization>("text.col-header")
@@ -166,13 +185,14 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
             .attr("class", "col-header")
             .attr("text-anchor", "middle")
             .attr("font-size", 11)
-            .attr("fill", "#eab308"),
+            .style("cursor", "pointer"),
         (update) => update,
         (exit) => exit.remove()
       )
       .attr("x", (_d, i) => xFor(i) + CELL_WIDTH / 2)
       .attr("y", MARGIN.top - 16)
-      .text((d) => `${d.type} · giri ${d.startLap}-${d.endLap}`);
+      .text((d) => `${d.type} · giri ${d.startLap}-${d.endLap}`)
+      .on("click", (_event, d) => setSelectedEventId(d.eventId));
 
     // --- Etichette di riga (i piloti) ---
     svg
@@ -194,11 +214,14 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
       )
       .attr("x", MARGIN.left - 10)
       .attr("y", (_d, i) => yFor(i) + CELL_HEIGHT / 2)
-      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
-      .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400))
       .text((d) => d.id)
-      .on("pointerenter", (_event, d) => onHighlightChange(d.id))
-      .on("pointerleave", () => onHighlightChange(null));
+      .on("pointerenter", (_event, d) => {
+        if (!lockedRef.current) setHoveredDriverId(d.id);
+      })
+      .on("pointerleave", () => {
+        if (!lockedRef.current) setHoveredDriverId(null);
+      })
+      .on("click", (_event, d) => toggleLockedDriverId(d.id));
 
     // --- Celle ---
     const cellData: CellDatum[] = drivers.flatMap((driver, rowIndex) =>
@@ -220,8 +243,8 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
       .data(cellData, (d) => `${d.driver.id}-${d.event.eventId}`)
       .join(
         (enter) => {
-          const g = enter.append("g").attr("class", "cell").style("cursor", "default");
-          g.append("rect").attr("rx", 3).attr("width", CELL_WIDTH).attr("height", CELL_HEIGHT);
+          const g = enter.append("g").attr("class", "cell").style("cursor", "pointer");
+          g.append("rect").attr("class", "cell-rect").attr("rx", 3).attr("width", CELL_WIDTH).attr("height", CELL_HEIGHT);
           g.append("text")
             .attr("x", CELL_WIDTH / 2)
             .attr("y", CELL_HEIGHT / 2)
@@ -239,14 +262,13 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
         const rowIndex = drivers.findIndex((dr) => dr.id === d.driver.id);
         return `translate(${xFor(d.eventIndex)}, ${yFor(rowIndex)})`;
       })
-      .attr("opacity", (d) => (highlightedDriverId && d.driver.id !== highlightedDriverId ? 0.35 : 1))
       .each(function (d) {
         const g = d3.select(this);
-        g.select("rect").attr("fill", outcomeColor(d.category));
+        g.select("rect.cell-rect").attr("fill", outcomeColor(d.category));
         g.select("text").text(d.posDelta != null ? `${d.posDelta > 0 ? "+" : ""}${d.posDelta}` : "");
       })
       .on("pointerenter", function (event, d) {
-        onHighlightChange(d.driver.id);
+        if (!lockedRef.current) setHoveredDriverId(d.driver.id);
         const [mx, my] = d3.pointer(event, svgRef.current);
         setTooltip({
           x: mx,
@@ -259,10 +281,41 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
         });
       })
       .on("pointerleave", () => {
-        onHighlightChange(null);
+        if (!lockedRef.current) setHoveredDriverId(null);
         setTooltip(null);
+      })
+      .on("click", (_event, d) => {
+        toggleLockedDriverId(d.driver.id);
+        setSelectedEventId(d.event.eventId);
       });
-  }, [raceData, drivers, events, highlightedDriverId, onHighlightChange]);
+  }, [raceData, drivers, events, setHoveredDriverId, toggleLockedDriverId, setSelectedEventId]);
+
+  // --- Effect di evidenziazione: opacità delle righe per il pilota
+  // evidenziato + contorno della colonna sincronizzata con lo slope chart.
+  // Solo attributi, nessun nuovo join.
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+
+    svg
+      .select<SVGGElement>(".cells-group")
+      .selectAll<SVGGElement, CellDatum>("g.cell")
+      .attr("opacity", (d) => (highlightedDriverId && d.driver.id !== highlightedDriverId ? 0.35 : 1))
+      .select<SVGRectElement>("rect.cell-rect")
+      .attr("stroke", (d) => (d.event.eventId === selectedEventId ? HIGHLIGHT_COLOR : "none"))
+      .attr("stroke-width", (d) => (d.event.eventId === selectedEventId ? 2 : 0));
+
+    svg
+      .select<SVGGElement>(".row-labels")
+      .selectAll<SVGTextElement, RaceDriver>("text.row-label")
+      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
+      .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400));
+
+    svg
+      .select<SVGGElement>(".column-headers")
+      .selectAll<SVGTextElement, RaceNeutralization>("text.col-header")
+      .attr("fill", (d) => (d.eventId === selectedEventId ? HIGHLIGHT_COLOR : "#eab308"))
+      .attr("font-weight", (d) => (d.eventId === selectedEventId ? 700 : 400));
+  }, [highlightedDriverId, selectedEventId, drivers, events]);
 
   if (events.length === 0) {
     return (

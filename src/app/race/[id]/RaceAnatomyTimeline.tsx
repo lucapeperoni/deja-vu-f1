@@ -1,21 +1,32 @@
 "use client";
 
-// Vista 1 della specifica (docs/PROGETTAZIONE.md, sezioni 6 e 7): la race
-// trace. Segue la convenzione di src/components/charts/D3Chart.tsx — React
-// possiede solo il contenitore (ref, props, stato del tooltip/lock), D3
+// Vista 1 della specifica (docs/PROGETTAZIONE.md, sezioni 6 e 7): la
+// race trace. Segue la convenzione di src/components/charts/D3Chart.tsx —
+// React possiede solo il contenitore (ref, props, stato del tooltip), D3
 // possiede l'intero <svg>: scale, assi, bande, linee, marker e brush sono
 // tutti dentro useEffect, con redraw incrementale via selection.join.
 //
-// Nota per il task 4.1 (coordinamento tra viste): oggi ogni hover richiama
-// onHighlightChange, che aggiorna lo stato nel componente padre e fa
-// ri-eseguire questo effetto da capo (ricalcola scale/assi). Funziona, ma
-// non è il redraw "solo attributi" richiesto dal checklist di 4.1 — lì va
-// ottimizzato separando l'aggiornamento dell'evidenziazione (stroke/width)
-// dal resto, così l'hover non ricalcola scale e assi a ogni pixel.
+// Task 4.1 (coordinamento tra viste, sezione 7/8): l'evidenziazione è
+// tenuta FUORI dall'effect strutturale apposta. Ci sono due effect:
+// - quello strutturale (deps: raceData, totalLaps, width) fa scale, assi,
+//   bande, join di linee/marker/etichette e attacca gli handler di
+//   hover/click/brush una volta sola;
+// - un secondo effect, minuscolo (deps: highlightedDriverId), riseleziona
+//   gli elementi già disegnati e ne aggiorna solo stroke/opacity/fill —
+//   nessun ricalcolo di scale o assi, nessun nuovo data join. Così l'hover
+//   (che scatta ad ogni pixel di movimento del mouse) non ridisegna il
+//   grafico: cambia solo qualche attributo su nodi che esistono già.
+//
+// Per evitare che l'effect strutturale debba includere highlightedDriverId
+// o lockedDriverId tra le dipendenze (altrimenti tornerebbe a ridisegnare
+// tutto ad ogni hover), gli handler di brush/hover leggono il valore
+// corrente da due ref sincronizzate con un effect a parte, che non tocca
+// il DOM ed è quindi economico anche se gira ad ogni cambiamento.
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { pitContextColor, NEUTRALIZATION_BAND_COLORS, HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR } from "@/lib/colors";
+import { useRaceInteraction } from "./RaceInteractionContext";
 
 export interface RaceLap {
   l: number;
@@ -73,16 +84,8 @@ export interface RaceData {
   drivers: RaceDriver[];
 }
 
-interface BrushRange {
-  startLap: number;
-  endLap: number;
-}
-
 interface Props {
   raceData: RaceData;
-  highlightedDriverId: string | null;
-  onHighlightChange: (id: string | null) => void;
-  onBrushChange?: (range: BrushRange | null) => void;
 }
 
 interface TooltipState {
@@ -103,15 +106,23 @@ function widthForLaps(totalLaps: number): number {
   return Math.max(900, totalLaps * 13);
 }
 
-export default function RaceAnatomyTimeline({
-  raceData,
-  highlightedDriverId,
-  onHighlightChange,
-  onBrushChange,
-}: Props) {
+export default function RaceAnatomyTimeline({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [locked, setLocked] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+  const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId, clearLock, setBrushRange } =
+    useRaceInteraction();
+
+  // Valori "vivi" per gli handler dell'effect strutturale, che non li ha
+  // tra le dipendenze (vedi commento in testa al file).
+  const highlightedRef = useRef(highlightedDriverId);
+  const lockedRef = useRef(lockedDriverId);
+  useEffect(() => {
+    highlightedRef.current = highlightedDriverId;
+  }, [highlightedDriverId]);
+  useEffect(() => {
+    lockedRef.current = lockedDriverId;
+  }, [lockedDriverId]);
 
   const totalLaps = raceData.race.laps;
   const width = widthForLaps(totalLaps);
@@ -127,6 +138,9 @@ export default function RaceAnatomyTimeline({
     }
   }, []);
 
+  // --- Effect strutturale: scale, assi, bande, linee, marker, etichette,
+  // brush. NON dipende dall'evidenziazione: gira solo quando cambiano i
+  // dati della gara o le dimensioni del grafico.
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     const innerWidth = width - MARGIN.left - MARGIN.right;
@@ -193,7 +207,8 @@ export default function RaceAnatomyTimeline({
           .text(`${d.type} · giri ${d.startLap}-${d.endLap}`);
       });
 
-    // --- Linee dei piloti ---
+    // --- Linee dei piloti (stile neutro: l'evidenziazione la dipinge il
+    // secondo effect, qui si parte sempre dallo stile di default) ---
     const line = d3
       .line<RaceLap>()
       .defined((d) => d.trace != null)
@@ -217,14 +232,13 @@ export default function RaceAnatomyTimeline({
         (update) => update,
         (exit) => exit.transition().duration(200).style("opacity", 0).remove()
       )
+      .attr("d", (d) => line(d.laps))
       .transition()
       .duration(250)
-      .style("opacity", 1)
-      .attr("stroke", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : DEFAULT_LINE_COLOR))
-      .attr("stroke-width", (d) => (d.id === highlightedDriverId ? 3 : 1.3))
-      .attr("d", (d) => line(d.laps));
+      .style("opacity", 1);
 
-    // --- Marker dei pit stop ---
+    // --- Marker dei pit stop (colore di contesto, fisso: non cambia con
+    // l'evidenziazione, solo l'opacità la aggiorna il secondo effect) ---
     type PitPoint = RacePit & { driverId: string; x: number; y: number | null };
     const pitPoints: PitPoint[] = drivers.flatMap((d) =>
       d.pits.map((p) => {
@@ -254,12 +268,11 @@ export default function RaceAnatomyTimeline({
         (exit) => exit.transition().duration(200).attr("r", 0).remove()
       )
       .attr("fill", (d) => pitContextColor(d.context))
-      .attr("opacity", (d) => (highlightedDriverId && d.driverId !== highlightedDriverId ? 0.35 : 1))
       .transition()
       .duration(250)
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y as number)
-      .attr("r", (d) => (d.driverId === highlightedDriverId ? 6 : 4.5));
+      .attr("r", 4.5);
 
     // titolo nativo (tooltip minimo del browser) sui marker
     svg
@@ -305,23 +318,15 @@ export default function RaceAnatomyTimeline({
         (exit) => exit.remove()
       )
       .attr("y", (d) => labelYById.get(d.id) ?? yScale(0))
-      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
-      .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400))
       .text((d) => d.id)
       .on("pointerenter", (_event, d) => {
-        if (!locked) onHighlightChange(d.id);
+        if (!lockedRef.current) setHoveredDriverId(d.id);
       })
       .on("pointerleave", () => {
-        if (!locked) onHighlightChange(null);
+        if (!lockedRef.current) setHoveredDriverId(null);
       })
       .on("click", (_event, d) => {
-        if (locked && highlightedDriverId === d.id) {
-          setLocked(false);
-          onHighlightChange(d.id);
-        } else {
-          setLocked(true);
-          onHighlightChange(d.id);
-        }
+        toggleLockedDriverId(d.id);
       });
 
     // --- Hover sulle linee + brush, sulla stessa area di interazione ---
@@ -368,7 +373,7 @@ export default function RaceAnatomyTimeline({
       .on("end", (event) => {
         const selection = event.selection as [number, number] | null;
         if (!selection) {
-          onBrushChange?.(null);
+          setBrushRange(null);
           return;
         }
         const [x0, x1] = selection;
@@ -378,24 +383,17 @@ export default function RaceAnatomyTimeline({
           // di click, poi ripulisce la selezione del brush.
           const hit = nearestDriverAt(x0, event.sourceEvent?.offsetY ?? MARGIN.top);
           if (!hit) {
-            if (locked) {
-              setLocked(false);
-              onHighlightChange(null);
-            }
-          } else if (locked && highlightedDriverId === hit.driver.id) {
-            setLocked(false);
-            onHighlightChange(hit.driver.id);
+            if (lockedRef.current) clearLock();
           } else {
-            setLocked(true);
-            onHighlightChange(hit.driver.id);
+            toggleLockedDriverId(hit.driver.id);
           }
           brushGroupSel.call(brush.move, null);
-          onBrushChange?.(null);
+          setBrushRange(null);
           return;
         }
         const startLap = Math.round(xScale.invert(x0));
         const endLap = Math.round(xScale.invert(x1));
-        onBrushChange?.({ startLap, endLap });
+        setBrushRange({ startLap, endLap });
       });
 
     const brushGroupSel = svg.select<SVGGElement>(".brush-group");
@@ -404,11 +402,11 @@ export default function RaceAnatomyTimeline({
     brushGroupSel
       .select<SVGRectElement>(".overlay")
       .on("pointermove.hover", function (event) {
-        if (locked) return;
+        if (lockedRef.current) return;
         const [mx, my] = d3.pointer(event, svgRef.current);
         const hit = nearestDriverAt(mx, my);
         if (hit) {
-          onHighlightChange(hit.driver.id);
+          setHoveredDriverId(hit.driver.id);
           setTooltip({
             x: mx,
             y: my,
@@ -417,16 +415,47 @@ export default function RaceAnatomyTimeline({
             gapLeader: hit.lap.gapLeader,
           });
         } else {
-          onHighlightChange(null);
+          setHoveredDriverId(null);
           setTooltip(null);
         }
       })
       .on("pointerleave.hover", () => {
-        if (locked) return;
-        onHighlightChange(null);
+        if (lockedRef.current) return;
+        setHoveredDriverId(null);
         setTooltip(null);
       });
-  }, [raceData, highlightedDriverId, onHighlightChange, onBrushChange, locked, totalLaps, width]);
+  }, [raceData, totalLaps, width, setHoveredDriverId, toggleLockedDriverId, clearLock, setBrushRange]);
+
+  // --- Effect di evidenziazione: SOLO attributi (stroke/opacity/fill) su
+  // elementi già disegnati dall'effect strutturale. Nessun ricalcolo di
+  // scale/assi, nessun nuovo data join: è la parte che deve restare
+  // economica anche se l'hover scatta ad ogni pixel (task 4.1).
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+
+    svg
+      .select<SVGGElement>(".series-group")
+      .selectAll<SVGPathElement, RaceDriver>("path.driver-line")
+      .attr("stroke", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : DEFAULT_LINE_COLOR))
+      .attr("stroke-width", (d) => (d.id === highlightedDriverId ? 3 : 1.3));
+
+    svg
+      .select<SVGGElement>(".pits-group")
+      .selectAll<SVGCircleElement, { driverId: string }>("circle.pit-marker")
+      .attr("opacity", (d) => (highlightedDriverId && d.driverId !== highlightedDriverId ? 0.35 : 1))
+      .attr("r", (d) => (d.driverId === highlightedDriverId ? 6 : 4.5));
+
+    svg
+      .select<SVGGElement>(".labels-group")
+      .selectAll<SVGTextElement, RaceDriver>("text.driver-label")
+      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
+      .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400));
+    // raceData/totalLaps/width in dipendenza: non per ricalcolare (lo fa
+    // l'altro effect), ma per ridipingere l'evidenziazione corrente sugli
+    // elementi appena ricreati quando cambia la gara — altrimenti un
+    // pilota bloccato "perderebbe" l'evidenziazione al primo redraw
+    // strutturale successivo.
+  }, [highlightedDriverId, raceData, totalLaps, width]);
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative overflow-x-auto hide-scrollbar">
