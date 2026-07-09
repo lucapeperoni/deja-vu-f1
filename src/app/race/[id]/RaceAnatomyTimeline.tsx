@@ -58,6 +58,10 @@ export interface RacePit {
   posAfter3: number | null;
   posAfter5: number | null;
   doubleStack: boolean;
+  // Mescola montata all'uscita: solo per le 3 gare-caso (vedi CASE_RACE_SLUGS
+  // in data-layer/scripts/build_all.py), puramente descrittivo — nessuna
+  // metrica ne dipende.
+  compound?: string | null;
 }
 
 export interface RaceDriver {
@@ -68,7 +72,15 @@ export interface RaceDriver {
   finish: number | null;
   laps: RaceLap[];
   pits: RacePit[];
-  outcomes: { event: number; eventId: string; category: string; posDelta: number | null }[];
+  outcomes: {
+    event: number;
+    eventId: string;
+    category: string;
+    posDelta: number | null;
+    // Gomma gia' in uso all'inizio dell'evento: solo per le 3 gare-caso.
+    tyreCompound?: string | null;
+    tyreAge?: number | null;
+  }[];
 }
 
 export interface RaceNeutralization {

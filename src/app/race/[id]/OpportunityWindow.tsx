@@ -52,6 +52,8 @@ interface CellDatum {
   eventIndex: number;
   category: string;
   posDelta: number | null;
+  tyreCompound: string | null;
+  tyreAge: number | null;
 }
 
 interface TooltipState {
@@ -103,27 +105,35 @@ function explainOutcome(
   event: RaceNeutralization,
   category: string,
   allDrivers: RaceDriver[],
-  nominalPitLoss: number | null
+  nominalPitLoss: number | null,
+  tyreCompound: string | null,
+  tyreAgeReal: number | null
 ): string {
   const pitInEvent = driver.pits.find((p) => p.eventId === event.eventId);
+  // Mescola montata all'uscita: disponibile solo per le 3 gare-caso (vedi
+  // build_all.py, CASE_RACE_SLUGS), puramente descrittivo.
+  const compoundSuffix = pitInEvent?.compound ? ` (gomme ${pitInEvent.compound})` : "";
 
   switch (category) {
     case "EXPLOITED":
       return pitInEvent
-        ? `Si è fermato al giro ${pitInEvent.lap}, sfruttando lo sconto (risparmio stimato ${pitInEvent.discount?.toFixed(1) ?? "n/d"}s).`
+        ? `Si è fermato al giro ${pitInEvent.lap}, sfruttando lo sconto (risparmio stimato ${pitInEvent.discount?.toFixed(1) ?? "n/d"}s)${compoundSuffix}.`
         : "Si è fermato durante la finestra, sfruttando lo sconto.";
     case "FULL_PRICE":
       return pitInEvent
         ? `Si è fermato al giro ${pitInEvent.lap}, pagando il prezzo pieno pochi giri prima dell'inizio della finestra.`
         : "Si è fermato poco prima della finestra, pagando il prezzo pieno.";
     case "LOCKED_OUT": {
-      const tyreAge = event.startLap - lastPitLapBefore(driver.pits, event.startLap);
+      // tyreAgeReal viene dagli stint OpenF1 (solo 3 gare-caso): quando c'è,
+      // e' piu' preciso della stima dedotta dai pit stop Ergast (tyreAge).
+      const tyreAge = tyreAgeReal ?? event.startLap - lastPitLapBefore(driver.pits, event.startLap);
+      const compoundLabel = tyreCompound ? ` ${tyreCompound}` : "";
       if (tyreAge < TYRE_AGE_MIN_LAPS) {
-        return `Escluso: gomme montate da ${tyreAge} giri, troppo fresche per fermarsi di nuovo.`;
+        return `Escluso: gomme${compoundLabel} montate da ${tyreAge} giri, troppo fresche per fermarsi di nuovo.`;
       }
       const carsBehind = carsBehindWithinPitLoss(driver, event.startLap, allDrivers, nominalPitLoss);
       return carsBehind != null
-        ? `Escluso: fermandosi sarebbe rientrato dietro ad almeno ${carsBehind} auto.`
+        ? `Escluso: fermandosi sarebbe rientrato dietro ad almeno ${carsBehind} auto (gomme${compoundLabel} da ${tyreAge} giri).`
         : "Escluso dalla finestra: le gomme o il traffico non lo permettevano.";
     }
     case "NOT_NEEDED":
@@ -241,6 +251,8 @@ export default function OpportunityWindow({ raceData }: Props) {
           eventIndex,
           category: outcome?.category ?? "NEUTRAL",
           posDelta: outcome?.posDelta ?? null,
+          tyreCompound: outcome?.tyreCompound ?? null,
+          tyreAge: outcome?.tyreAge ?? null,
         };
       })
     );
@@ -284,7 +296,15 @@ export default function OpportunityWindow({ raceData }: Props) {
           driverLabel: d.driver.id,
           eventLabel: `${d.event.type} · giri ${d.event.startLap}-${d.event.endLap}`,
           category: d.category,
-          detail: explainOutcome(d.driver, d.event, d.category, raceData.drivers, raceData.race.nominalPitLoss),
+          detail: explainOutcome(
+            d.driver,
+            d.event,
+            d.category,
+            raceData.drivers,
+            raceData.race.nominalPitLoss,
+            d.tyreCompound,
+            d.tyreAge
+          ),
           posDelta: d.posDelta,
         });
       })

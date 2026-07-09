@@ -84,10 +84,20 @@ interface TooltipState {
 
 const MARGIN = { top: 12, right: 20, bottom: 12, left: 20 };
 const WIDTH = 900;
-const ROW_HEIGHT = 96;
+const ROW_HEIGHT = 120;
 const ROW_GAP = 14;
 const BAR_HEIGHT = 14;
 const MAX_BAR_LEN = 190; // lunghezza massima di ciascuna mezza-barra, dal centro verso l'esterno
+
+// Coordinate verticali (row-local) del blocco di testo sopra la barra: ogni
+// riga di testo ha bisogno di piu' spazio del previsto rispetto alla
+// successiva, altrimenti ascendenti/discendenti dei font si sovrappongono
+// (era il bug: 6px di distanza tra baseline con font da 11-12px).
+const TEAM_LABEL_Y = 14;
+const DRIVER_LABEL_Y = 34;
+const PIT_LABEL_Y = 48;
+const BAR_Y = 68;
+const STACK_LABEL_Y = BAR_Y - 8;
 
 function sideFor(driver: RaceDriver, event: RaceNeutralization): MirrorSide {
   const pit = driver.pits.find((p) => p.eventId === event.eventId && p.context !== "GREEN") ?? null;
@@ -150,7 +160,10 @@ function buildRows(raceData: RaceData): MirrorRow[] {
 
 function pitLabel(side: MirrorSide): string {
   if (!side.pit) return "Non si è fermato in questa finestra";
-  return `Giro ${side.pit.lap} · ${PIT_CONTEXT_LABELS[side.pit.context as keyof typeof PIT_CONTEXT_LABELS] ?? side.pit.context}`;
+  const base = `Giro ${side.pit.lap} · ${PIT_CONTEXT_LABELS[side.pit.context as keyof typeof PIT_CONTEXT_LABELS] ?? side.pit.context}`;
+  // Mescola montata: disponibile solo per le 3 gare-caso (build_all.py,
+  // CASE_RACE_SLUGS), puramente descrittivo.
+  return side.pit.compound ? `${base} · gomme ${side.pit.compound}` : base;
 }
 
 export default function TeammateMirror({ raceData }: Props) {
@@ -242,7 +255,7 @@ export default function TeammateMirror({ raceData }: Props) {
     rowsSel
       .select<SVGTextElement>("text.team-label")
       .attr("x", centerX)
-      .attr("y", 12)
+      .attr("y", TEAM_LABEL_Y)
       .attr("fill", NEUTRALIZATION_ACCENT_COLOR)
       .text((d) => `${teamLabel(d.team)} · ${d.event.type} giro ${d.event.startLap}-${d.event.endLap}`);
 
@@ -250,19 +263,19 @@ export default function TeammateMirror({ raceData }: Props) {
       .select<SVGLineElement>("line.center-line")
       .attr("x1", centerX)
       .attr("x2", centerX)
-      .attr("y1", 20)
-      .attr("y2", ROW_HEIGHT - 8);
+      .attr("y1", TEAM_LABEL_Y + 10)
+      .attr("y2", ROW_HEIGHT - 10);
 
     for (const side of ["left", "right"] as const) {
       const isLeft = side === "left";
-      const barY = 42;
+      const barY = BAR_Y;
       const driverX = isLeft ? centerX - 8 : centerX + 8;
       const anchor = isLeft ? "end" : "start";
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-driver-label`)
         .attr("x", driverX)
-        .attr("y", 18)
+        .attr("y", DRIVER_LABEL_Y)
         .attr("text-anchor", anchor)
         .style("cursor", "pointer")
         .text((d) => d[side].driverId)
@@ -277,7 +290,7 @@ export default function TeammateMirror({ raceData }: Props) {
       rowsSel
         .select<SVGTextElement>(`text.${side}-pit-label`)
         .attr("x", driverX)
-        .attr("y", 30)
+        .attr("y", PIT_LABEL_Y)
         .attr("text-anchor", anchor)
         .text((d) => pitLabel(d[side]));
 
@@ -326,13 +339,13 @@ export default function TeammateMirror({ raceData }: Props) {
       rowsSel
         .select<SVGCircleElement>(`circle.${side}-outcome-dot`)
         .attr("cx", isLeft ? driverX - 4 : driverX + 4)
-        .attr("cy", barY + BAR_HEIGHT + 14)
+        .attr("cy", barY + BAR_HEIGHT + 16)
         .attr("fill", (d) => (d[side].outcomeCategory ? outcomeColor(d[side].outcomeCategory as string) : MUTED_FILL_COLOR));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-outcome-label`)
         .attr("x", isLeft ? driverX - 10 : driverX + 10)
-        .attr("y", barY + BAR_HEIGHT + 17)
+        .attr("y", barY + BAR_HEIGHT + 19)
         .attr("text-anchor", anchor)
         .attr("fill", TEXT_MUTED_COLOR)
         .text((d) => {
@@ -349,8 +362,8 @@ export default function TeammateMirror({ raceData }: Props) {
     // mezze-barre, con l'indicazione di chi è passato per primo.
     rowsSel
       .select<SVGLineElement>("line.stack-connector")
-      .attr("y1", 42 + BAR_HEIGHT / 2)
-      .attr("y2", 42 + BAR_HEIGHT / 2)
+      .attr("y1", BAR_Y + BAR_HEIGHT / 2)
+      .attr("y2", BAR_Y + BAR_HEIGHT / 2)
       .transition()
       .duration(350)
       .style("opacity", (d) => (d.doubleStack ? 1 : 0))
@@ -360,7 +373,7 @@ export default function TeammateMirror({ raceData }: Props) {
     rowsSel
       .select<SVGTextElement>("text.stack-label")
       .attr("x", centerX)
-      .attr("y", 42 - 6)
+      .attr("y", STACK_LABEL_Y)
       .style("opacity", (d) => (d.doubleStack ? 1 : 0))
       .text((d) => (d.doubleStack ? `Double stack · ${d.firstDriverId ?? "?"} entra per primo` : ""));
   }, [rows, colorMode, setHoveredDriverId, toggleLockedDriverId]);

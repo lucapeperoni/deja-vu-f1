@@ -29,7 +29,7 @@
       {
         "lap": 41,
         "title": "Chi resta escluso",
-        "text": "Norris e Zhou restano tagliati fuori dalla finestra: fermarsi lì li avrebbe danneggiati (gomme troppo fresche o troppo traffico al rientro), così restano esattamente dove sono in classifica.",
+        "text": "Norris e Zhou restano tagliati fuori dalla finestra, ma per motivi opposti: Norris ha gomme hard montate solo 3 giri prima, troppo fresche per un altro cambio; Zhou è già su soft usate da 11 giri, ma rientrerebbe dritto nel traffico. Stesso risultato — nessuno dei due si muove in classifica — da due vincoli diversi.",
         "eventId": "7953-vsc-1",
         "brushRange": { "startLap": 38, "endLap": 44 },
         "driverIds": ["NOR", "ZHO"]
@@ -66,7 +66,7 @@
       {
         "lap": 8,
         "title": "Chi resta tagliato fuori",
-        "text": "Hamilton, Hulkenberg, Norris e Zhou non possono sfruttare la finestra: perdono rispettivamente 5, 5, 5 e 8 posizioni nel corso dell'evento — lo split più netto delle tre gare-caso (14 dentro, 6 fuori).",
+        "text": "Hamilton, Hulkenberg, Norris e Zhou non possono sfruttare la finestra: perdono rispettivamente 5, 5, 5 e 8 posizioni nel corso dell'evento — lo split più netto delle tre gare-caso (14 dentro, 6 fuori). Tutti e quattro erano sulle stesse gomme medium montate al via, vecchie di 6 giri: a decidere chi resta fuori qui non è la gomma, ma solo dove ti trovi in pista quando esce la Safety Car.",
         "eventId": "9480-sc-1",
         "brushRange": { "startLap": 5, "endLap": 15 },
         "driverIds": ["HAM", "HUL", "NOR", "ZHO"]
@@ -79,7 +79,7 @@
       {
         "lap": 1,
         "title": "Il via è già caos",
-        "text": "La Safety Car entra al giro 1: solo 5 piloti (tra cui Perez e Sargeant) riescono a infilare un pit stop nella finestra, gli altri 14 restano tagliati fuori — la lotteria più esclusiva delle tre gare-caso.",
+        "text": "La Safety Car entra al giro 1: solo 5 piloti (tra cui Perez e Sargeant, che passano da gomme hard nuove a medium) riescono a infilare un pit stop nella finestra, gli altri 14 restano tagliati fuori — la lotteria più esclusiva delle tre gare-caso.",
         "eventId": "7787-sc-1",
         "brushRange": { "startLap": 1, "endLap": 4 },
         "driverIds": ["PER", "SAR", "BOT", "OCO", "ZHO"]

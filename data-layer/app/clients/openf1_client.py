@@ -148,5 +148,8 @@ class OpenF1Client:
     async def get_drivers(self, session_key: int, meeting_key: int = 0, year: int = 0):
         return await self._fetch("drivers", {"session_key": session_key}, year, meeting_key, session_key)
 
+    async def get_stints(self, session_key: int, meeting_key: int = 0, year: int = 0):
+        return await self._fetch("stints", {"session_key": session_key}, year, meeting_key, session_key)
+
     async def close(self):
         await self.client.aclose()

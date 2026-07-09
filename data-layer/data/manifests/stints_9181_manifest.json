@@ -1,0 +1,13 @@
+{
+  "endpoint": "stints",
+  "url": "https://api.openf1.org/v1/stints?session_key=9181",
+  "year": 2023,
+  "meeting_key": 1223,
+  "session_key": 9181,
+  "requested_at": "2026-07-09T16:40:44.109710Z",
+  "status_code": 200,
+  "record_count": 58,
+  "checksum": "79b7acb67127fb9ec63229028fc1d0156c9c80caf74a383d883bba6e1bbdcd05",
+  "file_path": "./data/raw/2023/1223/9181/stints_session_key-9181.json",
+  "completed": true
+}

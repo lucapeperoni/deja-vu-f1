@@ -119,10 +119,10 @@ export default async function Home() {
           </h1>
 
           <p className="text-lg text-neutral-gray max-w-2xl mx-auto leading-relaxed">
-            Un pit stop costa il tempo che si perde rispetto a chi resta in pista. Quando entra la Safety Car o la
-            Virtual Safety Car, tutti sono costretti ad andare piano: chi si ferma in quel momento paga molto meno.
-            È uno sconto — ma non è disponibile per tutti. Questo progetto misura quanto vale, e chi ha potuto
-            prenderlo.
+            Un pit stop costa normalmente 20-25 secondi rispetto a chi resta in pista. Ma quando entra la Safety Car
+            o la Virtual Safety Car, tutti sono costretti a rallentare: chi si ferma proprio in quel momento paga
+            molto meno. È uno sconto — ma non è disponibile per tutti. Questo progetto misura quanto vale, e chi ha
+            potuto prenderlo.
           </p>
 
           <div className="pt-6">

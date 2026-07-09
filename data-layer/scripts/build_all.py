@@ -65,6 +65,17 @@ POST_EVENT_OUTCOME_OFFSET = 3  # giri dopo la fine dell'evento per misurare il p
 
 RATE_LIMIT_SECONDS = 1.0       # pausa gentile tra una gara e l'altra verso OpenF1
 
+# Mescola ed età gomme (stint OpenF1): verificato in conversazione che una
+# formula predittiva basata sull'età gomme del rivale (chi resta fuori da
+# una neutralizzazione, per quanti giri lo tieni dietro) NON regge sui dati
+# — correlazione ~0 su 263 coppie testate sull'intero campione 2023-2024.
+# Il dato resta comunque utile in forma descrittiva per arricchire la
+# narrazione delle 3 gare-caso (dettagli concreti nei tooltip invece di
+# "gomme vecchie"): per questo si importa SOLO per queste gare, non per
+# tutte le 46 (§5.2 e la classifica dei pit restano quelle validate,
+# nessuna nuova metrica derivata dalla mescola).
+CASE_RACE_SLUGS = {"2023-bahrain", "2024-jeddah", "2023-albert_park"}
+
 # Alcuni giri in lap_times.csv durano diverse migliaia di secondi: sono
 # bandiere rosse (il tempo del giro include l'intera sospensione della
 # gara), non giri di corsa veri. Se uno di questi cade come giro di
@@ -445,6 +456,52 @@ def slugify(race_row: Dict, ergast: ErgastData) -> str:
     return f"{race_row['year']}-{circuit_ref}"
 
 
+def attach_tyre_info(race_json: Dict, stints: List[Dict], ergast: ErgastData) -> None:
+    """
+    Arricchisce SOLO le 3 gare-caso (vedi CASE_RACE_SLUGS) con la mescola e
+    l'età delle gomme, lette dagli stint OpenF1: aggiunge `compound` a ogni
+    pit stop (la mescola montata all'uscita) e `tyreCompound`/`tyreAge` a
+    ogni esito pilota-evento (la gomma già in uso all'inizio della
+    neutralizzazione — utile soprattutto per raccontare i LOCKED_OUT: "gomme
+    dure da 22 giri" invece del solo numero di giri dedotto dalle regole).
+    Puramente descrittivo: nessuna nuova metrica derivata, nessun impatto
+    su costo effettivo/sconto/etichetta, già validati in §5.1-5.4.
+    """
+    number_by_driver_id: Dict[str, int] = {}
+    for driver_id, row in ergast.drivers.items():
+        if row.get("number") not in (None, "", "\\N"):
+            number_by_driver_id[driver_id] = int(row["number"])
+
+    stints_by_number: Dict[int, List[Dict]] = defaultdict(list)
+    for s in stints:
+        stints_by_number[s["driver_number"]].append(s)
+
+    def stint_at(driver_id: str, lap: int) -> Optional[Dict]:
+        number = number_by_driver_id.get(driver_id)
+        if number is None:
+            return None
+        for s in stints_by_number.get(number, []):
+            lap_end = s.get("lap_end") or 9999
+            if s["lap_start"] <= lap <= lap_end:
+                return s
+        return None
+
+    for driver in race_json["drivers"]:
+        for pit in driver["pits"]:
+            s = stint_at(driver["driverId"], pit["lap"] + 1)  # lo stint dopo il pit, cioe' la gomma montata
+            pit["compound"] = s.get("compound") if s else None
+
+        for outcome in driver["outcomes"]:
+            event = next((e for e in race_json["neutralizations"] if e["eventId"] == outcome["eventId"]), None)
+            s = stint_at(driver["driverId"], event["startLap"]) if event else None
+            if s:
+                outcome["tyreCompound"] = s.get("compound")
+                outcome["tyreAge"] = s["tyre_age_at_start"] + (event["startLap"] - s["lap_start"])
+            else:
+                outcome["tyreCompound"] = None
+                outcome["tyreAge"] = None
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -497,6 +554,13 @@ async def process_all_races():
 
         race_json = build_race_json(ergast, race_row, windows)
         slug = slugify(race_row, ergast)
+
+        if slug in CASE_RACE_SLUGS:
+            try:
+                stints = await client.get_stints(session_key, meeting_key, year)
+                attach_tyre_info(race_json, stints, ergast)
+            except Exception as exc:  # noqa: BLE001 - descrittivo, non deve bloccare la gara
+                print(f"  [{label}] ATTENZIONE: stint OpenF1 non recuperati ({exc}), pit senza dati mescola")
 
         races_dir = PUBLIC_DATA_DIR / "races"
         races_dir.mkdir(parents=True, exist_ok=True)

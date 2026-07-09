@@ -45,3 +45,4 @@ data-layer/venv/
 __pycache__/
 *.pyc
 data-layer/race_dynamics.db
+data-layer/scripts/_*.json

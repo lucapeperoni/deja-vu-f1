@@ -77,7 +77,10 @@ function PitCostDiagram() {
         strokeWidth={1}
         strokeDasharray="5 4"
       />
-      <text x={20} y={baseY - baselineHeight - 8} fontSize={11} fill={NEUTRALIZATION_ACCENT_COLOR}>
+      {/* Ancorata sopra la barra più alta (non all'altezza della baseline):
+          quella era la barra "pit" più alta della baseline stessa, quindi
+          il testo ci finiva dietro. */}
+      <text x={20} y={12} fontSize={11} fill={NEUTRALIZATION_ACCENT_COLOR}>
         riferimento (baseline): quanto dura di solito un giro qui
       </text>
 
