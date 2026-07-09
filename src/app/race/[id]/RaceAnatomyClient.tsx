@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
 import OpportunityWindow from './OpportunityWindow';
+import PitCostDumbbell from './PitCostDumbbell';
 import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 
 interface BrushRange {
@@ -10,10 +11,9 @@ interface BrushRange {
   endLap: number;
 }
 
-// La vista 2 (sconti, PitCostDumbbell) arriva col task 3.3. La vista 1
-// (race trace) e la vista 4 (matrice della lotteria) condividono lo stesso
-// stato di evidenziazione: passare il mouse su un pilota in una vista lo
-// evidenzia anche nell'altra (sezione 6/7 della specifica).
+// Le tre viste condividono lo stesso stato: hover su un pilota in una
+// evidenzia anche nelle altre; il brush sui giri della race trace filtra
+// la vista degli sconti (sezione 6/7 della specifica).
 export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) {
   const [highlightedDriverId, setHighlightedDriverId] = useState<string | null>(null);
   const [brushRange, setBrushRange] = useState<BrushRange | null>(null);
@@ -62,6 +62,22 @@ export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) 
         {highlightedDriverId && (
           <p className="mt-1 text-xs text-neutral-gray">Pilota evidenziato: {highlightedDriverId}</p>
         )}
+      </section>
+
+      <section>
+        <div className="mb-6">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white">Gli sconti</h2>
+          <p className="text-sm text-text-secondary">
+            Uno sconto per pit stop: a destra chi ha guadagnato secondi, a sinistra chi ne ha persi rispetto al
+            prezzo di listino. Trascina sulla race trace qui sopra per filtrare per intervallo di giri.
+          </p>
+        </div>
+        <PitCostDumbbell
+          raceData={raceData}
+          highlightedDriverId={highlightedDriverId}
+          onHighlightChange={handleHighlightChange}
+          brushRange={brushRange}
+        />
       </section>
 
       <section>
