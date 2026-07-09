@@ -298,10 +298,16 @@ export default function MethodologyPage() {
               <span className="text-white font-bold">Il riferimento può poggiare su poche osservazioni.</span> Nelle
               gare con pochi pit in condizioni normali, sia la baseline personale di un pilota sia il prezzo di
               listino della gara si calcolano su un campione piccolo — nel codice, sotto {params.baselineMinCleanLaps}{" "}
-              giri puliti per la baseline personale o meno di {params.minGreenStopsForConfidence} pit verdi per il
-              prezzo di listino di gara, con meno di {params.fieldReferenceMinSamples} piloti disponibili anche il
-              riferimento di gruppo sotto neutralizzazione perde di affidabilità. In quei casi il numero esiste, ma
-              va letto con più cautela.
+              giri puliti per la baseline personale o meno di {params.minGreenStopsForConfidence}{" "}
+              pit verdi per il
+              prezzo di listino di gara. In quei casi il numero esiste, ma va letto con più cautela (è la stessa
+              etichetta &quot;bassa confidenza&quot; che compare nei dati). Per il riferimento di gruppo sotto
+              neutralizzazione, invece, non c&apos;è un numero incerto da leggere con cautela: se in un giro restano
+              meno di {params.fieldReferenceMinSamples} piloti che non si sono fermati (tipico quando quasi tutto il
+              gruppo pitta nella stessa finestra di Safety Car — è proprio il momento in cui conviene farlo), quel
+              pit stop viene escluso dal calcolo invece di stimato su un confronto inaffidabile. Succede per il 6,3%
+              dei pit stop del campione (quasi tutti sotto Safety Car piena, quasi mai sotto VSC): mancano dai
+              grafici, non ci sono con un numero sbagliato.
             </li>
             <li>
               <span className="text-white font-bold">L&apos;aggancio tra le due fonti dati è per numero di giro intero.</span>{" "}
