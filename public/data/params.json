@@ -1,0 +1,11 @@
+{
+  "tyreAgeMinLaps": 8,
+  "trafficMinCars": 3,
+  "postEventOutcomeOffsetLaps": 3,
+  "justBeforeMaxLaps": 3,
+  "justAfterMaxLaps": 2,
+  "baselineWindowLaps": 5,
+  "baselineMinCleanLaps": 3,
+  "minGreenStopsForConfidence": 4,
+  "fieldReferenceMinSamples": 3
+}

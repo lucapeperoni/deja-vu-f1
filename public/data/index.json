@@ -1,0 +1,462 @@
+[
+  {
+    "id": "2023-bahrain",
+    "raceId": "1098",
+    "year": 2023,
+    "round": 1,
+    "name": "Bahrain Grand Prix",
+    "circuit": "Bahrain International Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-jeddah",
+    "raceId": "1099",
+    "year": 2023,
+    "round": 2,
+    "name": "Saudi Arabian Grand Prix",
+    "circuit": "Jeddah Corniche Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-albert_park",
+    "raceId": "1100",
+    "year": 2023,
+    "round": 3,
+    "name": "Australian Grand Prix",
+    "circuit": "Albert Park Grand Prix Circuit",
+    "totalNeutralizations": 3,
+    "interesting": true
+  },
+  {
+    "id": "2023-baku",
+    "raceId": "1101",
+    "year": 2023,
+    "round": 4,
+    "name": "Azerbaijan Grand Prix",
+    "circuit": "Baku City Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-miami",
+    "raceId": "1102",
+    "year": 2023,
+    "round": 5,
+    "name": "Miami Grand Prix",
+    "circuit": "Miami International Autodrome",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-monaco",
+    "raceId": "1104",
+    "year": 2023,
+    "round": 6,
+    "name": "Monaco Grand Prix",
+    "circuit": "Circuit de Monaco",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-catalunya",
+    "raceId": "1105",
+    "year": 2023,
+    "round": 7,
+    "name": "Spanish Grand Prix",
+    "circuit": "Circuit de Barcelona-Catalunya",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-villeneuve",
+    "raceId": "1106",
+    "year": 2023,
+    "round": 8,
+    "name": "Canadian Grand Prix",
+    "circuit": "Circuit Gilles Villeneuve",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2023-red_bull_ring",
+    "raceId": "1107",
+    "year": 2023,
+    "round": 9,
+    "name": "Austrian Grand Prix",
+    "circuit": "Red Bull Ring",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2023-silverstone",
+    "raceId": "1108",
+    "year": 2023,
+    "round": 10,
+    "name": "British Grand Prix",
+    "circuit": "Silverstone Circuit",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2023-hungaroring",
+    "raceId": "1109",
+    "year": 2023,
+    "round": 11,
+    "name": "Hungarian Grand Prix",
+    "circuit": "Hungaroring",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-spa",
+    "raceId": "1110",
+    "year": 2023,
+    "round": 12,
+    "name": "Belgian Grand Prix",
+    "circuit": "Circuit de Spa-Francorchamps",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-zandvoort",
+    "raceId": "1111",
+    "year": 2023,
+    "round": 13,
+    "name": "Dutch Grand Prix",
+    "circuit": "Circuit Park Zandvoort",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-monza",
+    "raceId": "1112",
+    "year": 2023,
+    "round": 14,
+    "name": "Italian Grand Prix",
+    "circuit": "Autodromo Nazionale di Monza",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-marina_bay",
+    "raceId": "1113",
+    "year": 2023,
+    "round": 15,
+    "name": "Singapore Grand Prix",
+    "circuit": "Marina Bay Street Circuit",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2023-suzuka",
+    "raceId": "1114",
+    "year": 2023,
+    "round": 16,
+    "name": "Japanese Grand Prix",
+    "circuit": "Suzuka Circuit",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2023-losail",
+    "raceId": "1115",
+    "year": 2023,
+    "round": 17,
+    "name": "Qatar Grand Prix",
+    "circuit": "Losail International Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-americas",
+    "raceId": "1116",
+    "year": 2023,
+    "round": 18,
+    "name": "United States Grand Prix",
+    "circuit": "Circuit of the Americas",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2023-rodriguez",
+    "raceId": "1117",
+    "year": 2023,
+    "round": 19,
+    "name": "Mexico City Grand Prix",
+    "circuit": "Autódromo Hermanos Rodríguez",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-interlagos",
+    "raceId": "1118",
+    "year": 2023,
+    "round": 20,
+    "name": "São Paulo Grand Prix",
+    "circuit": "Autódromo José Carlos Pace",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2023-vegas",
+    "raceId": "1119",
+    "year": 2023,
+    "round": 21,
+    "name": "Las Vegas Grand Prix",
+    "circuit": "Las Vegas Strip Street Circuit",
+    "totalNeutralizations": 3,
+    "interesting": true
+  },
+  {
+    "id": "2023-yas_marina",
+    "raceId": "1120",
+    "year": 2023,
+    "round": 22,
+    "name": "Abu Dhabi Grand Prix",
+    "circuit": "Yas Marina Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-bahrain",
+    "raceId": "1121",
+    "year": 2024,
+    "round": 1,
+    "name": "Bahrain Grand Prix",
+    "circuit": "Bahrain International Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-jeddah",
+    "raceId": "1122",
+    "year": 2024,
+    "round": 2,
+    "name": "Saudi Arabian Grand Prix",
+    "circuit": "Jeddah Corniche Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2024-albert_park",
+    "raceId": "1123",
+    "year": 2024,
+    "round": 3,
+    "name": "Australian Grand Prix",
+    "circuit": "Albert Park Grand Prix Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2024-suzuka",
+    "raceId": "1124",
+    "year": 2024,
+    "round": 4,
+    "name": "Japanese Grand Prix",
+    "circuit": "Suzuka Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-shanghai",
+    "raceId": "1125",
+    "year": 2024,
+    "round": 5,
+    "name": "Chinese Grand Prix",
+    "circuit": "Shanghai International Circuit",
+    "totalNeutralizations": 3,
+    "interesting": true
+  },
+  {
+    "id": "2024-miami",
+    "raceId": "1126",
+    "year": 2024,
+    "round": 6,
+    "name": "Miami Grand Prix",
+    "circuit": "Miami International Autodrome",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2024-imola",
+    "raceId": "1127",
+    "year": 2024,
+    "round": 7,
+    "name": "Emilia Romagna Grand Prix",
+    "circuit": "Autodromo Enzo e Dino Ferrari",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-monaco",
+    "raceId": "1128",
+    "year": 2024,
+    "round": 8,
+    "name": "Monaco Grand Prix",
+    "circuit": "Circuit de Monaco",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-villeneuve",
+    "raceId": "1129",
+    "year": 2024,
+    "round": 9,
+    "name": "Canadian Grand Prix",
+    "circuit": "Circuit Gilles Villeneuve",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2024-catalunya",
+    "raceId": "1130",
+    "year": 2024,
+    "round": 10,
+    "name": "Spanish Grand Prix",
+    "circuit": "Circuit de Barcelona-Catalunya",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-red_bull_ring",
+    "raceId": "1131",
+    "year": 2024,
+    "round": 11,
+    "name": "Austrian Grand Prix",
+    "circuit": "Red Bull Ring",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2024-silverstone",
+    "raceId": "1132",
+    "year": 2024,
+    "round": 12,
+    "name": "British Grand Prix",
+    "circuit": "Silverstone Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-hungaroring",
+    "raceId": "1133",
+    "year": 2024,
+    "round": 13,
+    "name": "Hungarian Grand Prix",
+    "circuit": "Hungaroring",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-spa",
+    "raceId": "1134",
+    "year": 2024,
+    "round": 14,
+    "name": "Belgian Grand Prix",
+    "circuit": "Circuit de Spa-Francorchamps",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-zandvoort",
+    "raceId": "1135",
+    "year": 2024,
+    "round": 15,
+    "name": "Dutch Grand Prix",
+    "circuit": "Circuit Park Zandvoort",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-monza",
+    "raceId": "1136",
+    "year": 2024,
+    "round": 16,
+    "name": "Italian Grand Prix",
+    "circuit": "Autodromo Nazionale di Monza",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-baku",
+    "raceId": "1137",
+    "year": 2024,
+    "round": 17,
+    "name": "Azerbaijan Grand Prix",
+    "circuit": "Baku City Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-marina_bay",
+    "raceId": "1138",
+    "year": 2024,
+    "round": 18,
+    "name": "Singapore Grand Prix",
+    "circuit": "Marina Bay Street Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-americas",
+    "raceId": "1139",
+    "year": 2024,
+    "round": 19,
+    "name": "United States Grand Prix",
+    "circuit": "Circuit of the Americas",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2024-rodriguez",
+    "raceId": "1140",
+    "year": 2024,
+    "round": 20,
+    "name": "Mexico City Grand Prix",
+    "circuit": "Autódromo Hermanos Rodríguez",
+    "totalNeutralizations": 1,
+    "interesting": true
+  },
+  {
+    "id": "2024-interlagos",
+    "raceId": "1141",
+    "year": 2024,
+    "round": 21,
+    "name": "São Paulo Grand Prix",
+    "circuit": "Autódromo José Carlos Pace",
+    "totalNeutralizations": 2,
+    "interesting": true
+  },
+  {
+    "id": "2024-vegas",
+    "raceId": "1142",
+    "year": 2024,
+    "round": 22,
+    "name": "Las Vegas Grand Prix",
+    "circuit": "Las Vegas Strip Street Circuit",
+    "totalNeutralizations": 0,
+    "interesting": false
+  },
+  {
+    "id": "2024-losail",
+    "raceId": "1143",
+    "year": 2024,
+    "round": 23,
+    "name": "Qatar Grand Prix",
+    "circuit": "Losail International Circuit",
+    "totalNeutralizations": 4,
+    "interesting": true
+  },
+  {
+    "id": "2024-yas_marina",
+    "raceId": "1144",
+    "year": 2024,
+    "round": 24,
+    "name": "Abu Dhabi Grand Prix",
+    "circuit": "Yas Marina Circuit",
+    "totalNeutralizations": 1,
+    "interesting": true
+  }
+]

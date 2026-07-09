@@ -20,7 +20,6 @@ import asyncio
 import csv
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -31,7 +30,10 @@ ERGAST_DIR = REPO_ROOT / "data" / "raw"
 sys.path.insert(0, str(DATA_LAYER_DIR))
 
 from app.clients.openf1_client import OpenF1Client  # noqa: E402
-from app.metrics.neutralization_events import build_neutralization_events  # noqa: E402
+from app.metrics.neutralization_events import (  # noqa: E402
+    build_lap_indexed_windows,
+    parse_rc_messages,
+)
 from app.metrics.effective_pit_loss import calculate_pit_cost  # noqa: E402
 
 RACE_ID = "1113"       # Ergast: Singapore Grand Prix 2023
@@ -84,54 +86,6 @@ def load_ergast_race_data():
         "pit_stops": pit_stops,
         "ergast_total_laps": ergast_total_laps,
     }
-
-
-def parse_rc_messages(raw_messages):
-    parsed = []
-    for m in raw_messages:
-        date_str = m.get("date")
-        if not date_str:
-            continue
-        parsed.append({**m, "date": datetime.fromisoformat(date_str)})
-    return parsed
-
-
-def build_lap_indexed_windows(rc_messages_parsed):
-    """
-    build_neutralization_events lavora su timestamp; qui li convertiamo in
-    numero di giro usando il campo lap_number che OpenF1 fornisce già per
-    ogni messaggio di race control (non serve ricostruire l'orario di gara
-    a partire dai tempi sul giro).
-    """
-    lap_by_date = {
-        m["date"]: m.get("lap_number") for m in rc_messages_parsed if m.get("lap_number") is not None
-    }
-
-    events = build_neutralization_events(SESSION_KEY, rc_messages_parsed)
-
-    windows = []
-    warnings = []
-    for e in events:
-        start_lap = lap_by_date.get(e.start_time)
-        end_lap = lap_by_date.get(e.end_time) if e.end_time else None
-
-        if start_lap is None or end_lap is None:
-            warnings.append(
-                f"  ATTENZIONE: evento {e.event_id} ({e.event_type}) senza giro di "
-                f"inizio/fine risolvibile (start_lap={start_lap}, end_lap={end_lap}); scartato."
-            )
-            continue
-
-        windows.append(
-            {
-                "event_id": e.event_id,
-                "type": "SC" if e.event_type == "SAFETY_CAR" else "VSC",
-                "start_lap": start_lap,
-                "end_lap": end_lap,
-            }
-        )
-
-    return windows, warnings
 
 
 def check_lap_count_alignment(ergast_total_laps: int, openf1_laps: list):
@@ -216,12 +170,12 @@ def main():
 
     rc_raw, openf1_laps_raw = asyncio.run(fetch())
     rc_parsed = parse_rc_messages(rc_raw)
-    windows, window_warnings = build_lap_indexed_windows(rc_parsed)
+    windows, window_warnings = build_lap_indexed_windows(SESSION_KEY, rc_parsed)
 
     for w in windows:
         print(f"  {w['type']:<3} evento {w['event_id']}: giro {w['start_lap']} -> giro {w['end_lap']}")
     for warn in window_warnings:
-        print(warn)
+        print(f"  ATTENZIONE: {warn}")
     if not windows:
         print("  ATTENZIONE: nessuna neutralizzazione risolta in numero di giro.")
     print()

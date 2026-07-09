@@ -215,18 +215,56 @@ Esegui la build (npm run build) e verifica che passi.
 
 # Fase 2 — Pipeline completa (settimana 2)
 
-## 2.1 — A · Pipeline su tutte le gare 2023-2024
+## 2.1 — A · Pipeline su tutte le gare 2023-2024 ✅ COMPLETATO
 
 Dipende da: 1.2 (milestone superata)
 
-- [ ] Milestone 1.2 superata
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] `public/data/index.json` generato
-- [ ] `public/data/races/` popolata (un JSON per gara)
-- [ ] `public/data/aggregate.json` generato
-- [ ] Nessun file di gara oltre ~500 KB
-- [ ] Report finale letto: gare processate, saltate e perché
-- [ ] Diff letto, commit e push
+- [x] Milestone 1.2 superata
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] `public/data/index.json` generato (46 gare, 10 KB)
+- [x] `public/data/races/` popolata (46 file, media 104 KB, massimo 136 KB)
+- [x] `public/data/aggregate.json` generato (1658 pit stop, 389 KB)
+- [x] Nessun file di gara oltre ~500 KB
+- [x] Report finale letto: 46/46 gare processate, 0 saltate, 42
+      neutralizzazioni (Las Vegas 2024 inizialmente saltata per un bug di
+      allineamento data, poi recuperata — vedi sotto)
+- [x] Diff letto, commit e push
+
+**Esito reale di questa esecuzione** (di nuovo più articolato di un
+semplice sì/no — verificare l'aggregato, non solo il report a schermo, ha
+fatto emergere due problemi non richiesti esplicitamente dal prompt ma
+necessari per fidarsi dei dati):
+
+1. **Bug di allineamento risolto**: Las Vegas si corre di notte, quindi
+   OpenF1 registra la sessione con data UTC del giorno successivo rispetto
+   alla data "nominale" di Ergast. Il matching per data esatta la saltava.
+   Corretto tollerando ±1 giorno.
+2. **Bug delle bandiere rosse, trovato controllando l'aggregato e non solo
+   il report — RISOLTO**: alcuni giri in `lap_times.csv` durano migliaia
+   di secondi perché includono l'intera sospensione di una bandiera rossa
+   (mai modellata come evento). Un pit stop caduto su uno di quei giri
+   faceva esplodere il costo a livelli assurdi (sconti fino a -2561s /
+   +2464s sull'aggregato). Corretto escludendo dal calcolo del tempo (non
+   dalla posizione) i giri sopra 240 secondi — soglia verificata sui dati,
+   corrisponde esattamente a 8 gare con bandiere rosse reali documentate
+   nel 2023-2024.
+3. **Limite residuo, NON risolto, dichiarato**: il 9,2% dei pit stop (153
+   su 1658) mostra ancora sconti estremi, concentrati in poche gare con
+   pit di massa sotto SC o partenze sotto neutralizzazione (il riferimento
+   "di gruppo" introdotto al task 1.2 si assottiglia o diventa fuorviante
+   in questi casi limite). Non inseguito oltre: da dichiarare in
+   `/methodology` (task 4.2). Dettaglio completo, con i numeri, in
+   `docs/PROGETTAZIONE.md` §5.1bis.
+4. Ripuliti 22 file JSON orfani della vecchia pipeline rotta
+   (`public/data/races/<session_key>.json`, sostituiti dai nuovi
+   `<anno>-<circuitRef>.json`).
+5. Refactoring di pulizia: la conversione timestamp→numero di giro (prima
+   duplicata in `validate_sample_race.py`) è stata spostata in
+   `neutralization_events.py` così `build_all.py` la riusa.
+
+Prima di fidarsi del semplice "il report dice 0 saltate": **controllare
+sempre anche l'aggregato**, non solo il conteggio a schermo — è lì che si è
+visto il problema delle bandiere rosse, invisibile nel report per gara.
 
 **Prompt da copiare:**
 

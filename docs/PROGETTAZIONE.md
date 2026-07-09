@@ -125,6 +125,53 @@ box può aver percorso quasi tutto il giro a ritmo verde e solo l'ultima
 parte sotto VSC. È un limite di granularità dei dati, da dichiarare in
 `/methodology` (task 4.2), non un bug da inseguire ora.
 
+### 5.1bis Due problemi emersi eseguendo la pipeline su tutte le 46 gare (task 2.1)
+
+**Le bandiere rosse gonfiano il costo a migliaia di secondi — RISOLTO.**
+In `lap_times.csv` alcuni giri durano diverse migliaia di secondi: sono
+bandiere rosse, il tempo del giro include l'intera sospensione della gara,
+non è un giro di corsa vero. Il sistema oggi non modella le bandiere rosse
+come evento (solo SC/VSC), quindi se un pit stop cade proprio su uno di
+questi giri il suo costo effettivo esplodeva a livelli assurdi (osservato:
+sconti fino a -2561s / +2464s sull'aggregato delle due stagioni). Verificato
+sui dati: 152 giri su 46 gare superano i 240 secondi (4 minuti), soglia
+ben separata dal giro più lento plausibile anche sotto Safety Car pesante
+(230s osservati). Questi giri corrispondono esattamente a 8 gare con
+bandiere rosse realmente documentate nel 2023-2024 (tra cui Australia 2023,
+Messico 2023, San Paolo 2023 e 2024, Giappone 2024, Monaco 2024).
+
+Correzione applicata in `build_all.py` (`MAX_PLAUSIBLE_LAP_MS = 240000`):
+i giri con tempo sopra soglia sono esclusi dal calcolo del tempo/costo
+(il pit che ci cade sopra risulta con costo non calcolabile, `None`,
+invece che assurdo), ma **non** dalla posizione — la classifica in quel
+giro resta un dato valido anche quando il tempo non lo è. Limite noto da
+dichiarare in `/methodology`: le gare con bandiera rossa non sono
+modellate come evento a sé, i giri coinvolti sono trattati come dati
+mancanti.
+
+**Un residuo di sconti estremi in gare "caotiche" — NON RISOLTO, limite
+dichiarato.** Anche dopo il fix sopra, il 9,2% dei pit stop (153 su 1658
+nell'intero campione 2023-2024) mostra ancora sconti oltre ±40 secondi,
+concentrati fortemente in poche gare: Qatar 2024 (46 casi, la gara con la
+Safety Car prolungata per le forature da usura), Interlagos 2023 e 2024,
+Red Bull Ring 2023. Causa individuata: il riferimento "di gruppo"
+introdotto in §5.1 per i giri sotto neutralizzazione funziona bene quando
+ci sono abbastanza piloti che non si fermano in quel giro; ma quando
+**quasi tutti si fermano insieme** (pit di massa sotto una SC pesante) o
+il pit cade **appena dopo un restart/la partenza** (il gruppo è ancora
+compatto e lento anche se tecnicamente in condizioni "verdi"), il campione
+di riferimento si assottiglia o diventa fuorviante.
+
+Non è un errore di calcolo, è un limite metodologico reale che riguarda una
+minoranza concentrata di casi (il restante 90,8% dei pit ha valori
+plausibili). Decisione presa: non inseguirlo oltre per ora. Va dichiarato
+in `/methodology` insieme alla VSC, e può anche diventare un punto di forza
+invece che un difetto — la matrice della lotteria (vista 4) e la
+distribuzione degli sconti (vista 6) sono pensate proprio per "find
+anomalies" (tassonomia di Amar, sezione 8): questi casi estremi possono
+essere evidenziati come le gare più interessanti da raccontare, purché
+etichettati come tali e non spacciati per il pattern tipico.
+
 ### 5.2 Il prezzo di listino
 
 Il "prezzo di listino" di una gara è la mediana dei costi effettivi dei pit
@@ -171,19 +218,39 @@ Le soglie (8 giri, 3 auto) sono parametri dichiarati nella pagina
 
 ## 6. Come arrivano i dati al sito
 
-Una sola pipeline, quella Python del data-layer (che già parla con OpenF1).
-Il preprocess TypeScript resta al massimo per le anagrafiche piloti/team.
+STATO: implementato (task 2.1), eseguito su tutte le 46 gare 2023-2024.
+0 gare saltate, 42 neutralizzazioni catturate. Quello che segue è la
+pipeline reale (`data-layer/scripts/build_all.py`), non solo il progetto.
 
-Il flusso: i CSV Ergast e i messaggi race control di OpenF1 si uniscono per
-numero di giro; si calcolano tempi cumulati, gap, etichette e sconti; si
-esporta tutto in public/data/ come JSON statici:
+Una sola pipeline, quella Python del data-layer (che parla sia con i CSV
+Ergast sia con OpenF1). Il preprocess TypeScript resta solo per le
+anagrafiche piloti/team delle pagine non ancora riconvertite.
 
-- index.json — l'elenco delle gare per il selettore
-- races/nome-gara.json — un file per gara (200-400 KB), con: info gara,
-  finestre di neutralizzazione, e per ogni pilota i giri (tempo, posizione,
-  gap), i pit (etichetta, costo, sconto, posizioni prima/dopo) e gli esiti
-- aggregate.json — i dati per le viste d'insieme (tutti i pit delle due
-  stagioni, la matrice multi-gara)
+Il flusso: per ogni gara, la sessione di gara OpenF1 corrispondente si
+trova per data (con tolleranza di ±1 giorno: le gare in notturna, es. Las
+Vegas, hanno una data UTC diversa dalla data "nominale" di Ergast); i
+messaggi di race control danno le finestre SC/VSC già in numero di giro
+(OpenF1 lo fornisce direttamente, non va ricostruito); si calcolano tempi
+cumulati, gap, race trace, costi ed etichette dei pit, e gli esiti
+pilota-per-evento; si esporta tutto in public/data/ come JSON statici:
+
+- **index.json** — l'elenco delle gare (id/slug, anno, nome, circuito,
+  numero di neutralizzazioni, flag "interessante" preliminare) per il
+  selettore. Oggi 10 KB per 46 gare.
+- **races/&lt;anno&gt;-&lt;circuitRef&gt;.json** (es. `2023-marina_bay.json`)
+  — un file per gara, ~100-135 KB reali (sotto il budget dei 500 KB): info
+  gara (incluso `excludedAnomalousLaps`, il conteggio dei giri scartati
+  per bandiera rossa, vedi §5.1bis), finestre di neutralizzazione, e per
+  ogni pilota i giri (posizione, tempo cumulato, gap dal leader, race
+  trace), i pit (etichetta, costo effettivo, sconto, posizioni prima/dopo/
+  dopo 3/dopo 5 giri, double stack) e gli esiti per ogni evento della gara
+  (categoria ed eventuale delta di posizioni).
+- **aggregate.json** — tutti i pit delle due stagioni (1658 nel campione
+  attuale) con etichetta e sconto, più la matrice esiti pilota × evento ×
+  gara. 389 KB.
+- **params.json** — le soglie dichiarate della pipeline (età minima gomme,
+  auto minime per il traffico, finestre di baseline, ecc.), lette da qui
+  dalla pagina `/methodology` (task 4.2) invece di essere riscritte a mano.
 
 Niente backend: sito statico, si carica il JSON della gara quando serve.
 
@@ -325,18 +392,32 @@ In appendice: una gara senza neutralizzazioni come termine di paragone.
    (vedi §5.1) — da dichiarare in `/methodology`, non da inseguire ora.
 3. Il CSV Kaggle potrebbe non coprire tutto il 2024: le gare mancanti si
    scaricano da Jolpica, che ha lo stesso formato di Ergast. **Verificato
-   (task 0.2)**: sia il 2023 (22 gare) sia il 2024 (24 gare) sono completi
-   nel Kaggle già presente, nessuna integrazione necessaria per questo
-   perimetro.
+   (task 0.2 e 2.1)**: sia il 2023 (22 gare) sia il 2024 (24 gare) sono
+   completi nel Kaggle già presente; la pipeline (task 2.1) ha processato
+   tutte e 46 le gare senza scarti, nessuna integrazione Jolpica necessaria
+   per questo perimetro.
 4. Oggi ci sono due pipeline dati (TypeScript e Python): si converge su
-   quella Python. **Nota**: `data-layer/scripts/export_frontend.py` e
+   quella Python (ora `build_all.py`, task 2.1 completato). **Nota**:
+   `data-layer/scripts/export_frontend.py` e
    `data-layer/app/api/routes/sessions.py` chiamano ancora la vecchia
-   firma di `calculate_pit_cost` (quella basata su `pit_duration`) e oggi
-   sono rotti: vanno riscritti nel task 2.1, non prima.
+   firma di `calculate_pit_cost` (quella basata su `pit_duration`) e sono
+   **ancora rotti** — `build_all.py` è il loro sostituto, ma questi due
+   file non sono stati toccati. Non sono più usati da nessuna pipeline
+   attiva; da rimuovere quando si collega il frontend ai dati veri
+   (task 3.x), per non lasciare codice morto che confonde.
 5. Col rischio React, D3 può ridursi a due scale: vale la regola
    "D3 possiede l'SVG" di §7.
 6. Le soglie della categoria LOCKED_OUT (8 giri, 3 auto) sono arbitrarie:
    si dichiarano in /methodology con la motivazione.
+7. **Nuovo (trovato al task 2.1), RISOLTO**: le bandiere rosse fanno
+   esplodere il costo del pit stop a migliaia di secondi se un pit cade sul
+   giro sospeso. Corretto escludendo i giri con tempo sopra i 240 secondi
+   dal calcolo del tempo (non dalla posizione). Dettaglio in §5.1bis.
+8. **Nuovo (trovato al task 2.1), NON risolto, limite dichiarato**: il 9,2%
+   dei pit stop mostra ancora sconti estremi, concentrati in poche gare con
+   pit di massa o partenze sotto neutralizzazione (il campione per il
+   riferimento "di gruppo" si assottiglia o diventa fuorviante). Da
+   dichiarare in `/methodology`, non da inseguire ora. Dettaglio in §5.1bis.
 
 ## 11. Divisione del lavoro (proposta, 5 settimane)
 

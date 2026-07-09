@@ -1,0 +1,13 @@
+{
+  "endpoint": "race_control",
+  "url": "https://api.openf1.org/v1/race_control?session_key=9655",
+  "year": 2024,
+  "meeting_key": 1251,
+  "session_key": 9655,
+  "requested_at": "2026-07-08T23:52:54.145695Z",
+  "status_code": 200,
+  "record_count": 112,
+  "checksum": "f81b39178920038f562023c4d7adecca35f11660342048597ace8ac2ae6abbc1",
+  "file_path": "./data/raw/2024/1251/9655/race_control_session_key-9655.json",
+  "completed": true
+}
