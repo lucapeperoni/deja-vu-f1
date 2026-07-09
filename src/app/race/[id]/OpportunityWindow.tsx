@@ -223,6 +223,8 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
           const g = enter.append("g").attr("class", "cell").style("cursor", "default");
           g.append("rect").attr("rx", 3).attr("width", CELL_WIDTH).attr("height", CELL_HEIGHT);
           g.append("text")
+            .attr("x", CELL_WIDTH / 2)
+            .attr("y", CELL_HEIGHT / 2)
             .attr("text-anchor", "middle")
             .attr("dominant-baseline", "middle")
             .attr("font-size", 9)
@@ -241,7 +243,7 @@ export default function OpportunityWindow({ raceData, highlightedDriverId, onHig
       .each(function (d) {
         const g = d3.select(this);
         g.select("rect").attr("fill", outcomeColor(d.category));
-        g.select("text").text(d.posDelta ? `${d.posDelta > 0 ? "+" : ""}${d.posDelta}` : "");
+        g.select("text").text(d.posDelta != null ? `${d.posDelta > 0 ? "+" : ""}${d.posDelta}` : "");
       })
       .on("pointerenter", function (event, d) {
         onHighlightChange(d.driver.id);
