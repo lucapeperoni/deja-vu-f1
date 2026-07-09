@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
+import OpportunityWindow from './OpportunityWindow';
 import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 
 interface BrushRange {
@@ -9,9 +10,10 @@ interface BrushRange {
   endLap: number;
 }
 
-// Le viste 2 (sconti, PitCostDumbbell) e 4 (matrice della lotteria,
-// OpportunityWindow) arrivano con i task 3.2 e 3.3: qui per ora c'è solo
-// la vista 1 (race trace), completa di hover/click coordinati e brush.
+// La vista 2 (sconti, PitCostDumbbell) arriva col task 3.3. La vista 1
+// (race trace) e la vista 4 (matrice della lotteria) condividono lo stesso
+// stato di evidenziazione: passare il mouse su un pilota in una vista lo
+// evidenzia anche nell'altra (sezione 6/7 della specifica).
 export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) {
   const [highlightedDriverId, setHighlightedDriverId] = useState<string | null>(null);
   const [brushRange, setBrushRange] = useState<BrushRange | null>(null);
@@ -60,6 +62,21 @@ export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) 
         {highlightedDriverId && (
           <p className="mt-1 text-xs text-neutral-gray">Pilota evidenziato: {highlightedDriverId}</p>
         )}
+      </section>
+
+      <section>
+        <div className="mb-6">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white">La matrice della lotteria</h2>
+          <p className="text-sm text-text-secondary">
+            Per ogni neutralizzazione, chi ha sfruttato la finestra, chi ne è rimasto escluso, chi l&apos;ha pagata
+            piena. Passa il mouse su una riga o su una cella per i dettagli.
+          </p>
+        </div>
+        <OpportunityWindow
+          raceData={raceData}
+          highlightedDriverId={highlightedDriverId}
+          onHighlightChange={handleHighlightChange}
+        />
       </section>
     </div>
   );
