@@ -24,9 +24,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
-import { outcomeColor, OUTCOME_LEGEND, HIGHLIGHT_COLOR } from "@/lib/colors";
+import {
+  outcomeColor,
+  OUTCOME_LEGEND,
+  HIGHLIGHT_COLOR,
+  NEUTRALIZATION_ACCENT_COLOR,
+  TEXT_MUTED_COLOR,
+  CONTRAST_TEXT_COLOR,
+} from "@/lib/colors";
 import type { RaceData, RaceDriver, RaceNeutralization, RacePit } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
+import ChartTooltip from "@/components/ChartTooltip";
 
 // Soglie dichiarate (docs/PROGETTAZIONE.md sezione 5.5 e
 // public/data/params.json): devono restare sincronizzate con
@@ -205,7 +213,7 @@ export default function OpportunityWindow({ raceData }: Props) {
             .append("text")
             .attr("class", "row-label")
             .attr("text-anchor", "end")
-            .attr("font-size", 10)
+            .attr("font-size", 11)
             .attr("dominant-baseline", "middle")
             .style("cursor", "pointer")
             .style("user-select", "none"),
@@ -250,8 +258,8 @@ export default function OpportunityWindow({ raceData }: Props) {
             .attr("y", CELL_HEIGHT / 2)
             .attr("text-anchor", "middle")
             .attr("dominant-baseline", "middle")
-            .attr("font-size", 9)
-            .attr("fill", "#0a0a0a")
+            .attr("font-size", 11)
+            .attr("fill", CONTRAST_TEXT_COLOR)
             .style("pointer-events", "none");
           return g;
         },
@@ -307,13 +315,13 @@ export default function OpportunityWindow({ raceData }: Props) {
     svg
       .select<SVGGElement>(".row-labels")
       .selectAll<SVGTextElement, RaceDriver>("text.row-label")
-      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
+      .attr("fill", (d) => (d.id === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_MUTED_COLOR))
       .attr("font-weight", (d) => (d.id === highlightedDriverId ? 700 : 400));
 
     svg
       .select<SVGGElement>(".column-headers")
       .selectAll<SVGTextElement, RaceNeutralization>("text.col-header")
-      .attr("fill", (d) => (d.eventId === selectedEventId ? HIGHLIGHT_COLOR : "#eab308"))
+      .attr("fill", (d) => (d.eventId === selectedEventId ? HIGHLIGHT_COLOR : NEUTRALIZATION_ACCENT_COLOR))
       .attr("font-weight", (d) => (d.eventId === selectedEventId ? 700 : 400));
   }, [highlightedDriverId, selectedEventId, drivers, events]);
 
@@ -337,10 +345,7 @@ export default function OpportunityWindow({ raceData }: Props) {
           aria-label={`Matrice degli esiti pilota per evento di ${raceData.race.name} ${raceData.race.year}`}
         />
         {tooltip && (
-          <div
-            className="pointer-events-none absolute z-50 rounded-md border border-white/20 bg-black/90 px-3 py-2 text-xs text-white shadow-xl max-w-[240px]"
-            style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
-          >
+          <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={240}>
             <div className="font-bold">
               {tooltip.driverLabel} · {tooltip.eventLabel}
             </div>
@@ -351,7 +356,7 @@ export default function OpportunityWindow({ raceData }: Props) {
                 {tooltip.posDelta}
               </div>
             )}
-          </div>
+          </ChartTooltip>
         )}
       </div>
       <div className="flex gap-4 flex-wrap mt-4">

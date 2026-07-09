@@ -25,8 +25,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { pitContextColor, NEUTRALIZATION_BAND_COLORS, HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR } from "@/lib/colors";
+import {
+  pitContextColor,
+  NEUTRALIZATION_BAND_COLORS,
+  NEUTRALIZATION_ACCENT_COLOR,
+  STORY_ACCENT_COLOR,
+  HIGHLIGHT_COLOR,
+  DEFAULT_LINE_COLOR,
+  TEXT_MUTED_COLOR,
+  CONTRAST_TEXT_COLOR,
+  WHITE_TEXT_COLOR,
+} from "@/lib/colors";
 import { useRaceInteraction } from "./RaceInteractionContext";
+import ChartTooltip from "@/components/ChartTooltip";
 
 export interface RaceLap {
   l: number;
@@ -244,7 +255,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
           .attr("y", MARGIN.top - 10)
           .attr("text-anchor", "middle")
           .attr("font-size", 11)
-          .attr("fill", "#eab308")
+          .attr("fill", NEUTRALIZATION_ACCENT_COLOR)
           .text(`${d.type} · giri ${d.startLap}-${d.endLap}`);
       });
 
@@ -303,7 +314,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
             .attr("r", 0)
             .attr("cx", (d) => d.x)
             .attr("cy", (d) => d.y as number)
-            .attr("stroke", "#0a0a0a")
+            .attr("stroke", CONTRAST_TEXT_COLOR)
             .attr("stroke-width", 1),
         (update) => update,
         (exit) => exit.transition().duration(200).attr("r", 0).remove()
@@ -357,24 +368,24 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
           .attr("x2", x)
           .attr("y1", MARGIN.top)
           .attr("y2", storyRowY - 10)
-          .attr("stroke", "#e10600")
+          .attr("stroke", STORY_ACCENT_COLOR)
           .attr("stroke-width", 1)
           .attr("stroke-dasharray", "3,3")
           .attr("opacity", 0.5);
         g.select(".story-badge")
           .attr("cx", x)
           .attr("cy", storyRowY)
-          .attr("fill", "#e10600")
-          .attr("stroke", "#0a0a0a")
+          .attr("fill", STORY_ACCENT_COLOR)
+          .attr("stroke", CONTRAST_TEXT_COLOR)
           .attr("stroke-width", 1.5);
         g.select(".story-badge-label")
           .attr("x", x)
           .attr("y", storyRowY)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "central")
-          .attr("font-size", 10)
+          .attr("font-size", 11)
           .attr("font-weight", 700)
-          .attr("fill", "#fff")
+          .attr("fill", WHITE_TEXT_COLOR)
           .style("pointer-events", "none")
           .text(d.index + 1);
         g.select("title").remove();
@@ -414,7 +425,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
             .append("text")
             .attr("class", "driver-label")
             .attr("x", MARGIN.left + innerWidth + 6)
-            .attr("font-size", 10)
+            .attr("font-size", 11)
             .attr("dominant-baseline", "middle")
             .style("cursor", "pointer")
             .style("user-select", "none"),
@@ -559,7 +570,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
     svg
       .select<SVGGElement>(".series-group")
       .selectAll<SVGPathElement, RaceDriver>("path.driver-line")
-      .attr("stroke", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? "#e10600" : DEFAULT_LINE_COLOR))
+      .attr("stroke", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? STORY_ACCENT_COLOR : DEFAULT_LINE_COLOR))
       .attr("stroke-width", (d) => (isInvolved(d.id) ? 3 : 1.3));
 
     svg
@@ -571,7 +582,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
     svg
       .select<SVGGElement>(".labels-group")
       .selectAll<SVGTextElement, RaceDriver>("text.driver-label")
-      .attr("fill", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? "#e10600" : "#9ca3af"))
+      .attr("fill", (d) => (isPrimary(d.id) ? HIGHLIGHT_COLOR : isInvolved(d.id) ? STORY_ACCENT_COLOR : TEXT_MUTED_COLOR))
       .attr("font-weight", (d) => (isInvolved(d.id) ? 700 : 400));
     // raceData/totalLaps/width in dipendenza: non per ricalcolare (lo fa
     // l'altro effect), ma per ridipingere l'evidenziazione corrente sugli
@@ -592,17 +603,14 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
           aria-label={`Race trace di ${raceData.race.name} ${raceData.race.year}`}
         />
         {tooltip && (
-          <div
-            className="pointer-events-none absolute z-50 rounded-md border border-white/20 bg-black/85 px-3 py-2 text-xs text-white shadow-xl"
-            style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
-          >
+          <ChartTooltip x={tooltip.x} y={tooltip.y}>
             <div className="font-bold">{tooltip.driverId}</div>
             <div className="text-neutral-gray">giro {tooltip.lap}</div>
             <div>
               gap leader{" "}
               {tooltip.gapLeader != null ? `${tooltip.gapLeader >= 0 ? "+" : ""}${tooltip.gapLeader.toFixed(1)}s` : "n/d"}
             </div>
-          </div>
+          </ChartTooltip>
         )}
       </div>
     </div>

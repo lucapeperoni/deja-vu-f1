@@ -16,7 +16,13 @@ export const PIT_CONTEXT_COLORS: Record<PitContext, string> = {
   UNDER_VSC: "#56b4e9", // azzurro: sconto sotto Virtual Safety Car
   UNDER_SC: "#0072b2", // blu intenso: sconto sotto Safety Car piena
   JUST_BEFORE: "#d55e00", // vermiglio: il "fregato", pagato prezzo pieno appena prima
-  JUST_AFTER: "#cc79a7", // porpora: fermato appena dopo la fine della finestra
+  // Arancio Okabe-Ito, non la porpora originaria (#cc79a7): simulando
+  // protanopia e deuteranopia (matrici Machado-Oliveira-Fernandes 2009) la
+  // porpora cadeva a una distanza RGB di soli ~20 punti da GREEN sotto
+  // deuteranopia (~41 sotto protanopia) — praticamente indistinguibile.
+  // L'arancio porta la distanza minima tra tutte le coppie a 61-75 punti
+  // in entrambe le simulazioni (task 5.2, passata di accessibilità).
+  JUST_AFTER: "#e69f00",
 };
 
 export const PIT_CONTEXT_LABELS: Record<PitContext, string> = {
@@ -49,6 +55,33 @@ export const NEUTRALIZATION_BAND_COLORS = {
 export const HIGHLIGHT_COLOR = "#f8fafc";
 export const DEFAULT_LINE_COLOR = "#4b5563";
 
+// Accento del dominio "neutralizzazione" (bandiera gialla): testo delle
+// bande SC/VSC, intestazioni di evento, linee di riferimento. Non è
+// un'etichetta di pit né un esito — è un terzo significato ("qui c'è un
+// evento/riferimento"), tenuto volutamente fuori da PIT_CONTEXT_COLORS e
+// OUTCOME_COLORS. Un'unica costante invece di "#eab308" ripetuto a mano in
+// ogni vista (task 5.2, passata di qualità).
+export const NEUTRALIZATION_ACCENT_COLOR = "#eab308";
+
+// Colore delle tappe di racconto (task 5.1): marcatori numerati sulla race
+// trace e stato attivo nel pannello. Riusa il rosso di brand (--racing-red
+// in globals.css) invece di un'altra tinta ad hoc, per restare coerente
+// con l'identità visiva del sito fuori dai grafici D3.
+export const STORY_ACCENT_COLOR = "#e10600";
+
+// Testo delle etichette dentro gli SVG: due soli livelli, non i tanti grigi
+// leggermente diversi che si erano accumulati vista per vista.
+export const TEXT_MUTED_COLOR = "#9ca3af"; // etichette secondarie (nomi pilota non evidenziati, assi)
+export const TEXT_PRIMARY_COLOR = "#e5e7eb"; // valori/numeri in evidenza su sfondo scuro
+export const CONTRAST_TEXT_COLOR = "#0a0a0a"; // testo scuro sopra un marker/cella colorata chiara
+export const WHITE_TEXT_COLOR = "#ffffff"; // testo chiaro sopra un accento pieno e scuro (es. STORY_ACCENT_COLOR)
+
+// Riempimento "assente/non applicabile": stessa tinta di OUTCOME_COLORS.NEUTRAL
+// qui sotto, ma usata anche fuori dalla matrice della lotteria (es. la mezza
+// riga di "stesso box, fortuna diversa" quando un pilota non si è fermato) —
+// un'unica costante invece di ripetere "#334155" a mano.
+export const MUTED_FILL_COLOR = "#334155";
+
 // Esiti della "matrice della lotteria" (vista 4, sezione 5.5 della
 // specifica). Palette distinta da quella dei contesti pit sopra (schema
 // diverso, appare in una vista diversa), ma con la stessa filosofia:
@@ -66,7 +99,7 @@ export const OUTCOME_COLORS: Record<PitOutcome, string> = {
   FULL_PRICE: "#d55e00", // vermiglio: fregato, ha pagato prezzo pieno poco prima (= JUST_BEFORE)
   LOCKED_OUT: "#f0e442", // giallo: escluso dalla finestra (gomme fresche o traffico)
   NOT_NEEDED: "#64748b", // grigio medio: non gli serviva fermarsi
-  NEUTRAL: "#334155", // grigio scuro: nessuna delle precedenti, quasi "assente"
+  NEUTRAL: MUTED_FILL_COLOR, // grigio scuro: nessuna delle precedenti, quasi "assente"
 };
 
 export const OUTCOME_LABELS: Record<PitOutcome, string> = {

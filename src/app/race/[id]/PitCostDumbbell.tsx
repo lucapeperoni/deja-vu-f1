@@ -13,9 +13,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
-import { pitContextColor, HIGHLIGHT_COLOR } from "@/lib/colors";
+import { pitContextColor, HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR, TEXT_PRIMARY_COLOR } from "@/lib/colors";
 import type { RaceData } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
+import ChartTooltip from "@/components/ChartTooltip";
 
 interface Props {
   raceData: RaceData;
@@ -134,7 +135,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
       .attr("x2", xScale(0))
       .attr("y1", MARGIN.top)
       .attr("y2", MARGIN.top + innerHeight)
-      .attr("stroke", "#4b5563")
+      .attr("stroke", DEFAULT_LINE_COLOR)
       .attr("stroke-width", 1);
 
     const barsGroup = svg.select<SVGGElement>(".bars-group");
@@ -154,7 +155,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
           g.append("text")
             .attr("class", "pit-label")
             .attr("dominant-baseline", "middle")
-            .attr("font-size", 10);
+            .attr("font-size", 11);
           return g;
         },
         (update) => update,
@@ -228,7 +229,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
     svg
       .select<SVGGElement>(".bars-group")
       .selectAll<SVGTextElement, PitDatum>("text.pit-label")
-      .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#cbd5e1"))
+      .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_PRIMARY_COLOR))
       .attr("font-weight", (d) => (d.driverId === highlightedDriverId ? 700 : 400));
     // visiblePits in dipendenza solo per ridipingere l'evidenziazione dopo
     // un redraw strutturale (nuovo brush): il ricalcolo vero e proprio lo
@@ -256,7 +257,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
           <svg
             ref={svgRef}
             viewBox={`0 0 ${WIDTH} ${height}`}
-            width={WIDTH}
+            width="100%"
             height={height}
             role="img"
             aria-label={`Sconti dei pit stop di ${raceData.race.name} ${raceData.race.year}`}
@@ -264,10 +265,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
         </div>
       )}
       {tooltip && (
-        <div
-          className="pointer-events-none absolute z-50 rounded-md border border-white/20 bg-black/90 px-3 py-2 text-xs text-white shadow-xl"
-          style={{ left: tooltip.x + 12, top: tooltip.y + MARGIN.top }}
-        >
+        <ChartTooltip x={tooltip.x} y={tooltip.y + MARGIN.top + 10}>
           <div className="font-bold">
             {tooltip.datum.driverId} · giro {tooltip.datum.lap}
           </div>
@@ -281,7 +279,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
           <div className="text-neutral-gray mt-1">
             posizione {tooltip.datum.posBefore ?? "n/d"} → {tooltip.datum.posAfter ?? "n/d"}
           </div>
-        </div>
+        </ChartTooltip>
       )}
     </div>
   );

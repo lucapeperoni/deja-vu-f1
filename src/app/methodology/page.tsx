@@ -4,8 +4,14 @@ import Link from "next/link";
 import {
   PIT_CONTEXT_LEGEND,
   PIT_CONTEXT_LABELS,
+  PIT_CONTEXT_COLORS,
   OUTCOME_LEGEND,
   OUTCOME_LABELS,
+  NEUTRALIZATION_ACCENT_COLOR,
+  MUTED_FILL_COLOR,
+  TEXT_MUTED_COLOR,
+  TEXT_PRIMARY_COLOR,
+  HIGHLIGHT_COLOR,
 } from "@/lib/colors";
 
 // Pagina /methodology (docs/PROGETTAZIONE.md, sezioni 5 e 10): spiega, per
@@ -67,11 +73,11 @@ function PitCostDiagram() {
         x2={chartWidth + 20}
         y1={baseY - baselineHeight}
         y2={baseY - baselineHeight}
-        stroke="#eab308"
+        stroke={NEUTRALIZATION_ACCENT_COLOR}
         strokeWidth={1}
         strokeDasharray="5 4"
       />
-      <text x={20} y={baseY - baselineHeight - 8} fontSize={11} fill="#eab308">
+      <text x={20} y={baseY - baselineHeight - 8} fontSize={11} fill={NEUTRALIZATION_ACCENT_COLOR}>
         riferimento (baseline): quanto dura di solito un giro qui
       </text>
 
@@ -86,10 +92,10 @@ function PitCostDiagram() {
               y={y}
               width={barWidth}
               height={lap.height}
-              fill={isPit ? "#0072b2" : "#334155"}
+              fill={isPit ? PIT_CONTEXT_COLORS.UNDER_SC : MUTED_FILL_COLOR}
               rx={3}
             />
-            <text x={x + barWidth / 2} y={baseY + 18} fontSize={10} textAnchor="middle" fill="#9ca3af">
+            <text x={x + barWidth / 2} y={baseY + 18} fontSize={11} textAnchor="middle" fill={TEXT_MUTED_COLOR}>
               {lap.label}
             </text>
             {isPit && (
@@ -100,14 +106,14 @@ function PitCostDiagram() {
                   x2={x + barWidth + 6}
                   y1={y}
                   y2={baseY - baselineHeight}
-                  stroke="#f8fafc"
+                  stroke={HIGHLIGHT_COLOR}
                   strokeWidth={1}
                 />
                 <text
                   x={x + barWidth + 10}
                   y={(y + (baseY - baselineHeight)) / 2 + 4}
-                  fontSize={10}
-                  fill="#f8fafc"
+                  fontSize={11}
+                  fill={HIGHLIGHT_COLOR}
                 >
                   Δ
                 </text>
@@ -117,7 +123,7 @@ function PitCostDiagram() {
         );
       })}
 
-      <text x={20} y={246} fontSize={12} fill="#e5e7eb">
+      <text x={20} y={246} fontSize={12} fill={TEXT_PRIMARY_COLOR}>
         costo effettivo del pit = Δ(giro di entrata) + Δ(giro di uscita)
       </text>
     </svg>

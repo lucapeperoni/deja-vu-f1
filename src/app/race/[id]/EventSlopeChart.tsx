@@ -25,7 +25,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as d3 from "d3";
 import clsx from "clsx";
-import { HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR, OUTCOME_COLORS } from "@/lib/colors";
+import { HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR, OUTCOME_COLORS, NEUTRALIZATION_ACCENT_COLOR, TEXT_MUTED_COLOR } from "@/lib/colors";
 import type { RaceData, RaceNeutralization } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
 
@@ -108,7 +108,7 @@ export default function EventSlopeChart({ raceData }: Props) {
       .selectAll<SVGTextElement, string>("text.header")
       .data(["Al deployment", `+${POST_EVENT_OFFSET} giri dopo la fine`])
       .join(
-        (enter) => enter.append("text").attr("class", "header").attr("font-size", 10).attr("fill", "#eab308"),
+        (enter) => enter.append("text").attr("class", "header").attr("font-size", 11).attr("fill", NEUTRALIZATION_ACCENT_COLOR),
         (update) => update,
         (exit) => exit.remove()
       )
@@ -169,7 +169,7 @@ export default function EventSlopeChart({ raceData }: Props) {
             enter
               .append("text")
               .attr("class", "label")
-              .attr("font-size", 10)
+              .attr("font-size", 11)
               .attr("dominant-baseline", "middle")
               .attr("text-anchor", anchor)
               .style("cursor", "pointer")
@@ -217,7 +217,7 @@ export default function EventSlopeChart({ raceData }: Props) {
       svg
         .select<SVGGElement>(`.${cls}`)
         .selectAll<SVGTextElement, SlopeDatum>("text.label")
-        .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#9ca3af"))
+        .attr("fill", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_MUTED_COLOR))
         .attr("font-weight", (d) => (d.driverId === highlightedDriverId ? 700 : 400));
     }
     // selectedEvent/slopeData in dipendenza solo per ridipingere

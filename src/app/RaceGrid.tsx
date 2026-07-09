@@ -62,12 +62,12 @@ export default function RaceGrid({ races, caseRaceIds }: Props) {
 
               <div className="flex gap-4 border-t border-graphite/50 pt-4">
                 <div>
-                  <div className="text-[10px] text-neutral-gray uppercase tracking-widest">Neutralizzazioni</div>
+                  <div className="text-[11px] text-neutral-gray uppercase tracking-widest">Neutralizzazioni</div>
                   <div className="text-white font-condensed font-bold">{race.totalNeutralizations}</div>
                 </div>
                 {isCase && (
                   <div>
-                    <div className="text-[10px] text-yellow-500 uppercase tracking-widest">Gara studio</div>
+                    <div className="text-[11px] text-yellow-500 uppercase tracking-widest">Gara studio</div>
                     <div className="text-yellow-500 font-condensed font-bold">Raccontata in relazione</div>
                   </div>
                 )}

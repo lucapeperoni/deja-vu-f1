@@ -80,7 +80,7 @@ export default function StoryPanel({ story }: Props) {
                       {step.driverIds.map((id) => (
                         <span
                           key={id}
-                          className="text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-graphite text-neutral-gray"
+                          className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-graphite text-neutral-gray"
                         >
                           {id}
                         </span>

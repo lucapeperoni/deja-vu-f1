@@ -18,7 +18,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { useRouter } from "next/navigation";
-import { pitContextColor, PIT_CONTEXT_LEGEND, HIGHLIGHT_COLOR } from "@/lib/colors";
+import { pitContextColor, PIT_CONTEXT_LEGEND, HIGHLIGHT_COLOR, NEUTRALIZATION_ACCENT_COLOR } from "@/lib/colors";
+import ChartTooltip from "@/components/ChartTooltip";
 
 export interface PitPoint {
   key: string;
@@ -135,7 +136,7 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
       .attr("x2", refX)
       .attr("y1", MARGIN.top)
       .attr("y2", MARGIN.top + innerHeight)
-      .attr("stroke", "#eab308")
+      .attr("stroke", NEUTRALIZATION_ACCENT_COLOR)
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "4 4")
       .attr("opacity", 0.6);
@@ -146,8 +147,8 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
       .attr("x", refX)
       .attr("y", MARGIN.top - 8)
       .attr("text-anchor", "middle")
-      .attr("font-size", 10)
-      .attr("fill", "#eab308")
+      .attr("font-size", 11)
+      .attr("fill", NEUTRALIZATION_ACCENT_COLOR)
       .text(`prezzo di listino · ${listinoTipico.toFixed(1)}s`);
 
     svg
@@ -203,10 +204,7 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
           aria-label="Distribuzione del costo effettivo di tutti i pit stop 2023-2024"
         />
         {tooltip && (
-          <div
-            className="pointer-events-none absolute z-50 rounded-md border border-white/20 bg-black/90 px-3 py-2 text-xs text-white shadow-xl"
-            style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
-          >
+          <ChartTooltip x={tooltip.x} y={tooltip.y}>
             <div className="font-bold">
               {tooltip.point.driverCode} · {tooltip.point.raceName} {tooltip.point.year}
             </div>
@@ -218,7 +216,7 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
             </div>
             <div className="text-neutral-gray">costo effettivo {tooltip.point.effectiveLoss.toFixed(1)}s</div>
             <div className="text-racing-red mt-1">Clic per aprire la gara →</div>
-          </div>
+          </ChartTooltip>
         )}
       </div>
       <div className="flex gap-4 flex-wrap mt-4">

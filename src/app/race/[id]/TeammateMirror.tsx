@@ -42,9 +42,15 @@ import {
   OUTCOME_LABELS,
   PIT_CONTEXT_LABELS,
   HIGHLIGHT_COLOR,
+  DEFAULT_LINE_COLOR,
+  NEUTRALIZATION_ACCENT_COLOR,
+  TEXT_MUTED_COLOR,
+  TEXT_PRIMARY_COLOR,
+  MUTED_FILL_COLOR,
 } from "@/lib/colors";
 import type { RaceData, RaceDriver, RaceNeutralization, RacePit } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
+import ChartTooltip from "@/components/ChartTooltip";
 
 type ColorMode = "context" | "team";
 
@@ -185,7 +191,7 @@ export default function TeammateMirror({ raceData }: Props) {
 
     function fillFor(row: MirrorRow, side: MirrorSide): string {
       if (colorMode === "team") return teamColor(row.team);
-      if (!side.pit) return "#334155";
+      if (!side.pit) return MUTED_FILL_COLOR;
       return pitContextColor(side.pit.context);
     }
 
@@ -207,19 +213,19 @@ export default function TeammateMirror({ raceData }: Props) {
             .attr("transform", (_d, i) => `translate(0, ${MARGIN.top + i * (ROW_HEIGHT + ROW_GAP)})`);
 
           g.append("text").attr("class", "team-label").attr("text-anchor", "middle").attr("font-size", 11);
-          g.append("line").attr("class", "center-line").attr("stroke", "#4b5563").attr("stroke-width", 1);
+          g.append("line").attr("class", "center-line").attr("stroke", DEFAULT_LINE_COLOR).attr("stroke-width", 1);
 
           for (const side of ["left", "right"] as const) {
             g.append("text").attr("class", `${side}-driver-label`).attr("font-size", 12).attr("font-weight", 700);
-            g.append("text").attr("class", `${side}-pit-label`).attr("font-size", 10).attr("fill", "#9ca3af");
+            g.append("text").attr("class", `${side}-pit-label`).attr("font-size", 11).attr("fill", TEXT_MUTED_COLOR);
             g.append("rect").attr("class", `${side}-bar`).attr("height", BAR_HEIGHT).attr("rx", 2);
-            g.append("text").attr("class", `${side}-discount-label`).attr("font-size", 10).attr("font-weight", 700);
+            g.append("text").attr("class", `${side}-discount-label`).attr("font-size", 11).attr("font-weight", 700);
             g.append("circle").attr("class", `${side}-outcome-dot`).attr("r", 4);
-            g.append("text").attr("class", `${side}-outcome-label`).attr("font-size", 10);
+            g.append("text").attr("class", `${side}-outcome-label`).attr("font-size", 11);
           }
 
-          g.append("line").attr("class", "stack-connector").attr("stroke", "#eab308").attr("stroke-width", 2).style("opacity", 0);
-          g.append("text").attr("class", "stack-label").attr("font-size", 9).attr("fill", "#eab308").attr("text-anchor", "middle");
+          g.append("line").attr("class", "stack-connector").attr("stroke", NEUTRALIZATION_ACCENT_COLOR).attr("stroke-width", 2).style("opacity", 0);
+          g.append("text").attr("class", "stack-label").attr("font-size", 11).attr("fill", NEUTRALIZATION_ACCENT_COLOR).attr("text-anchor", "middle");
 
           return g;
         },
@@ -237,7 +243,7 @@ export default function TeammateMirror({ raceData }: Props) {
       .select<SVGTextElement>("text.team-label")
       .attr("x", centerX)
       .attr("y", 12)
-      .attr("fill", "#eab308")
+      .attr("fill", NEUTRALIZATION_ACCENT_COLOR)
       .text((d) => `${teamLabel(d.team)} · ${d.event.type} giro ${d.event.startLap}-${d.event.endLap}`);
 
     rowsSel
@@ -303,7 +309,7 @@ export default function TeammateMirror({ raceData }: Props) {
         .select<SVGTextElement>(`text.${side}-discount-label`)
         .attr("y", barY + BAR_HEIGHT / 2 + 3)
         .attr("text-anchor", isLeft ? "end" : "start")
-        .attr("fill", "#cbd5e1")
+        .attr("fill", TEXT_PRIMARY_COLOR)
         .transition()
         .duration(350)
         .attr("x", (d) => {
@@ -321,14 +327,14 @@ export default function TeammateMirror({ raceData }: Props) {
         .select<SVGCircleElement>(`circle.${side}-outcome-dot`)
         .attr("cx", isLeft ? driverX - 4 : driverX + 4)
         .attr("cy", barY + BAR_HEIGHT + 14)
-        .attr("fill", (d) => (d[side].outcomeCategory ? outcomeColor(d[side].outcomeCategory as string) : "#334155"));
+        .attr("fill", (d) => (d[side].outcomeCategory ? outcomeColor(d[side].outcomeCategory as string) : MUTED_FILL_COLOR));
 
       rowsSel
         .select<SVGTextElement>(`text.${side}-outcome-label`)
         .attr("x", isLeft ? driverX - 10 : driverX + 10)
         .attr("y", barY + BAR_HEIGHT + 17)
         .attr("text-anchor", anchor)
-        .attr("fill", "#9ca3af")
+        .attr("fill", TEXT_MUTED_COLOR)
         .text((d) => {
           const s = d[side];
           const outcomeText = s.outcomeCategory
@@ -368,7 +374,7 @@ export default function TeammateMirror({ raceData }: Props) {
       svg
         .select<SVGGElement>(".rows-group")
         .selectAll<SVGTextElement, MirrorRow>(`text.${side}-driver-label`)
-        .attr("fill", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : "#e5e7eb"));
+        .attr("fill", (d) => (d[side].driverId === highlightedDriverId ? HIGHLIGHT_COLOR : TEXT_PRIMARY_COLOR));
 
       svg
         .select<SVGGElement>(".rows-group")
@@ -431,10 +437,7 @@ export default function TeammateMirror({ raceData }: Props) {
       </div>
 
       {tooltip && (
-        <div
-          className="pointer-events-none absolute z-50 rounded-md border border-white/20 bg-black/90 px-3 py-2 text-xs text-white shadow-xl max-w-[240px]"
-          style={{ left: tooltip.x + 12, top: tooltip.y + MARGIN.top }}
-        >
+        <ChartTooltip x={tooltip.x} y={tooltip.y + MARGIN.top + 10} maxWidthPx={240}>
           <div className="font-bold">{tooltip.side.driverId}</div>
           <div className="text-neutral-gray mt-1">{pitLabel(tooltip.side)}</div>
           {tooltip.side.pit?.discount != null && (
@@ -448,7 +451,7 @@ export default function TeammateMirror({ raceData }: Props) {
               {OUTCOME_LABELS[tooltip.side.outcomeCategory as keyof typeof OUTCOME_LABELS] ?? tooltip.side.outcomeCategory}
             </div>
           )}
-        </div>
+        </ChartTooltip>
       )}
     </div>
   );
