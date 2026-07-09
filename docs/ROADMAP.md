@@ -248,13 +248,21 @@ necessari per fidarsi dei dati):
    dalla posizione) i giri sopra 240 secondi — soglia verificata sui dati,
    corrisponde esattamente a 8 gare con bandiere rosse reali documentate
    nel 2023-2024.
-3. **Limite residuo, NON risolto, dichiarato**: il 9,2% dei pit stop (153
-   su 1658) mostra ancora sconti estremi, concentrati in poche gare con
-   pit di massa sotto SC o partenze sotto neutralizzazione (il riferimento
-   "di gruppo" introdotto al task 1.2 si assottiglia o diventa fuorviante
-   in questi casi limite). Non inseguito oltre: da dichiarare in
-   `/methodology` (task 4.2). Dettaglio completo, con i numeri, in
-   `docs/PROGETTAZIONE.md` §5.1bis.
+3. **Limite residuo, poi RISOLTO controllando la home (task 3.6)**: il
+   9,2% dei pit stop mostrava ancora sconti estremi, concentrati in poche
+   gare con pit di massa sotto SC o partenze sotto neutralizzazione (il
+   riferimento "di gruppo" introdotto al task 1.2 si assottiglia o diventa
+   fuorviante in questi casi limite). Inizialmente non inseguito oltre;
+   verificando poi il beeswarm della home si è visto che la mediana dei
+   pit sotto Safety Car (26,0s) era più ALTA di quella in verde (22,5s) —
+   il contrario della tesi del progetto, causato proprio da questo limite.
+   Corretto in `effective_pit_loss.py`: quando manca il riferimento di
+   gruppo, il pit si scarta (non si calcola più sulla baseline personale)
+   e viene marcato a bassa confidenza (`missing_field_reference` /
+   `lowConfidence` nei JSON). 110 pit su 1737 scartati per questo motivo;
+   dopo la correzione la mediana sotto SC scende a 15,5s, sotto il
+   prezzo di listino, come atteso. Pipeline rieseguita su tutte le 46 gare.
+   Dettaglio completo, con i numeri, in `docs/PROGETTAZIONE.md` §5.1bis.
 4. Ripuliti 22 file JSON orfani della vecchia pipeline rotta
    (`public/data/races/<session_key>.json`, sostituiti dai nuovi
    `<anno>-<circuitRef>.json`).
@@ -519,14 +527,16 @@ riferimenti rotti.
 
 Dipende da: 2.1
 
-- [ ] 2.1 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok
-- [ ] Le due nuvole (pit verdi vs pit scontati) sono visibilmente separate
-      → se NON lo sono, segnalarlo ad A: è un problema di dati
-- [ ] Click su un punto porta alla pagina della sua gara
-- [ ] Griglia delle gare presente, gare-caso in evidenza
-- [ ] Diff letto, commit e push
+- [x] 2.1 completato
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok
+- [x] Le due nuvole (pit verdi vs pit scontati) sono visibilmente separate
+      → NON lo erano alla prima verifica: segnalato, era un problema di
+      dati reale (non della vista), risolto — vedi punto 3 dell'esito del
+      task 2.1 e `docs/PROGETTAZIONE.md` §5.1bis
+- [x] Click su un punto porta alla pagina della sua gara
+- [x] Griglia delle gare presente, gare-caso in evidenza
+- [x] Diff letto, commit e push
 
 **Prompt da copiare:**
 

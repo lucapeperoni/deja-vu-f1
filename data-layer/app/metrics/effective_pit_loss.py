@@ -66,6 +66,7 @@ class PitCostImpact(BaseModel):
     discount_seconds: Optional[float] = None
     double_stack: bool = False
     low_confidence: bool = False
+    missing_field_reference: bool = False
 
 
 def _context_for_window_type(window_type: str) -> str:
@@ -220,17 +221,29 @@ def _lap_reference_ms(
     personal_baseline_ms: float,
     neutralized_laps: Set[int],
     field_reference_by_lap: Dict[int, float],
-) -> float:
+) -> Tuple[Optional[float], bool]:
     """
-    Termine di paragone per un singolo giro: il ritmo del gruppo in quel
-    giro se il giro è sotto neutralizzazione (e il riferimento è
-    disponibile), altrimenti la baseline personale del pilota.
+    Termine di paragone per un singolo giro, e se il giro va scartato.
+
+    Se il giro è sotto neutralizzazione, il riferimento DEVE essere il
+    ritmo del gruppo in quel giro (vedi il docstring del modulo): usare la
+    baseline personale del pilota confronterebbe un giro rallentato dalla
+    SC/VSC con il suo ritmo normale, gonfiando il costo a dismisura — è
+    esattamente l'errore che questo modulo esiste per evitare.
+
+    Quando quasi tutto il gruppo si ferma nella stessa finestra (tipico:
+    è proprio il momento in cui conviene farlo), restano troppo pochi
+    piloti "puliti" per calcolare un riferimento di gruppo affidabile
+    (vedi compute_field_reference_by_lap). In quel caso il giro non ha un
+    riferimento utilizzabile: va scartato (secondo valore True), non
+    ripiegato sulla baseline personale.
     """
     if lap in neutralized_laps:
         field_ref = field_reference_by_lap.get(lap)
-        if field_ref is not None:
-            return field_ref
-    return personal_baseline_ms
+        if field_ref is None:
+            return None, True
+        return field_ref, False
+    return personal_baseline_ms, False
 
 
 def _effective_pit_loss_seconds(
@@ -239,7 +252,7 @@ def _effective_pit_loss_seconds(
     baseline_ms: Optional[float],
     neutralized_laps: Set[int],
     field_reference_by_lap: Dict[int, float],
-) -> Optional[float]:
+) -> Tuple[Optional[float], bool]:
     """
     costo effettivo = (giro entrata - riferimento) + (giro uscita - riferimento)
 
@@ -250,23 +263,34 @@ def _effective_pit_loss_seconds(
 
     Se il giro di uscita non esiste (es. pit stop nell'ultimo giro di
     gara), si usa la sola perdita sul giro di entrata.
+
+    Se il riferimento di gruppo necessario per il giro di entrata o di
+    uscita manca (vedi _lap_reference_ms), il pit va scartato: si
+    restituisce None invece di un costo calcolato su un confronto
+    inaffidabile, insieme al flag che segnala il motivo.
     """
     if baseline_ms is None:
-        return None
+        return None, False
 
     in_lap_ms = driver_lap_times_ms.get(pit_lap)
     if in_lap_ms is None:
-        return None
+        return None, False
 
-    in_ref_ms = _lap_reference_ms(pit_lap, baseline_ms, neutralized_laps, field_reference_by_lap)
+    in_ref_ms, in_missing = _lap_reference_ms(pit_lap, baseline_ms, neutralized_laps, field_reference_by_lap)
+    if in_missing:
+        return None, True
     loss_ms = in_lap_ms - in_ref_ms
 
     out_lap_ms = driver_lap_times_ms.get(pit_lap + 1)
     if out_lap_ms is not None:
-        out_ref_ms = _lap_reference_ms(pit_lap + 1, baseline_ms, neutralized_laps, field_reference_by_lap)
+        out_ref_ms, out_missing = _lap_reference_ms(
+            pit_lap + 1, baseline_ms, neutralized_laps, field_reference_by_lap
+        )
+        if out_missing:
+            return None, True
         loss_ms += out_lap_ms - out_ref_ms
 
-    return loss_ms / 1000.0
+    return loss_ms / 1000.0, False
 
 
 def calculate_pit_cost(
@@ -340,7 +364,7 @@ def calculate_pit_cost(
             pit_lap,
             total_laps,
         )
-        effective_loss = _effective_pit_loss_seconds(
+        effective_loss, missing_field_reference = _effective_pit_loss_seconds(
             driver_lap_times, pit_lap, baseline_ms, neutralized_laps, field_reference_by_lap
         )
         context, event_id = classify_pit_context(pit_lap, windows)
@@ -361,6 +385,7 @@ def calculate_pit_cost(
                 baseline_lap_ms=baseline_ms,
                 effective_pit_loss_seconds=effective_loss,
                 double_stack=double_stack,
+                missing_field_reference=missing_field_reference,
             )
         )
 
@@ -375,7 +400,9 @@ def calculate_pit_cost(
 
     for r in results:
         r.nominal_pit_loss_seconds = nominal_pit_loss
-        r.low_confidence = low_confidence
+        # bassa confidenza per l'intera gara (pochi pit in verde) OPPURE per
+        # questo singolo pit (costo scartato per riferimento di gruppo mancante)
+        r.low_confidence = low_confidence or r.missing_field_reference
         if nominal_pit_loss is not None and r.effective_pit_loss_seconds is not None:
             r.discount_seconds = nominal_pit_loss - r.effective_pit_loss_seconds
 

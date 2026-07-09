@@ -149,6 +149,13 @@ def _race_scenario():
         {"driver_id": "77", "lap": 5, "milliseconds": 100_000},
     ]
 
+    # Driver "5": non si ferma mai, resta "pulito" ai giri 6-7. Serve a dare
+    # al riferimento di gruppo sotto VSC i FIELD_REFERENCE_MIN_SAMPLES=3
+    # piloti richiesti (1, 77, 5): senza questo terzo pilota il test
+    # eserciterebbe per sbaglio il percorso "riferimento mancante" invece
+    # del normale calcolo col ritmo di gruppo.
+    laps += _clean_laps("5", 90_000)
+
     pit_stops = [
         {"driver_id": "1", "lap": 2},
         {"driver_id": "44", "lap": 6},
@@ -323,3 +330,57 @@ def test_calculate_pit_cost_under_sc_uses_field_pace_not_personal_baseline():
     # di listino, come atteso dalla sezione 5.3 della specifica
     assert by_driver["A"].discount_seconds == 17.0
     assert by_driver["A"].discount_seconds > 0
+
+
+def test_calculate_pit_cost_discards_pit_when_field_reference_missing():
+    """
+    Bug reale trovato sui dati (Qatar 2024, SC ai giri 35-36): quando quasi
+    tutto il gruppo si ferma nella stessa finestra di neutralizzazione (e'
+    normale che succeda, e' proprio il momento conveniente per farlo),
+    restano troppo pochi piloti "puliti" per calcolare un riferimento di
+    gruppo affidabile. Il vecchio codice ripiegava sulla baseline personale
+    del pilota (il suo ritmo verde), confrontando un giro rallentato dalla
+    SC con un ritmo normale e gonfiando il costo a centinaia di secondi.
+
+    Qui A, B, C si fermano tutti al giro 6 (dentro la SC 6-7): a quel giro
+    restano zero piloti "in pista" per un riferimento di gruppo. Il pit
+    deve essere scartato (None), non calcolato con la baseline personale.
+    """
+    neutralizations = [{"event_id": "sc-1", "type": "SC", "start_lap": 6, "end_lap": 7}]
+
+    laps = []
+    for driver in ["A", "B", "C"]:
+        laps += _clean_laps(driver, 90_000, laps=[1, 2, 3, 4, 5, 8, 9, 10])
+        laps += [
+            {"driver_id": driver, "lap": 6, "milliseconds": 140_000},
+            {"driver_id": driver, "lap": 7, "milliseconds": 135_000},
+        ]
+
+    # E: pit in verde, lontano dalla SC, serve da prezzo di listino
+    laps += [
+        {"driver_id": "E", "lap": 1, "milliseconds": 112_000},
+        {"driver_id": "E", "lap": 2, "milliseconds": 100_000},
+    ]
+    laps += _clean_laps("E", 90_000, laps=[3, 4, 5, 6, 7, 8, 9, 10])
+
+    pit_stops = [
+        {"driver_id": "A", "lap": 6},
+        {"driver_id": "B", "lap": 6},
+        {"driver_id": "C", "lap": 6},
+        {"driver_id": "E", "lap": 1},
+    ]
+
+    results = calculate_pit_cost(laps, pit_stops, neutralizations)
+    by_driver = {r.driver_id: r for r in results}
+
+    assert by_driver["A"].context == CONTEXT_UNDER_SC
+    # scartato, non calcolato sulla baseline personale (che darebbe
+    # (140000-90000)+(135000-90000) = 95000ms, un costo assurdo)
+    assert by_driver["A"].effective_pit_loss_seconds is None
+    assert by_driver["A"].discount_seconds is None
+    assert by_driver["A"].missing_field_reference is True
+    assert by_driver["A"].low_confidence is True
+
+    # il pit in verde di E non e' toccato: nessun riferimento di gruppo in gioco
+    assert by_driver["E"].effective_pit_loss_seconds == 32.0
+    assert by_driver["E"].missing_field_reference is False

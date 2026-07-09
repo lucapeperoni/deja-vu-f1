@@ -383,6 +383,7 @@ def build_race_json(ergast: ErgastData, race_row: Dict, windows: List[Dict]) -> 
                     "posAfter3": position_at(driver_id, r.lap + 1 + POST_EVENT_OUTCOME_OFFSET),
                     "posAfter5": position_at(driver_id, r.lap + 1 + 5),
                     "doubleStack": r.double_stack,
+                    "lowConfidence": r.low_confidence,
                 }
             )
 
@@ -529,6 +530,7 @@ async def process_all_races():
                         "effectiveLoss": pit["effectiveLoss"],
                         "discount": pit["discount"],
                         "doubleStack": pit["doubleStack"],
+                        "lowConfidence": pit["lowConfidence"],
                     }
                 )
             for outcome in driver["outcomes"]:

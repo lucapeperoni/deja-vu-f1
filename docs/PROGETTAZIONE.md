@@ -149,28 +149,44 @@ dichiarare in `/methodology`: le gare con bandiera rossa non sono
 modellate come evento a sé, i giri coinvolti sono trattati come dati
 mancanti.
 
-**Un residuo di sconti estremi in gare "caotiche" — NON RISOLTO, limite
-dichiarato.** Anche dopo il fix sopra, il 9,2% dei pit stop (153 su 1658
-nell'intero campione 2023-2024) mostra ancora sconti oltre ±40 secondi,
-concentrati fortemente in poche gare: Qatar 2024 (46 casi, la gara con la
-Safety Car prolungata per le forature da usura), Interlagos 2023 e 2024,
-Red Bull Ring 2023. Causa individuata: il riferimento "di gruppo"
-introdotto in §5.1 per i giri sotto neutralizzazione funziona bene quando
-ci sono abbastanza piloti che non si fermano in quel giro; ma quando
-**quasi tutti si fermano insieme** (pit di massa sotto una SC pesante) o
-il pit cade **appena dopo un restart/la partenza** (il gruppo è ancora
-compatto e lento anche se tecnicamente in condizioni "verdi"), il campione
-di riferimento si assottiglia o diventa fuorviante.
+**Un residuo di sconti estremi in gare "caotiche" — RISOLTO (verificando la
+home, task 3.6): i pit senza riferimento affidabile ora si scartano invece
+di calcolarsi male.** Il problema era sempre lo stesso individuato sopra:
+il riferimento "di gruppo" per i giri sotto neutralizzazione richiede
+almeno `FIELD_REFERENCE_MIN_SAMPLES` (3) piloti che in quel giro non si
+sono fermati. Quando **quasi tutti si fermano insieme** (pit di massa
+sotto una SC pesante — è proprio il momento in cui conviene farlo) restano
+meno di 3 piloti "puliti", e il vecchio codice ripiegava silenziosamente
+sulla baseline personale del pilota: esattamente l'errore che il
+riferimento di gruppo esiste per evitare, e che gonfiava il costo a
+centinaia di secondi (osservato: Qatar 2024, giri 35-36, 150-180s di
+"costo" per un pit stop).
 
-Non è un errore di calcolo, è un limite metodologico reale che riguarda una
-minoranza concentrata di casi (il restante 90,8% dei pit ha valori
-plausibili). Decisione presa: non inseguirlo oltre per ora. Va dichiarato
-in `/methodology` insieme alla VSC, e può anche diventare un punto di forza
-invece che un difetto — la matrice della lotteria (vista 4) e la
-distribuzione degli sconti (vista 6) sono pensate proprio per "find
-anomalies" (tassonomia di Amar, sezione 8): questi casi estremi possono
-essere evidenziati come le gare più interessanti da raccontare, purché
-etichettati come tali e non spacciati per il pattern tipico.
+Prova concreta trovata verificando la home (vista 6): su 42 finestre di
+neutralizzazione dell'intero campione, 5 avevano meno di 3 piloti liberi
+in almeno un giro: bastava a spiegare perché la mediana dei pit sotto SC
+(26,0s) risultava più ALTA di quella dei pit in verde (22,5s) — il
+contrario della tesi del progetto.
+
+Correzione applicata in `effective_pit_loss.py`: quando il riferimento di
+gruppo manca per un giro sotto neutralizzazione, il pit stop viene
+**scartato** (`effective_pit_loss_seconds = None`, `discount_seconds =
+None`) invece di calcolato sulla baseline personale; il nuovo campo
+`missing_field_reference` (propagato come `lowConfidence` nei JSON)
+segnala il perché. 110 pit stop su 1737 (6,3%, quasi tutti sotto Safety
+Car piena: 109/251, contro 1/82 sotto VSC — coerente con VSC che rallenta
+il gruppo molto meno) sono ora esclusi dal calcolo invece di avere un
+numero sbagliato. Dopo la correzione, la mediana sotto Safety Car scende a
+15,5s (sotto i 22,5s del verde, lo sconto atteso), quella sotto VSC resta
+vicina al verde (23,1s) — coerente col limite di granularità già
+dichiarato sopra (finestre VSC troppo brevi per allinearle bene al singolo
+giro).
+
+Non è più un limite "da dichiarare e basta": i numeri che restano nel
+grafico ora sono tutti calcolati in modo affidabile. Il limite di
+granularità della VSC (paragrafo precedente) resta invece dichiarato in
+`/methodology`, perché quello è un problema di risoluzione dei dati non
+risolvibile scartando pit stop.
 
 ### 5.2 Il prezzo di listino
 
