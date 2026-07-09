@@ -171,12 +171,12 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
       .attr("opacity", (d) => (hoveredContext && d.context !== hoveredContext ? 0.12 : 0.85))
       .on("pointerenter", function (event, d) {
         d3.select(this).attr("stroke", HIGHLIGHT_COLOR).attr("stroke-width", 1.5);
-        const [mx, my] = d3.pointer(event, svgRef.current);
-        setTooltip({ x: mx, y: my, point: d });
+        // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è un
+        // portal fixed su document.body, vedi ChartTooltip.
+        setTooltip({ x: event.clientX, y: event.clientY, point: d });
       })
       .on("pointermove", function (event, d) {
-        const [mx, my] = d3.pointer(event, svgRef.current);
-        setTooltip({ x: mx, y: my, point: d });
+        setTooltip({ x: event.clientX, y: event.clientY, point: d });
       })
       .on("pointerleave", function () {
         d3.select(this).attr("stroke", "none");
@@ -204,7 +204,7 @@ export default function PitStopBeeswarm({ points, listinoTipico }: Props) {
           aria-label="Distribuzione del costo effettivo di tutti i pit stop 2023-2024"
         />
         {tooltip && (
-          <ChartTooltip x={tooltip.x} y={tooltip.y}>
+          <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
             <div className="font-bold">
               {tooltip.point.driverCode} · {tooltip.point.raceName} {tooltip.point.year}
             </div>

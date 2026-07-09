@@ -530,13 +530,17 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
       .select<SVGRectElement>(".overlay")
       .on("pointermove.hover", function (event) {
         if (lockedRef.current) return;
+        // mx/my restano in spazio SVG: servono a nearestDriverAt per
+        // confrontarsi con xScale/yScale. Il tooltip invece usa le
+        // coordinate VIEWPORT (event.clientX/clientY): è un portal fixed
+        // su document.body, vedi ChartTooltip.
         const [mx, my] = d3.pointer(event, svgRef.current);
         const hit = nearestDriverAt(mx, my);
         if (hit) {
           setHoveredDriverId(hit.driver.id);
           setTooltip({
-            x: mx,
-            y: my,
+            x: event.clientX,
+            y: event.clientY,
             driverId: hit.driver.id,
             lap: hit.lap.l,
             gapLeader: hit.lap.gapLeader,
@@ -615,7 +619,7 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
           aria-label={`Race trace di ${raceData.race.name} ${raceData.race.year}`}
         />
         {tooltip && (
-          <ChartTooltip x={tooltip.x} y={tooltip.y}>
+          <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
             <div className="font-bold">{tooltip.driverId}</div>
             <div className="text-neutral-gray">giro {tooltip.lap}</div>
             <div>

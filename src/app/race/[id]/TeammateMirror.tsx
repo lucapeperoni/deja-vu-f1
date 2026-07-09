@@ -300,12 +300,12 @@ export default function TeammateMirror({ raceData }: Props) {
         .style("cursor", "pointer")
         .on("pointerenter", function (event, d) {
           if (!lockedRef.current) setHoveredDriverId(d[side].driverId);
-          const [mx, my] = d3.pointer(event, svgRef.current);
-          setTooltip({ x: mx, y: my, side: d[side], row: d });
+          // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è
+          // un portal fixed su document.body, vedi ChartTooltip.
+          setTooltip({ x: event.clientX, y: event.clientY, side: d[side], row: d });
         })
         .on("pointermove", function (event, d) {
-          const [mx, my] = d3.pointer(event, svgRef.current);
-          setTooltip({ x: mx, y: my, side: d[side], row: d });
+          setTooltip({ x: event.clientX, y: event.clientY, side: d[side], row: d });
         })
         .on("pointerleave", () => {
           if (!lockedRef.current) setHoveredDriverId(null);
@@ -450,7 +450,7 @@ export default function TeammateMirror({ raceData }: Props) {
       </div>
 
       {tooltip && (
-        <ChartTooltip x={tooltip.x} y={tooltip.y + MARGIN.top + 10} maxWidthPx={240}>
+        <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={240} onDismiss={() => setTooltip(null)}>
           <div className="font-bold">{tooltip.side.driverId}</div>
           <div className="text-neutral-gray mt-1">{pitLabel(tooltip.side)}</div>
           {tooltip.side.pit?.discount != null && (

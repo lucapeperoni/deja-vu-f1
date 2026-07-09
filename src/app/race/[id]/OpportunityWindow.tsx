@@ -289,10 +289,12 @@ export default function OpportunityWindow({ raceData }: Props) {
       })
       .on("pointerenter", function (event, d) {
         if (!lockedRef.current) setHoveredDriverId(d.driver.id);
-        const [mx, my] = d3.pointer(event, svgRef.current);
+        // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è un
+        // portal fixed su document.body, vedi ChartTooltip — non risente
+        // dell'overflow-x-auto del contenitore della matrice.
         setTooltip({
-          x: mx,
-          y: my,
+          x: event.clientX,
+          y: event.clientY,
           driverLabel: d.driver.id,
           eventLabel: `${d.event.type} · giri ${d.event.startLap}-${d.event.endLap}`,
           category: d.category,
@@ -365,7 +367,7 @@ export default function OpportunityWindow({ raceData }: Props) {
           aria-label={`Matrice degli esiti pilota per evento di ${raceData.race.name} ${raceData.race.year}`}
         />
         {tooltip && (
-          <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={240}>
+          <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={240} onDismiss={() => setTooltip(null)}>
             <div className="font-bold">
               {tooltip.driverLabel} · {tooltip.eventLabel}
             </div>

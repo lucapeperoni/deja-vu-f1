@@ -176,8 +176,10 @@ export default function PitCostDumbbell({ raceData }: Props) {
         if (!lockedRef.current) setHoveredDriverId(null);
       })
       .on("pointermove", function (event, d) {
-        const [mx, my] = d3.pointer(event, svgRef.current);
-        setTooltip({ x: mx, y: my, datum: d });
+        // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è un
+        // portal fixed su document.body, vedi ChartTooltip — non risente
+        // né della scala dell'SVG né dell'overflow del contenitore.
+        setTooltip({ x: event.clientX, y: event.clientY, datum: d });
       })
       .on("click", (_event, d) => {
         toggleLockedDriverId(d.driverId);
@@ -265,7 +267,7 @@ export default function PitCostDumbbell({ raceData }: Props) {
         </div>
       )}
       {tooltip && (
-        <ChartTooltip x={tooltip.x} y={tooltip.y + MARGIN.top + 10}>
+        <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
           <div className="font-bold">
             {tooltip.datum.driverId} · giro {tooltip.datum.lap}
           </div>
