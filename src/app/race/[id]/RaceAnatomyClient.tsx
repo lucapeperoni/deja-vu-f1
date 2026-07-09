@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import RaceAnatomyTimeline, { type RaceData } from './RaceAnatomyTimeline';
 import OpportunityWindow from './OpportunityWindow';
 import PitCostDumbbell from './PitCostDumbbell';
+import EventSlopeChart from './EventSlopeChart';
 import { PIT_CONTEXT_LEGEND } from '@/lib/colors';
 
 interface BrushRange {
@@ -80,6 +81,21 @@ export default function RaceAnatomyClient({ raceData }: { raceData: RaceData }) 
           highlightedDriverId={highlightedDriverId}
           onHighlightChange={handleHighlightChange}
           brushRange={brushRange}
+        />
+      </section>
+
+      <section>
+        <div className="mb-6">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white">La classifica deformata</h2>
+          <p className="text-sm text-text-secondary">
+            Posizioni al momento della neutralizzazione a sinistra, posizioni 3 giri dopo la fine del ciclo di
+            soste a destra. Le linee che si incrociano sono i posti guadagnati o persi per effetto dell&apos;evento.
+          </p>
+        </div>
+        <EventSlopeChart
+          raceData={raceData}
+          highlightedDriverId={highlightedDriverId}
+          onHighlightChange={handleHighlightChange}
         />
       </section>
 
