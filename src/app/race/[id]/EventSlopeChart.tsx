@@ -1,15 +1,18 @@
 "use client";
 
-// Vista 3 della specifica (docs/PROGETTAZIONE.md, sezioni 6 e 7): la
-// classifica deformata. Nasce riadattando src/app/rivalry/[id]/RaceSlopeChart.tsx
-// (ora rimosso insieme alle pagine rivalry, sezione 3) — qui è una
-// riscrittura completa secondo la convenzione D3-possiede-l'SVG delle
-// altre viste della pagina gara.
+// Vista 3 della specifica, pivot v2 (docs/PROGETTAZIONE.md, §5.6 e §7,
+// tabella pivot): "il momento della scelta". Non più solo prima/dopo, ma
+// tre colonne — sinistra = posizione al giro del deploy, centro =
+// rientro PREVISTO se si boxa (§5.6, boxOption.predictedRejoinPos, chi
+// non ha boxato mantiene la posizione: linea dritta), destra = posizione
+// reale 3 giri dopo la fine (come nella v1). Il segmento previsione→
+// realtà (centro→destra) È il racconto: quanto il muretto aveva
+// indovinato, quanto no.
 //
-// Confronta, per UNA neutralizzazione alla volta, le posizioni al giro del
-// deployment con le posizioni 3 giri dopo la fine del ciclo di soste (lo
-// stesso scarto — POST_EVENT_OUTCOME_OFFSET = 3 — già usato per il
-// posDelta di outcomes in data-layer/scripts/build_all.py).
+// Nasce riadattando src/app/rivalry/[id]/RaceSlopeChart.tsx (ora rimosso
+// insieme alle pagine rivalry, sezione 3) — qui è una riscrittura completa
+// secondo la convenzione D3-possiede-l'SVG delle altre viste della pagina
+// gara.
 //
 // L'evento selezionato non è più uno stato locale: vive nel
 // RaceInteractionContext (selectedEventId), condiviso con la matrice della
@@ -25,7 +28,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as d3 from "d3";
 import clsx from "clsx";
-import { HIGHLIGHT_COLOR, DEFAULT_LINE_COLOR, OUTCOME_COLORS, NEUTRALIZATION_ACCENT_COLOR, TEXT_MUTED_COLOR } from "@/lib/colors";
+import {
+  HIGHLIGHT_COLOR,
+  DEFAULT_LINE_COLOR,
+  OUTCOME_COLORS,
+  NEUTRALIZATION_ACCENT_COLOR,
+  TEXT_MUTED_COLOR,
+} from "@/lib/colors";
 import type { RaceData, RaceNeutralization } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
 
@@ -38,17 +47,29 @@ interface Props {
 interface SlopeDatum {
   driverId: string;
   posBefore: number;
+  // Rientro previsto (boxOption.predictedRejoinPos) se choice === "BOX";
+  // altrimenti uguale a posBefore ("mantiene la posizione", linea dritta
+  // sul primo segmento — v. docstring in cima al file).
+  posMid: number;
   posAfter: number;
-  delta: number;
+  choice: "BOX" | "STAY" | "FORCED";
+  // Distanza tra previsione e realtà: positiva = ha fatto MEGLIO del
+  // previsto, negativa = peggio. È il racconto del secondo segmento
+  // (v. docstring). Per chi non ha boxato coincide col movimento reale
+  // (posBefore − posAfter), coerente con la v1.
+  accuracyDelta: number;
 }
 
-const MARGIN = { top: 16, right: 64, bottom: 16, left: 64 };
+const MARGIN = { top: 20, right: 68, bottom: 16, left: 68 };
 const ROW_HEIGHT = 22;
-const WIDTH = 420;
+const WIDTH = 640;
 
-function slopeColor(delta: number): string {
-  if (delta > 0) return OUTCOME_COLORS.EXPLOITED; // ha guadagnato posizioni
-  if (delta < 0) return OUTCOME_COLORS.FULL_PRICE; // ne ha perse
+// Colore condiviso dai due segmenti "di risultato" (il secondo, sempre; il
+// primo solo quando non ha boxato, perché li' coincide col movimento
+// reale): stessa palette esiti usata nella matrice della lotteria.
+function resultColor(delta: number): string {
+  if (delta > 0) return OUTCOME_COLORS.EXPLOITED; // ha fatto meglio del previsto
+  if (delta < 0) return OUTCOME_COLORS.FULL_PRICE; // ha fatto peggio del previsto
   return DEFAULT_LINE_COLOR;
 }
 
@@ -69,12 +90,18 @@ export default function EventSlopeChart({ raceData }: Props) {
   const slopeData = useMemo<SlopeDatum[]>(() => {
     if (!selectedEvent) return [];
     const afterLap = selectedEvent.endLap + POST_EVENT_OFFSET;
+    const decisionByDriverId = new Map(
+      raceData.decisions.filter((d) => d.eventId === selectedEvent.eventId).map((d) => [d.driverId, d])
+    );
     return raceData.drivers
       .map((driver) => {
         const posBefore = driver.laps.find((l) => l.l === selectedEvent.startLap)?.pos;
         const posAfter = driver.laps.find((l) => l.l === afterLap)?.pos;
         if (posBefore == null || posAfter == null) return null;
-        return { driverId: driver.id, posBefore, posAfter, delta: posBefore - posAfter };
+        const decision = decisionByDriverId.get(driver.driverId);
+        const choice = decision?.choice ?? "STAY";
+        const posMid = choice === "BOX" ? decision?.boxOption.predictedRejoinPos ?? posBefore : posBefore;
+        return { driverId: driver.id, posBefore, posMid, posAfter, choice, accuracyDelta: posMid - posAfter };
       })
       .filter((d): d is SlopeDatum => d != null);
   }, [raceData, selectedEvent]);
@@ -83,7 +110,7 @@ export default function EventSlopeChart({ raceData }: Props) {
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    const groups = ["headers", "lines-group", "left-labels", "right-labels"];
+    const groups = ["headers", "predicted-lines-group", "actual-lines-group", "left-labels", "mid-labels", "right-labels"];
     for (const cls of groups) {
       if (svg.select(`.${cls}`).empty()) svg.append("g").attr("class", cls);
     }
@@ -95,40 +122,110 @@ export default function EventSlopeChart({ raceData }: Props) {
   useEffect(() => {
     if (!selectedEvent) return;
     const svg = d3.select(svgRef.current);
+
+    // Interrompe transizioni in corso prima di ridisegnare: React
+    // StrictMode (dev) invoca questo effect due volte per commit, e due
+    // join/transizioni consecutivi sugli stessi elementi altrimenti si
+    // accavallano (v. DecisionIndexDistribution.tsx per il bug che questo
+    // pattern evita: un tween interrotto a metà lascia etichette vuote o
+    // linee mai portate al valore finale).
+    for (const cls of ["predicted-lines-group", "actual-lines-group", "left-labels", "mid-labels", "right-labels"]) {
+      const group = svg.select(`.${cls}`);
+      group.interrupt();
+      group.selectAll("*").interrupt();
+    }
+
     const xLeft = MARGIN.left;
     const xRight = WIDTH - MARGIN.right;
+    const xMid = (xLeft + xRight) / 2;
 
+    // Ranghi densi (indice dopo ordinamento, non il valore di posizione
+    // grezzo): evita righe vuote se qualche pilota manca di dati a questo
+    // giro. Stesso principio per le tre colonne.
     const byBefore = [...slopeData].sort((a, b) => a.posBefore - b.posBefore);
+    const byMid = [...slopeData].sort((a, b) => a.posMid - b.posMid);
     const byAfter = [...slopeData].sort((a, b) => a.posAfter - b.posAfter);
     const yLeft = new Map(byBefore.map((d, i) => [d.driverId, MARGIN.top + i * ROW_HEIGHT]));
+    const yMid = new Map(byMid.map((d, i) => [d.driverId, MARGIN.top + i * ROW_HEIGHT]));
     const yRight = new Map(byAfter.map((d, i) => [d.driverId, MARGIN.top + i * ROW_HEIGHT]));
 
     svg
       .select<SVGGElement>(".headers")
-      .selectAll<SVGTextElement, string>("text.header")
-      .data(["Al deployment", `+${POST_EVENT_OFFSET} giri dopo la fine`])
+      .selectAll<SVGTextElement, { text: string; x: number; anchor: "start" | "middle" | "end" }>("text.header")
+      .data([
+        { text: "Al deployment", x: xLeft, anchor: "start" as const },
+        { text: "Rientro previsto (se boxa)", x: xMid, anchor: "middle" as const },
+        { text: `+${POST_EVENT_OFFSET} giri dopo la fine`, x: xRight, anchor: "end" as const },
+      ])
       .join(
         (enter) => enter.append("text").attr("class", "header").attr("font-size", 11).attr("fill", NEUTRALIZATION_ACCENT_COLOR),
         (update) => update,
         (exit) => exit.remove()
       )
-      .attr("x", (_d, i) => (i === 0 ? xLeft : xRight))
-      .attr("y", MARGIN.top - 6)
-      .attr("text-anchor", (_d, i) => (i === 0 ? "start" : "end"))
-      .text((d) => d);
+      .attr("x", (d) => d.x)
+      .attr("y", MARGIN.top - 8)
+      .attr("text-anchor", (d) => d.anchor)
+      .text((d) => d.text);
 
-    const lines = svg
-      .select<SVGGElement>(".lines-group")
-      .selectAll<SVGLineElement, SlopeDatum>("line.slope-line")
+    // Primo segmento (sinistra→centro), tratteggiato: la PREVISIONE, non
+    // un risultato — colore neutro di riferimento (stessa costante usata
+    // per le bande di neutralizzazione e le linee di riferimento altrove
+    // nel progetto), non la palette esiti. Per chi non ha boxato è piatto
+    // (posMid = posBefore): "mantiene la posizione", come da richiesta.
+    const predictedLines = svg
+      .select<SVGGElement>(".predicted-lines-group")
+      .selectAll<SVGLineElement, SlopeDatum>("line.predicted-line")
       .data(slopeData, (d) => d.driverId)
       .join(
         (enter) =>
           enter
             .append("line")
-            .attr("class", "slope-line")
+            .attr("class", "predicted-line")
             .style("cursor", "pointer")
-            .attr("stroke", (d) => slopeColor(d.delta))
+            .style("pointer-events", "stroke")
+            .attr("stroke", NEUTRALIZATION_ACCENT_COLOR)
+            .attr("stroke-dasharray", "3 3")
             .attr("x1", xLeft)
+            .attr("x2", xMid)
+            .attr("y1", (d) => yLeft.get(d.driverId) ?? 0)
+            .attr("y2", (d) => yLeft.get(d.driverId) ?? 0)
+            .style("opacity", 0),
+        (update) => update,
+        (exit) => exit.transition().duration(200).style("opacity", 0).remove()
+      );
+
+    predictedLines
+      .on("pointerenter", (_event, d) => {
+        if (!lockedRef.current) setHoveredDriverId(d.driverId);
+      })
+      .on("pointerleave", () => {
+        if (!lockedRef.current) setHoveredDriverId(null);
+      })
+      .on("click", (_event, d) => toggleLockedDriverId(d.driverId))
+      .attr("stroke-width", 1.5)
+      .transition()
+      .duration(400)
+      .style("opacity", (d) => (d.choice === "BOX" ? 0.85 : 0.35))
+      .attr("y1", (d) => yLeft.get(d.driverId) ?? 0)
+      .attr("y2", (d) => yMid.get(d.driverId) ?? 0);
+
+    // Secondo segmento (centro→destra), pieno: "successo davvero" — la
+    // distanza tra previsione e realtà, colorata con la palette esiti
+    // (verde = ha fatto meglio del previsto, vermiglio = peggio). Per chi
+    // non ha boxato coincide col movimento reale rispetto al deployment,
+    // stessa lettura della v1.
+    const actualLines = svg
+      .select<SVGGElement>(".actual-lines-group")
+      .selectAll<SVGLineElement, SlopeDatum>("line.actual-line")
+      .data(slopeData, (d) => d.driverId)
+      .join(
+        (enter) =>
+          enter
+            .append("line")
+            .attr("class", "actual-line")
+            .style("cursor", "pointer")
+            .attr("stroke", (d) => resultColor(d.accuracyDelta))
+            .attr("x1", xMid)
             .attr("x2", xRight)
             .attr("y1", (d) => yLeft.get(d.driverId) ?? 0)
             .attr("y2", (d) => yLeft.get(d.driverId) ?? 0)
@@ -137,7 +234,7 @@ export default function EventSlopeChart({ raceData }: Props) {
         (exit) => exit.transition().duration(200).style("opacity", 0).remove()
       );
 
-    lines
+    actualLines
       .on("pointerenter", (_event, d) => {
         if (!lockedRef.current) setHoveredDriverId(d.driverId);
       })
@@ -145,20 +242,23 @@ export default function EventSlopeChart({ raceData }: Props) {
         if (!lockedRef.current) setHoveredDriverId(null);
       })
       .on("click", (_event, d) => toggleLockedDriverId(d.driverId))
-      .attr("stroke", (d) => slopeColor(d.delta))
-      .attr("stroke-width", (d) => Math.min(1 + Math.abs(d.delta) * 0.6, 8))
+      .attr("stroke", (d) => resultColor(d.accuracyDelta))
+      .attr("stroke-width", (d) => Math.min(1 + Math.abs(d.accuracyDelta) * 0.6, 8))
       .transition()
       .duration(400)
       .style("opacity", 1)
-      .attr("y1", (d) => yLeft.get(d.driverId) ?? 0)
+      .attr("x1", xMid)
+      .attr("y1", (d) => yMid.get(d.driverId) ?? 0)
       .attr("y2", (d) => yRight.get(d.driverId) ?? 0);
 
     function labelSelection(
       className: string,
       x: number,
-      anchor: "start" | "end",
+      anchor: "start" | "end" | "middle",
       yMap: Map<string, number>,
-      position: (d: SlopeDatum) => number
+      fontSize: number,
+      text: (d: SlopeDatum) => string,
+      visible: (d: SlopeDatum) => boolean = () => true
     ) {
       svg
         .select<SVGGElement>(`.${className}`)
@@ -169,7 +269,7 @@ export default function EventSlopeChart({ raceData }: Props) {
             enter
               .append("text")
               .attr("class", "label")
-              .attr("font-size", 11)
+              .attr("font-size", fontSize)
               .attr("dominant-baseline", "middle")
               .attr("text-anchor", anchor)
               .style("cursor", "pointer")
@@ -187,19 +287,29 @@ export default function EventSlopeChart({ raceData }: Props) {
         .on("click", (_event, d) => toggleLockedDriverId(d.driverId))
         .transition()
         .duration(400)
-        .style("opacity", 1)
+        .style("opacity", (d) => (visible(d) ? 1 : 0))
         .attr("x", x)
         .attr("y", (d) => yMap.get(d.driverId) ?? 0)
-        .text((d) => (anchor === "end" ? `${d.driverId} P${position(d)}` : `P${position(d)} ${d.driverId}`));
+        .text(text);
     }
 
     // Sinistra: testo allineato a destra (verso il grafico), mostra la
     // posizione AL DEPLOYMENT. Destra: allineato a sinistra, mostra la
-    // posizione DOPO. Il parametro "anchor" controlla solo l'allineamento
-    // del testo, "position" sceglie quale valore mostrare — sono due cose
-    // diverse: tenerle disaccoppiate evita di scambiare le etichette.
-    labelSelection("left-labels", xLeft - 8, "end", yLeft, (d) => d.posBefore);
-    labelSelection("right-labels", xRight + 8, "start", yRight, (d) => d.posAfter);
+    // posizione DOPO. Centro: piccola etichetta solo per chi ha boxato
+    // (per chi resta fuori coinciderebbe col valore già mostrato a
+    // sinistra, sarebbe rumore) — il parametro "visible" controlla questo
+    // senza toccare i join sopra.
+    labelSelection("left-labels", xLeft - 8, "end", yLeft, 11, (d) => `P${d.posBefore} ${d.driverId}`);
+    labelSelection("right-labels", xRight + 8, "start", yRight, 11, (d) => `${d.driverId} P${d.posAfter}`);
+    labelSelection(
+      "mid-labels",
+      xMid,
+      "middle",
+      yMid,
+      9,
+      (d) => `P${d.posMid}`,
+      (d) => d.choice === "BOX"
+    );
   }, [raceData, selectedEvent, slopeData, height, setHoveredDriverId, toggleLockedDriverId]);
 
   // --- Effect di evidenziazione: solo colore/spessore sui nodi già
@@ -208,12 +318,18 @@ export default function EventSlopeChart({ raceData }: Props) {
     const svg = d3.select(svgRef.current);
 
     svg
-      .select<SVGGElement>(".lines-group")
-      .selectAll<SVGLineElement, SlopeDatum>("line.slope-line")
-      .attr("stroke", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : slopeColor(d.delta)))
-      .attr("stroke-width", (d) => (d.driverId === highlightedDriverId ? 4 : Math.min(1 + Math.abs(d.delta) * 0.6, 8)));
+      .select<SVGGElement>(".predicted-lines-group")
+      .selectAll<SVGLineElement, SlopeDatum>("line.predicted-line")
+      .attr("stroke", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : NEUTRALIZATION_ACCENT_COLOR))
+      .attr("stroke-width", (d) => (d.driverId === highlightedDriverId ? 3 : 1.5));
 
-    for (const cls of ["left-labels", "right-labels"]) {
+    svg
+      .select<SVGGElement>(".actual-lines-group")
+      .selectAll<SVGLineElement, SlopeDatum>("line.actual-line")
+      .attr("stroke", (d) => (d.driverId === highlightedDriverId ? HIGHLIGHT_COLOR : resultColor(d.accuracyDelta)))
+      .attr("stroke-width", (d) => (d.driverId === highlightedDriverId ? 4 : Math.min(1 + Math.abs(d.accuracyDelta) * 0.6, 8)));
+
+    for (const cls of ["left-labels", "mid-labels", "right-labels"]) {
       svg
         .select<SVGGElement>(`.${cls}`)
         .selectAll<SVGTextElement, SlopeDatum>("text.label")
@@ -253,6 +369,12 @@ export default function EventSlopeChart({ raceData }: Props) {
           ))}
         </div>
       )}
+      <p className="text-xs text-text-secondary mb-3 max-w-2xl">
+        La colonna centrale è dove il modello prevedeva di rientrare chi ha scelto di fermarsi (§5.6): tratteggiato
+        il tragitto previsto, pieno il tratto che conta — quanto la realtà si è discostata dalla previsione, in
+        verde se meglio del previsto, in vermiglio se peggio. Chi non si è fermato resta piatto sul primo tratto:
+        non c&apos;era una previsione di rientro da verificare.
+      </p>
       {slopeData.length === 0 ? (
         <p className="text-sm text-text-secondary italic">Dati insufficienti per questo evento.</p>
       ) : (
@@ -262,7 +384,7 @@ export default function EventSlopeChart({ raceData }: Props) {
           width="100%"
           height={height}
           role="img"
-          aria-label={`Classifica deformata dall'evento ${selectedEvent?.type} di ${raceData.race.name}`}
+          aria-label={`Classifica deformata dall'evento ${selectedEvent?.type} di ${raceData.race.name}, con rientro previsto per chi ha boxato`}
         />
       )}
     </div>

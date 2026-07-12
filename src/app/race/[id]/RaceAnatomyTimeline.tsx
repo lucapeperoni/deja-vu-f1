@@ -90,6 +90,19 @@ export interface RaceNeutralization {
   endLap: number;
 }
 
+// Blocco decision (docs/PROGETTAZIONE.md §5.6, task P2.1): uno snapshot per
+// pilota x neutralizzazione. Qui si usano solo choice e predictedRejoinPos
+// (vista 3, colonna centrale); il resto dello snapshot (gap, gomme, indice
+// combinato) resta di uso della mappa in home (DecisionIndexDistribution).
+export interface RaceDecision {
+  eventId: string;
+  driverId: string; // id numerico Ergast, combacia con RaceDriver.driverId (non .id)
+  choice: "BOX" | "STAY" | "FORCED";
+  boxOption: {
+    predictedRejoinPos: number | null;
+  };
+}
+
 export interface RaceData {
   race: {
     raceId: string;
@@ -105,6 +118,7 @@ export interface RaceData {
   };
   neutralizations: RaceNeutralization[];
   drivers: RaceDriver[];
+  decisions: RaceDecision[];
 }
 
 export interface StoryStep {

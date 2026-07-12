@@ -86,8 +86,10 @@ function RaceAnatomyContent({ raceData, story }: { raceData: RaceData; story?: R
           <h2 className="font-condensed text-2xl font-bold uppercase text-white">La classifica deformata</h2>
           <p className="text-sm text-text-secondary">
             Posizioni al momento della neutralizzazione a sinistra, posizioni 3 giri dopo la fine del ciclo di
-            soste a destra. Le linee che si incrociano sono i posti guadagnati o persi per effetto dell&apos;evento.
-            Scegliere l&apos;evento qui o cliccare una colonna nella matrice qui sotto fa la stessa cosa.
+            soste a destra — e in mezzo, per chi si è fermato, dove il modello prevedeva che sarebbe rientrato.
+            La distanza tra la colonna centrale e quella di destra è il racconto: quanto il muretto aveva
+            indovinato. Scegliere l&apos;evento qui o cliccare una colonna nella matrice qui sotto fa la stessa
+            cosa.
           </p>
         </div>
         <EventSlopeChart raceData={raceData} />
