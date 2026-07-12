@@ -341,18 +341,45 @@ silenzio). Riporta tutto, anche quello che non torna.
 
 Dipende da: P2.1
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok, mappa visibile su dati veri
-- [ ] Due distribuzioni sovrapposte (guadagnato/perso) su combinedIndex,
-      NON uno scatter a 2 assi (decisione presa, v. §5.6)
-- [ ] Le medie delle due distribuzioni sono marcate ed etichettate; il
-      testo dichiara onestamente che si sovrappongono (niente confine
-      finto)
-- [ ] Filtri/small multiples per almeno un parametro di contesto
-      (sorpassabilità della pista)
-- [ ] Il beeswarm v1 resta come sezione di supporto sotto la mappa
-- [ ] Click/hover su un punto porta alla gara, tooltip = scheda decisione breve
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok (`npm run build` + `tsc --noEmit` puliti), mappa visibile su
+      dati veri (verificato in browser: 181 decisioni BOX guadagnato/perso,
+      esclusi NOT_NEEDED e i 14 snapshot `unreliableGapReference` di P2.2)
+- [x] Due distribuzioni sovrapposte (guadagnato/perso) su combinedIndex —
+      stima KDE a kernel gaussiano (Silverman bandwidth), NON uno scatter a
+      2 assi (decisione presa, v. §5.6)
+- [x] Le medie delle due distribuzioni sono marcate (linea verticale
+      tratteggiata) ed etichettate col valore numerico (0,73 vs 0,27 sul
+      campione intero); il testo sotto il grafico dichiara esplicitamente
+      che le due popolazioni si sovrappongono pesantemente — "tendenza
+      statistica", non previsione
+- [x] Filtro piste sorpassabili / tecniche (soglia = mediana di
+      `overtakability` su `circuits.json`), verificato che ricalcola
+      correttamente distribuzioni e medie sul sottoinsieme (56 vs 125
+      punti, medie 0,41/-0,07 sul sottoinsieme sorpassabile)
+- [x] Il beeswarm v1 resta come sezione di supporto sotto la mappa,
+      titolo "Quanto costa fermarsi: il prezzo dell'opzione BOX"
+- [x] Hover su una tacca del rug plot mostra la scheda decisione (pilota,
+      gara, gap dietro, gomme, scelta, esito, indice combinato); click
+      naviga alla pagina della gara corrispondente (verificato: tacca →
+      `/race/2023-albert_park`)
+- [x] Diff letto, commit e push
+
+**Nota (bug trovato in fase di verifica, non nel prompt originale):** la
+prima versione del grafico sembrava ignorare il filtro piste (il conteggio
+delle tacche non calava mai) e in un caso le etichette delle medie
+restavano vuote. Causa: React StrictMode (dev) invoca l'effetto di redraw
+due volte per ogni commit; due join/transizioni D3 consecutive sugli
+stessi elementi si interrompevano a vicenda a metà (un tween di testo o
+opacità mai completato lascia l'etichetta vuota o l'elemento mai rimosso).
+Corretto in `DecisionIndexDistribution.tsx` chiamando `.interrupt()` sui
+gruppi a inizio effetto e scorporando l'impostazione del testo (sincrona)
+dall'animazione (solo opacità/posizione). Verificato via DOM/console,
+non via screenshot: lo strumento di preview di questa sessione non
+avanzava le transizioni D3 quando il tab era in background
+(`document.visibilityState === "hidden"` mette in pausa
+`requestAnimationFrame`) — un limite dello strumento di verifica, non
+del sito; confermato portando il tab in primo piano.
 
 **Prompt da copiare:**
 

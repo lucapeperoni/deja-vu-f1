@@ -118,6 +118,24 @@ export const OUTCOME_LEGEND: { key: PitOutcome; label: string; color: string }[]
   Object.keys(OUTCOME_COLORS) as PitOutcome[]
 ).map((key) => ({ key, label: OUTCOME_LABELS[key], color: OUTCOME_COLORS[key] }));
 
+// Indice combinato (§5.6/§7 vista 6, mappa "quando conviene" in home): due
+// sole serie, guadagnato/perso, sull'esito a 5 giri delle sole decisioni
+// BOX (NOT_NEEDED e NEUTRAL esclusi, v. §5.6). Riusa gli stessi due colori
+// già validati per la matrice della lotteria (EXPLOITED/FULL_PRICE): stessa
+// storia (esito positivo/negativo di un pit), stesse distanze colorblind-
+// safe già verificate (task 5.2) — niente palette nuova da validare da capo.
+export type Verdict = "GAINED" | "LOST" | "NEUTRAL";
+
+export const VERDICT_COLORS: Record<"GAINED" | "LOST", string> = {
+  GAINED: OUTCOME_COLORS.EXPLOITED,
+  LOST: OUTCOME_COLORS.FULL_PRICE,
+};
+
+export const VERDICT_LABELS: Record<"GAINED" | "LOST", string> = {
+  GAINED: "Ha guadagnato posizioni",
+  LOST: "Ha perso posizioni",
+};
+
 // Colori team: usati SOLO dalla vista 5 (docs/PROGETTAZIONE.md, sezione 7,
 // "l'unica eccezione è la vista 5, che ha un interruttore per passare ai
 // colori team"). Da nessun'altra parte: altrove il colore codifica sempre
