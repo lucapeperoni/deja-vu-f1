@@ -1,46 +1,65 @@
 "use client";
 
-// Vista 4 della specifica (docs/PROGETTAZIONE.md, sezioni 5.5, 6 e 7):
-// la matrice della lotteria. Stessa convenzione di
-// src/components/charts/D3Chart.tsx e di RaceAnatomyTimeline.tsx: React
-// possiede solo il contenitore (ref, props, stato del tooltip), D3
-// possiede l'intero <svg> — griglia, celle, etichette dentro useEffect,
-// redraw incrementale via selection.join.
+// Vista 4 della specifica, pivot v2 (docs/PROGETTAZIONE.md, §5.6 e §7,
+// tabella pivot): la matrice della lotteria diventa "matrice scelta ×
+// esito". Le celle non colorano più solo la categoria v1 (EXPLOITED/
+// LOCKED_OUT/...), ma choice × verdict del blocco decisions (§5.6, task
+// P2.1): BOX-guadagnato, BOX-perso, STAY-guadagnato, STAY-perso, FORCED,
+// NOT_NEEDED attenuato. La lettura v1 resta raggiungibile con il toggle
+// "Vista opportunità" qui sotto — stessi dati, non ricalcolati, solo
+// un'altra chiave di colore.
 //
-// I dati di outcomes.json portano solo la categoria e il posDelta (vedi
-// sezione 6), non il "perché" testuale: la spiegazione in italiano per il
-// tooltip viene ricostruita qui rileggendo gli stessi ingredienti usati
-// da classify_outcome() in data-layer/scripts/build_all.py (soglie
-// comprese) — nessun dato nuovo, solo la stessa logica raccontata a parole.
+// Il tooltip diventa la scheda decisione (§5.6): cosa vedeva il muretto
+// (margine, gomme, soste già fatte), le due opzioni quantificate (costo
+// del box e rientro previsto — quest'ultimo preciso, errore mediano 1
+// posizione, spike P1.1), scelta ed esito, in italiano discorsivo.
+// L'indice combinato è una riga separata e dichiaratamente diversa: un
+// vantaggio statistico stimato sull'intero campione, MAI chiamato
+// "previsione" (quella è solo il rientro previsto, che è invece uno
+// snapshot preciso per singolo caso — la distinzione è il punto centrale
+// della decisione presa dopo lo spike P1.2, v. §5.6).
+//
+// Stessa convenzione di src/components/charts/D3Chart.tsx e di
+// RaceAnatomyTimeline.tsx: React possiede solo il contenitore (ref, props,
+// stato di tooltip/toggle), D3 possiede l'intero <svg> — griglia, celle,
+// etichette dentro useEffect, redraw incrementale via selection.join.
 //
 // La colonna dell'evento cliccata sincronizza EventSlopeChart tramite
 // RaceInteractionContext (selectedEventId) — "connect: brushing and
 // linking tra le viste" (sezione 8, categorie di Yi et al.).
 //
 // Task 4.1: split tra effect strutturale (celle/etichette, dipende da
-// raceData/drivers/events) ed effect di evidenziazione (opacità per
-// pilota evidenziato + contorno della colonna sincronizzata con lo slope
-// chart) — nessun nuovo data join quando cambia solo l'hover.
+// raceData/drivers/events/matrixMode) ed effect di evidenziazione
+// (opacità per pilota evidenziato + contorno della colonna sincronizzata
+// con lo slope chart) — nessun nuovo data join quando cambia solo l'hover.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
+import clsx from "clsx";
 import {
   outcomeColor,
+  OUTCOME_LABELS,
   OUTCOME_LEGEND,
+  decisionCellColor,
+  DECISION_CELL_LEGEND,
+  type DecisionCellCategory,
   HIGHLIGHT_COLOR,
   NEUTRALIZATION_ACCENT_COLOR,
   TEXT_MUTED_COLOR,
   CONTRAST_TEXT_COLOR,
 } from "@/lib/colors";
-import type { RaceData, RaceDriver, RaceNeutralization, RacePit } from "./RaceAnatomyTimeline";
+import type { RaceData, RaceDecision, RaceDriver, RaceNeutralization } from "./RaceAnatomyTimeline";
 import { useRaceInteraction } from "./RaceInteractionContext";
 import ChartTooltip from "@/components/ChartTooltip";
 
-// Soglie dichiarate (docs/PROGETTAZIONE.md sezione 5.5 e
-// public/data/params.json): devono restare sincronizzate con
-// data-layer/scripts/build_all.py, che è la fonte di verità per il
-// calcolo effettivo della categoria. Qui servono solo a spiegarla.
-const TYRE_AGE_MIN_LAPS = 8;
+// Deve restare sincronizzato con build_all.py / params.json
+// (postEventOutcomeOffsetLaps): il campo outcome.posDelta5 del blocco
+// decisions è popolato con lo stesso valore v1 a questo scarico di giri,
+// non un calcolo separato a 5 giri nonostante il nome del campo — v.
+// data-layer/app/metrics/decision_snapshots.py, build_event_decisions.
+const POST_EVENT_OFFSET = 3;
+
+type MatrixMode = "decision" | "opportunity";
 
 interface Props {
   raceData: RaceData;
@@ -50,10 +69,10 @@ interface CellDatum {
   driver: RaceDriver;
   event: RaceNeutralization;
   eventIndex: number;
-  category: string;
+  decision: RaceDecision | undefined;
+  decisionCategory: DecisionCellCategory;
+  legacyCategory: string;
   posDelta: number | null;
-  tyreCompound: string | null;
-  tyreAge: number | null;
 }
 
 interface TooltipState {
@@ -61,86 +80,91 @@ interface TooltipState {
   y: number;
   driverLabel: string;
   eventLabel: string;
-  category: string;
-  detail: string;
-  posDelta: number | null;
+  narrative: string;
+  indexLine: string;
+  legacyLabel: string;
 }
 
 const MARGIN = { top: 64, right: 16, bottom: 8, left: 56 };
 const CELL_WIDTH = 96;
 const CELL_HEIGHT = 22;
 const CELL_GAP = 3;
+const NOT_NEEDED_OPACITY = 0.35;
 
-function lastPitLapBefore(pits: RacePit[], lap: number): number {
-  let last = 0;
-  for (const p of [...pits].sort((a, b) => a.lap - b.lap)) {
-    if (p.lap < lap) last = p.lap;
-    else break;
-  }
-  return last;
+function decisionCategory(decision: RaceDecision | undefined): DecisionCellCategory {
+  if (!decision) return "STAY_NEUTRAL";
+  if (decision.notNeeded) return "NOT_NEEDED";
+  if (decision.choice === "FORCED") return "FORCED";
+  const prefix = decision.choice === "BOX" ? "BOX" : "STAY";
+  return `${prefix}_${decision.outcome.verdict}` as DecisionCellCategory;
 }
 
-function carsBehindWithinPitLoss(
-  driver: RaceDriver,
-  eventStartLap: number,
-  allDrivers: RaceDriver[],
-  nominalPitLoss: number | null
-): number | null {
-  if (nominalPitLoss == null) return null;
-  const driverLap = driver.laps.find((l) => l.l === eventStartLap);
-  if (!driverLap || driverLap.ms == null) return null;
-  let count = 0;
-  for (const other of allDrivers) {
-    if (other.driverId === driver.driverId) continue;
-    const otherLap = other.laps.find((l) => l.l === eventStartLap);
-    if (!otherLap || otherLap.ms == null) continue;
-    const gap = otherLap.ms - driverLap.ms;
-    if (gap > 0 && gap <= nominalPitLoss * 1000) count++;
-  }
-  return count;
-}
-
-function explainOutcome(
+// Scheda decisione (§5.6) raccontata in italiano discorsivo, come nel
+// prompt: "aveva 19s di margine e gomme di 22 giri: si è fermato, previsto
+// P6, rientrato P7, dopo 3 giri P5". Nessun dato nuovo: solo gli stessi
+// campi del blocco decisions e di driver.pits (per la posizione di
+// rientro effettiva, non presente in decisions) raccontati a parole.
+function buildDecisionCard(
   driver: RaceDriver,
   event: RaceNeutralization,
-  category: string,
-  allDrivers: RaceDriver[],
-  nominalPitLoss: number | null,
-  tyreCompound: string | null,
-  tyreAgeReal: number | null
-): string {
-  const pitInEvent = driver.pits.find((p) => p.eventId === event.eventId);
-  // Mescola montata all'uscita: disponibile solo per le 3 gare-caso (vedi
-  // build_all.py, CASE_RACE_SLUGS), puramente descrittivo.
-  const compoundSuffix = pitInEvent?.compound ? ` (gomme ${pitInEvent.compound})` : "";
-
-  switch (category) {
-    case "EXPLOITED":
-      return pitInEvent
-        ? `Si è fermato al giro ${pitInEvent.lap}, sfruttando lo sconto (risparmio stimato ${pitInEvent.discount?.toFixed(1) ?? "n/d"}s)${compoundSuffix}.`
-        : "Si è fermato durante la finestra, sfruttando lo sconto.";
-    case "FULL_PRICE":
-      return pitInEvent
-        ? `Si è fermato al giro ${pitInEvent.lap}, pagando il prezzo pieno pochi giri prima dell'inizio della finestra.`
-        : "Si è fermato poco prima della finestra, pagando il prezzo pieno.";
-    case "LOCKED_OUT": {
-      // tyreAgeReal viene dagli stint OpenF1 (solo 3 gare-caso): quando c'è,
-      // e' piu' preciso della stima dedotta dai pit stop Ergast (tyreAge).
-      const tyreAge = tyreAgeReal ?? event.startLap - lastPitLapBefore(driver.pits, event.startLap);
-      const compoundLabel = tyreCompound ? ` ${tyreCompound}` : "";
-      if (tyreAge < TYRE_AGE_MIN_LAPS) {
-        return `Escluso: gomme${compoundLabel} montate da ${tyreAge} giri, troppo fresche per fermarsi di nuovo.`;
-      }
-      const carsBehind = carsBehindWithinPitLoss(driver, event.startLap, allDrivers, nominalPitLoss);
-      return carsBehind != null
-        ? `Escluso: fermandosi sarebbe rientrato dietro ad almeno ${carsBehind} auto (gomme${compoundLabel} da ${tyreAge} giri).`
-        : "Escluso dalla finestra: le gomme o il traffico non lo permettevano.";
-    }
-    case "NOT_NEEDED":
-      return "Aveva già completato le soste previste: la finestra non lo riguardava.";
-    default:
-      return "Non si è fermato, per una strategia non altrimenti classificata.";
+  decision: RaceDecision | undefined
+): { narrative: string; indexLine: string } {
+  if (!decision) {
+    return { narrative: "Dati della decisione non disponibili per questo pilota in questo evento.", indexLine: "" };
   }
+
+  if (decision.notNeeded) {
+    return {
+      narrative: "Non aveva bisogno di fermarsi: aveva già completato le soste previste per questa gara.",
+      indexLine: "",
+    };
+  }
+
+  const { snapshot, boxOption, choice, outcome, combinedIndex } = decision;
+
+  const gapPart =
+    snapshot.gapBehind != null
+      ? `${snapshot.gapBehind.toFixed(1)}s di margine sul gruppo dietro${
+          snapshot.unreliableGapReference ? " (gap non affidabile in questo giro, v. metodologia)" : ""
+        }`
+      : "nessuno dietro (ultimo in classifica)";
+  const tyrePart =
+    snapshot.tyreAge != null
+      ? `gomme di ${snapshot.tyreAge} giri${snapshot.compound ? ` (${snapshot.compound})` : ""}`
+      : "età gomme non nota";
+  const stopsPart =
+    snapshot.stopsTypical > 0
+      ? ` Aveva già fatto ${snapshot.stopsDone} sosta/e su ${snapshot.stopsTypical} tipiche di questa gara.`
+      : "";
+
+  const pit = driver.pits.find((p) => p.eventId === event.eventId);
+  const posAfterOffset = outcome.posDelta5 != null && snapshot.pos != null ? snapshot.pos - outcome.posDelta5 : null;
+  const afterClause = posAfterOffset != null ? `, dopo ${POST_EVENT_OFFSET} giri P${posAfterOffset}` : "";
+
+  let choiceSentence: string;
+  if (choice === "BOX") {
+    const rejoin = pit?.posAfter != null ? `rientrato P${pit.posAfter}` : "rientro non registrato";
+    choiceSentence = `Si è fermato: previsto P${boxOption.predictedRejoinPos ?? "n/d"}, ${rejoin}${afterClause}.`;
+  } else if (choice === "FORCED") {
+    choiceSentence = `Scelta forzata: escluso dalla finestra${afterClause}.`;
+  } else {
+    choiceSentence = `È rimasto fuori, ha scelto di aspettare${afterClause}.`;
+  }
+
+  const costClause =
+    choice === "BOX" && boxOption.expectedLoss != null ? ` Costo atteso del box: ${boxOption.expectedLoss.toFixed(1)}s.` : "";
+
+  const posClause = snapshot.pos != null ? `Aveva P${snapshot.pos}, ` : "Posizione al deployment non nota, ";
+  const narrative = `${posClause}${gapPart} e ${tyrePart}.${stopsPart} ${choiceSentence}${costClause}`;
+
+  const indexLine =
+    combinedIndex != null
+      ? `Vantaggio statistico stimato: ${combinedIndex >= 0 ? "+" : ""}${combinedIndex.toFixed(2)} — ${
+          combinedIndex > 0.1 ? "sopra" : combinedIndex < -0.1 ? "sotto" : "nella"
+        } media di chi di solito guadagna posizioni fermandosi (indice combinato di traffico e margine, §5.6: un'euristica aggregata su tutto il campione, non una previsione per questo caso).`
+      : "Vantaggio statistico stimato: non calcolabile per questo evento (mancano traffico o margine).";
+
+  return { narrative, indexLine };
 }
 
 function orderDrivers(raceData: RaceData): RaceDriver[] {
@@ -158,6 +182,7 @@ function orderDrivers(raceData: RaceData): RaceDriver[] {
 export default function OpportunityWindow({ raceData }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [matrixMode, setMatrixMode] = useState<MatrixMode>("decision");
   const { highlightedDriverId, lockedDriverId, setHoveredDriverId, toggleLockedDriverId, selectedEventId, setSelectedEventId } =
     useRaceInteraction();
 
@@ -168,6 +193,12 @@ export default function OpportunityWindow({ raceData }: Props) {
 
   const drivers = useMemo(() => orderDrivers(raceData), [raceData]);
   const events = raceData.neutralizations;
+
+  const decisionByKey = useMemo(() => {
+    const map = new Map<string, RaceDecision>();
+    for (const d of raceData.decisions) map.set(`${d.eventId}-${d.driverId}`, d);
+    return map;
+  }, [raceData]);
 
   const width = MARGIN.left + MARGIN.right + Math.max(events.length, 1) * (CELL_WIDTH + CELL_GAP);
   const height = MARGIN.top + MARGIN.bottom + drivers.length * (CELL_HEIGHT + CELL_GAP);
@@ -180,12 +211,20 @@ export default function OpportunityWindow({ raceData }: Props) {
     }
   }, []);
 
-  // --- Effect strutturale: intestazioni, etichette, celle. NON dipende da
+  // --- Effect strutturale: intestazioni, etichette, celle. Dipende anche
+  // da matrixMode (ricolora le celle già disegnate): NON dipende da
   // highlightedDriverId né da selectedEventId (li dipinge il secondo
   // effect).
   useEffect(() => {
     if (events.length === 0) return;
     const svg = d3.select(svgRef.current);
+
+    // Interrompe transizioni in corso prima di ridisegnare (v. commento
+    // analogo in DecisionIndexDistribution.tsx/EventSlopeChart.tsx):
+    // React StrictMode (dev) invoca questo effect due volte per commit.
+    const cellsGroup = svg.select(".cells-group");
+    cellsGroup.interrupt();
+    cellsGroup.selectAll("*").interrupt();
 
     const yFor = (rowIndex: number) => MARGIN.top + rowIndex * (CELL_HEIGHT + CELL_GAP);
     const xFor = (colIndex: number) => MARGIN.left + colIndex * (CELL_WIDTH + CELL_GAP);
@@ -244,15 +283,16 @@ export default function OpportunityWindow({ raceData }: Props) {
     // --- Celle ---
     const cellData: CellDatum[] = drivers.flatMap((driver, rowIndex) =>
       events.map((event, eventIndex) => {
-        const outcome = driver.outcomes.find((o) => o.eventId === event.eventId);
+        const decision = decisionByKey.get(`${event.eventId}-${driver.driverId}`);
+        const legacyCategory = driver.outcomes.find((o) => o.eventId === event.eventId)?.category ?? "NEUTRAL";
         return {
           driver,
           event,
           eventIndex,
-          category: outcome?.category ?? "NEUTRAL",
-          posDelta: outcome?.posDelta ?? null,
-          tyreCompound: outcome?.tyreCompound ?? null,
-          tyreAge: outcome?.tyreAge ?? null,
+          decision,
+          decisionCategory: decisionCategory(decision),
+          legacyCategory,
+          posDelta: driver.outcomes.find((o) => o.eventId === event.eventId)?.posDelta ?? null,
         };
       })
     );
@@ -284,11 +324,14 @@ export default function OpportunityWindow({ raceData }: Props) {
       })
       .each(function (d) {
         const g = d3.select(this);
-        g.select("rect.cell-rect").attr("fill", outcomeColor(d.category));
+        const fill = matrixMode === "decision" ? decisionCellColor(d.decisionCategory) : outcomeColor(d.legacyCategory);
+        const fillOpacity = matrixMode === "decision" && d.decisionCategory === "NOT_NEEDED" ? NOT_NEEDED_OPACITY : 1;
+        g.select("rect.cell-rect").attr("fill", fill).attr("fill-opacity", fillOpacity);
         g.select("text").text(d.posDelta != null ? `${d.posDelta > 0 ? "+" : ""}${d.posDelta}` : "");
       })
       .on("pointerenter", function (event, d) {
         if (!lockedRef.current) setHoveredDriverId(d.driver.id);
+        const { narrative, indexLine } = buildDecisionCard(d.driver, d.event, d.decision);
         // Coordinate VIEWPORT (non d3.pointer/spazio SVG): il tooltip è un
         // portal fixed su document.body, vedi ChartTooltip — non risente
         // dell'overflow-x-auto del contenitore della matrice.
@@ -297,17 +340,9 @@ export default function OpportunityWindow({ raceData }: Props) {
           y: event.clientY,
           driverLabel: d.driver.id,
           eventLabel: `${d.event.type} · giri ${d.event.startLap}-${d.event.endLap}`,
-          category: d.category,
-          detail: explainOutcome(
-            d.driver,
-            d.event,
-            d.category,
-            raceData.drivers,
-            raceData.race.nominalPitLoss,
-            d.tyreCompound,
-            d.tyreAge
-          ),
-          posDelta: d.posDelta,
+          narrative,
+          indexLine,
+          legacyLabel: OUTCOME_LABELS[d.legacyCategory as keyof typeof OUTCOME_LABELS] ?? d.legacyCategory,
         });
       })
       .on("pointerleave", () => {
@@ -318,7 +353,7 @@ export default function OpportunityWindow({ raceData }: Props) {
         toggleLockedDriverId(d.driver.id);
         setSelectedEventId(d.event.eventId);
       });
-  }, [raceData, drivers, events, setHoveredDriverId, toggleLockedDriverId, setSelectedEventId]);
+  }, [raceData, drivers, events, decisionByKey, matrixMode, setHoveredDriverId, toggleLockedDriverId, setSelectedEventId]);
 
   // --- Effect di evidenziazione: opacità delle righe per il pilota
   // evidenziato + contorno della colonna sincronizzata con lo slope chart.
@@ -355,8 +390,32 @@ export default function OpportunityWindow({ raceData }: Props) {
     );
   }
 
+  const legend = matrixMode === "decision" ? DECISION_CELL_LEGEND : OUTCOME_LEGEND;
+
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative overflow-x-auto hide-scrollbar">
+      <div className="flex justify-end mb-3">
+        <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md">
+          <button
+            onClick={() => setMatrixMode("decision")}
+            className={clsx(
+              "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
+              matrixMode === "decision" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
+            )}
+          >
+            Vista decisione
+          </button>
+          <button
+            onClick={() => setMatrixMode("opportunity")}
+            className={clsx(
+              "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
+              matrixMode === "opportunity" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
+            )}
+          >
+            Vista opportunità (v1)
+          </button>
+        </div>
+      </div>
       <div style={{ position: "relative", width }}>
         <svg
           ref={svgRef}
@@ -364,25 +423,23 @@ export default function OpportunityWindow({ raceData }: Props) {
           width={width}
           height={height}
           role="img"
-          aria-label={`Matrice degli esiti pilota per evento di ${raceData.race.name} ${raceData.race.year}`}
+          aria-label={`Matrice scelta per esito, pilota per evento, di ${raceData.race.name} ${raceData.race.year}`}
         />
         {tooltip && (
-          <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={240} onDismiss={() => setTooltip(null)}>
+          <ChartTooltip x={tooltip.x} y={tooltip.y} maxWidthPx={280} onDismiss={() => setTooltip(null)}>
             <div className="font-bold">
               {tooltip.driverLabel} · {tooltip.eventLabel}
             </div>
-            <div className="text-neutral-gray mt-1">{tooltip.detail}</div>
-            {tooltip.posDelta != null && (
-              <div className="mt-1">
-                delta posizioni: {tooltip.posDelta > 0 ? "+" : ""}
-                {tooltip.posDelta}
-              </div>
-            )}
+            <div className="text-neutral-gray mt-1">{tooltip.narrative}</div>
+            {tooltip.indexLine && <div className="text-neutral-gray mt-1.5 italic">{tooltip.indexLine}</div>}
+            <div className="text-neutral-gray/70 mt-1.5 text-[10px] uppercase tracking-wide">
+              lettura precedente (v1): {tooltip.legacyLabel}
+            </div>
           </ChartTooltip>
         )}
       </div>
       <div className="flex gap-4 flex-wrap mt-4">
-        {OUTCOME_LEGEND.map((item) => (
+        {legend.map((item) => (
           <div key={item.key} className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
             {item.label}

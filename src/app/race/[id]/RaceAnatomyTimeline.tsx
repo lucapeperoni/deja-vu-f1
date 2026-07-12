@@ -91,16 +91,39 @@ export interface RaceNeutralization {
 }
 
 // Blocco decision (docs/PROGETTAZIONE.md §5.6, task P2.1): uno snapshot per
-// pilota x neutralizzazione. Qui si usano solo choice e predictedRejoinPos
-// (vista 3, colonna centrale); il resto dello snapshot (gap, gomme, indice
-// combinato) resta di uso della mappa in home (DecisionIndexDistribution).
+// pilota x neutralizzazione. Usato dalla colonna centrale dello slope
+// chart (vista 3, solo choice e predictedRejoinPos) e dalla scheda
+// decisione nel tooltip della matrice (vista 4, task P3.2: cosa vedeva il
+// muretto, le due opzioni quantificate, l'indice combinato). Campi non
+// ancora usati da nessuna vista (gapAhead, trafficFraction,
+// lapsRemaining, freshTyreDeltaPerLap) restano fuori, come per gli altri
+// tipi di questo file.
 export interface RaceDecision {
   eventId: string;
   driverId: string; // id numerico Ergast, combacia con RaceDriver.driverId (non .id)
-  choice: "BOX" | "STAY" | "FORCED";
+  snapshot: {
+    pos: number | null;
+    gapBehind: number | null;
+    tyreAge: number | null;
+    compound: string | null;
+    stopsDone: number;
+    stopsTypical: number;
+    // Task P2.2: gap calcolato su un tempo cumulato non confrontabile tra
+    // piloti in questo giro (tipicamente dopo bandiera rossa). Flag
+    // dichiarato, non una correzione silenziosa: v. decision_snapshots.py.
+    unreliableGapReference: boolean;
+  };
   boxOption: {
+    expectedLoss: number | null;
     predictedRejoinPos: number | null;
   };
+  choice: "BOX" | "STAY" | "FORCED";
+  outcome: {
+    posDelta5: number | null;
+    verdict: "GAINED" | "LOST" | "NEUTRAL";
+  };
+  combinedIndex: number | null;
+  notNeeded: boolean;
 }
 
 export interface RaceData {

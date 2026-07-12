@@ -136,6 +136,60 @@ export const VERDICT_LABELS: Record<"GAINED" | "LOST", string> = {
   LOST: "Ha perso posizioni",
 };
 
+// Matrice della lotteria, vista 4 riorientata (§5.6/§7, task P3.2): le
+// celle si colorano per scelta × esito, non più solo per la categoria v1
+// (EXPLOITED/LOCKED_OUT/..., che resta raggiungibile con un toggle nel
+// componente). Stessa coppia di tinte guadagnato/perso della mappa in
+// home (VERDICT_COLORS): l'hue codifica sempre l'esito, in tutto il sito.
+// La scelta (BOX vs STAY) si distingue per luminosità sulla STESSA tinta —
+// BOX pieno, STAY una tinta più chiara — non con un'altra tinta: un hue in
+// più avrebbe rotto la regola "il colore codifica una cosa sola" (sezione
+// 7) proprio nella vista che più conta. FORCED riusa il giallo di
+// LOCKED_OUT: è l'esatta stessa condizione vista dal lato scelta invece
+// che esito (v. classify_choice in decision_snapshots.py). NOT_NEEDED
+// riusa il grigio omonimo ma va reso "attenuato" nel componente
+// (fill-opacity ridotta), non con un colore a parte: non è un quinto
+// esito, è l'assenza di una decisione da giudicare.
+export type DecisionCellCategory =
+  | "BOX_GAINED"
+  | "BOX_LOST"
+  | "BOX_NEUTRAL"
+  | "STAY_GAINED"
+  | "STAY_LOST"
+  | "STAY_NEUTRAL"
+  | "FORCED"
+  | "NOT_NEEDED";
+
+export const DECISION_CELL_COLORS: Record<DecisionCellCategory, string> = {
+  BOX_GAINED: VERDICT_COLORS.GAINED,
+  BOX_LOST: VERDICT_COLORS.LOST,
+  BOX_NEUTRAL: "#94a3b8", // stesso slate "condizione normale/nessun movimento" di PIT_CONTEXT_COLORS.GREEN
+  STAY_GAINED: "#7fd4bb", // stessa tinta di BOX_GAINED, più chiara: guadagno anche restando fuori (raro)
+  STAY_LOST: "#f0a875", // stessa tinta di BOX_LOST, più chiara
+  STAY_NEUTRAL: "#94a3b8",
+  FORCED: OUTCOME_COLORS.LOCKED_OUT,
+  NOT_NEEDED: OUTCOME_COLORS.NOT_NEEDED,
+};
+
+export const DECISION_CELL_LABELS: Record<DecisionCellCategory, string> = {
+  BOX_GAINED: "Si è fermato, ha guadagnato",
+  BOX_LOST: "Si è fermato, ha perso",
+  BOX_NEUTRAL: "Si è fermato, nessun cambio",
+  STAY_GAINED: "È rimasto fuori, ha guadagnato",
+  STAY_LOST: "È rimasto fuori, ha perso",
+  STAY_NEUTRAL: "È rimasto fuori, nessun cambio",
+  FORCED: "Scelta forzata (escluso dalla finestra)",
+  NOT_NEEDED: "Non ne aveva bisogno",
+};
+
+export function decisionCellColor(category: string): string {
+  return DECISION_CELL_COLORS[category as DecisionCellCategory] ?? DECISION_CELL_COLORS.STAY_NEUTRAL;
+}
+
+export const DECISION_CELL_LEGEND: { key: DecisionCellCategory; label: string; color: string }[] = (
+  Object.keys(DECISION_CELL_COLORS) as DecisionCellCategory[]
+).map((key) => ({ key, label: DECISION_CELL_LABELS[key], color: DECISION_CELL_COLORS[key] }));
+
 // Colori team: usati SOLO dalla vista 5 (docs/PROGETTAZIONE.md, sezione 7,
 // "l'unica eccezione è la vista 5, che ha un interruttore per passare ai
 // colori team"). Da nessun'altra parte: altrove il colore codifica sempre
