@@ -1,4 +1,12 @@
-# Chaos Discount — Roadmap con checklist (per Notion)
+# Chaos Discount — Roadmap con checklist (per Notion) — v1, SUPERATA
+
+> **⚠ Questa roadmap è della v1 ed è superata.** Il lavoro qui descritto è
+> stato completato (fino al task 5.3 incluso — le checkbox sotto non sono
+> state aggiornate man mano, fa fede il git log). Dopo il feedback del
+> professore il progetto è stato riorientato (12 luglio 2026): la specifica
+> aggiornata è `docs/PROGETTAZIONE.md` (v2) e la roadmap attiva è
+> **`docs/ROADMAP-2.md`**. Questo file resta come archivio dei prompt e
+> delle lezioni imparate (esiti reali dei task 1.2, 2.1, 3.6).
 
 Regole rapide: un task = una sessione di Claude Code (Sonnet 5, reasoning
 medio) aperta nella cartella `F1AnalyticsVisual`. Ogni task qui sotto ha la

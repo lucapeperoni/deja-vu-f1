@@ -65,16 +65,21 @@ POST_EVENT_OUTCOME_OFFSET = 3  # giri dopo la fine dell'evento per misurare il p
 
 RATE_LIMIT_SECONDS = 1.0       # pausa gentile tra una gara e l'altra verso OpenF1
 
-# Mescola ed età gomme (stint OpenF1): verificato in conversazione che una
-# formula predittiva basata sull'età gomme del rivale (chi resta fuori da
-# una neutralizzazione, per quanti giri lo tieni dietro) NON regge sui dati
-# — correlazione ~0 su 263 coppie testate sull'intero campione 2023-2024.
-# Il dato resta comunque utile in forma descrittiva per arricchire la
-# narrazione delle 3 gare-caso (dettagli concreti nei tooltip invece di
-# "gomme vecchie"): per questo si importa SOLO per queste gare, non per
-# tutte le 46 (§5.2 e la classifica dei pit restano quelle validate,
-# nessuna nuova metrica derivata dalla mescola).
-CASE_RACE_SLUGS = {"2023-bahrain", "2024-jeddah", "2023-albert_park"}
+# Mescola ed età gomme (stint OpenF1). Fino al pivot v2 si importava SOLO per
+# le 3 gare-caso (un'analisi precedente aveva verificato che una formula
+# predittiva basata sull'età gomme del RIVALE — chi resta fuori da una
+# neutralizzazione, per quanti giri lo tieni dietro — non reggeva sui dati,
+# correlazione ~0 su 263 coppie testate; era rimasto quindi solo un
+# arricchimento descrittivo per le 3 gare-caso). Il pivot v2 (docs/
+# PROGETTAZIONE.md §5.6) usa l'età gomme diversamente — come asse della
+# mappa "quando conviene" sulle ~800 decisioni, non come predittore del
+# comportamento del rivale — e per costruire quella mappa serve su tutte
+# le gare, non solo 3 (spike P1.2, docs/ROADMAP-2.md). Da qui: import
+# esteso a tutte le gare con almeno una neutralizzazione (v. `if windows`
+# più sotto). Resta comunque un arricchimento puramente descrittivo:
+# nessun impatto su costo effettivo/sconto/etichetta (§5.1-5.4), già
+# validati e non toccati.
+CASE_RACE_SLUGS = {"2023-bahrain", "2024-jeddah", "2023-albert_park"}  # le 3 gare-caso raccontate a fondo (storie, task 5.1); non più legate all'import gomme
 
 # Alcuni giri in lap_times.csv durano diverse migliaia di secondi: sono
 # bandiere rosse (il tempo del giro include l'intera sospensione della
@@ -458,12 +463,14 @@ def slugify(race_row: Dict, ergast: ErgastData) -> str:
 
 def attach_tyre_info(race_json: Dict, stints: List[Dict], ergast: ErgastData) -> None:
     """
-    Arricchisce SOLO le 3 gare-caso (vedi CASE_RACE_SLUGS) con la mescola e
-    l'età delle gomme, lette dagli stint OpenF1: aggiunge `compound` a ogni
-    pit stop (la mescola montata all'uscita) e `tyreCompound`/`tyreAge` a
-    ogni esito pilota-evento (la gomma già in uso all'inizio della
-    neutralizzazione — utile soprattutto per raccontare i LOCKED_OUT: "gomme
-    dure da 22 giri" invece del solo numero di giri dedotto dalle regole).
+    Arricchisce una gara con la mescola e l'età delle gomme, lette dagli
+    stint OpenF1: aggiunge `compound` a ogni pit stop (la mescola montata
+    all'uscita) e `tyreCompound`/`tyreAge` a ogni esito pilota-evento (la
+    gomma già in uso all'inizio della neutralizzazione — utile per
+    raccontare i LOCKED_OUT: "gomme dure da 22 giri" invece del solo numero
+    di giri dedotto dalle regole, e per la mappa "quando conviene" di §5.6).
+    Chiamata dal chiamante per ogni gara con almeno una neutralizzazione
+    (v. `if windows` in process_all_races), non solo per le 3 gare-caso.
     Puramente descrittivo: nessuna nuova metrica derivata, nessun impatto
     su costo effettivo/sconto/etichetta, già validati in §5.1-5.4.
     """
@@ -555,7 +562,7 @@ async def process_all_races():
         race_json = build_race_json(ergast, race_row, windows)
         slug = slugify(race_row, ergast)
 
-        if slug in CASE_RACE_SLUGS:
+        if windows:  # l'età gomme serve solo dove c'e' almeno una neutralizzazione da valutare
             try:
                 stints = await client.get_stints(session_key, meeting_key, year)
                 attach_tyre_info(race_json, stints, ergast)

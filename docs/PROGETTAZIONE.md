@@ -1,61 +1,96 @@
-# Chaos Discount — Documento di progettazione
+# Box, box? — Documento di progettazione (v2)
 
 Progetto per il corso di Visualizzazione delle Informazioni.
 Gruppo di 3 studenti. Visualizzazione interattiva in D3.js su dati reali di Formula 1.
 
-Ultimo aggiornamento: 8 luglio 2026. La fase di ideazione è conclusa:
-questo documento è la specifica condivisa per l'implementazione.
+Ultimo aggiornamento: 12 luglio 2026 — **pivot dopo il feedback del
+professore** (v1 "Chaos Discount": il progetto descriveva un fenomeno ma
+non individuava un problema né proponeva una soluzione). Le sezioni 1-3
+sono riscritte per il nuovo frame; metriche (§5), pipeline (§6) e gran
+parte delle viste (§7) restano valide e già implementate — vedi
+`docs/ROADMAP-2.md` per il piano dei soli delta.
 
 ---
 
-## 1. L'idea in due righe
+## 1. Il problema e la soluzione (l'idea in due righe)
 
-In Formula 1 un pit stop costa circa 20-25 secondi rispetto a chi resta in pista.
-Quando entra la Safety Car (SC) o la Virtual Safety Car (VSC), tutti sono costretti
-ad andare piano: chi si ferma ai box in quel momento paga molto meno.
-È uno "sconto". Ma lo sconto non è disponibile per tutti: dipende da dove sei,
-da quanto sono vecchie le tue gomme, dal traffico, da cosa fa il tuo compagno
-di squadra. Il progetto visualizza questa disuguaglianza.
+**Il problema.** Quando entra una Safety Car (SC) o una Virtual Safety Car
+(VSC), ogni muretto ha pochi secondi per rispondere alla chiamata radio
+"box, box?": fermarsi adesso costa molto meno del normale (15,5s mediani
+contro 22,5s in verde, misurato dalla nostra pipeline su 46 gare), ma si
+rientra nel traffico; restare fuori conserva la posizione, con gomme più
+vecchie e la scommessa di dover pagare prezzo pieno più avanti. La
+decisione dipende da parametri che interagiscono (gap, gomme, piano soste,
+cosa fanno gli altri) e da fuori — TV, timing screen, classifica — è
+invisibile: si vede solo l'esito, mai le carte che il muretto aveva in
+mano. Persino i top team la sbagliano (Ferrari a Monaco 2022, Mercedes ad
+Abu Dhabi 2021).
+
+**La soluzione.** Uno strumento di visualizzazione che, per ogni
+neutralizzazione delle stagioni 2023-2024: (a) ricostruisce la decisione
+com'era in quel momento, pilota per pilota, con le due opzioni
+quantificate; (b) mostra la scelta fatta e com'è andata; (c) aggrega
+~800 decisioni reali in una mappa empirica del "quando conviene fermarsi".
 
 ## 2. Domanda di ricerca
 
-Le neutralizzazioni di gara (SC e VSC) creano opportunità strategiche uguali
-per tutti, o premiano chi si trova nel posto giusto al giro giusto?
-Quanto vale, in secondi e in posizioni, questa "lotteria"?
+**Quando conviene fermarsi ai box durante una neutralizzazione?**
 
 In pratica il progetto risponde a tre domande:
 
-1. Quanto vale lo sconto? (in secondi, rispetto a un pit stop normale)
-2. Chi può prenderlo e chi ne resta escluso?
-3. La distribuzione è equa o casuale?
+1. Che decisione aveva davanti ciascun pilota? (ricostruzione: opzioni
+   BOX e STAY quantificate — §5.6)
+2. Chi ha scelto bene e chi ha sbagliato? (verdetto retrospettivo:
+   esito dopo 5 giri, confronto col "gemello")
+3. Quali condizioni rendono conveniente fermarsi? (la mappa empirica
+   su due stagioni di scelte vere)
 
-Attenzione a cosa il progetto NON è: non dimostriamo che "fermarsi sotto
-Safety Car conviene". Quello lo sanno tutti, è banale, e il prof ha detto
-esplicitamente di evitare progetti banali. Noi mostriamo una cosa che NON si
-vede in TV né in classifica: chi aveva accesso allo sconto e chi no.
+Utente di riferimento e decisione supportata (richiesti dalle slide):
+l'analista di strategia — o il tifoso che vuole giudicare il muretto —
+che si chiede "il pilota X doveva fermarsi?".
 
-## 3. Decisioni prese (riunione di ideazione)
+Cosa il progetto NON è: non un modello predittivo né una simulazione
+(fuori scopo per un corso di InfoViz e metodologicamente attaccabile).
+La risposta al "quando conviene" emerge facendo parlare le scelte reali
+e i loro esiti — che è esattamente il mestiere della visualizzazione
+delle informazioni.
 
-**Un solo progetto, non due.** Nel repo c'è ancora il filone "rivalità tra
-compagni di squadra" (il package si chiama ancora nemici-in-casa). Si tiene
-UNA sola domanda di ricerca: quella della lotteria. Le pagine sulle rivalità
-non si buttano: diventano una singola vista chiamata "stesso box, fortuna
-diversa", cioè come due compagni di squadra vivono la stessa neutralizzazione
-in modo opposto (uno si ferma gratis, l'altro aspetta il giro dopo).
+## 3. Decisioni prese
 
-**L'angolo che rende il progetto non banale** è misurare la disuguaglianza:
-per ogni neutralizzazione, classifichiamo ogni pilota (ha sfruttato la
-finestra / è stato fregato / era tagliato fuori / non gli serviva) e mostriamo
-il quadro complessivo su due stagioni.
+**Pivot di luglio 2026 (feedback del professore).** La v1 dimostrava che
+"la lotteria esiste" (descrittivo, nessun problema da risolvere). Il
+riorientamento trasforma lo stesso dataset e la stessa pipeline in uno
+strumento di supporto alla decisione. Regole del pivot:
 
-**Perimetro dati:** stagioni 2023 e 2024 complete (circa 45 gare) per le
-statistiche aggregate, più 3 gare raccontate a fondo una per una.
-Se il 2024 desse problemi coi dati, si ripiega sul solo 2023.
+- **La pipeline validata non si tocca.** Il layer decisionale
+  (`decision_snapshots`) si costruisce SOPRA i JSON già esportati: se il
+  nuovo layer avesse problemi, il progetto v1 resta in piedi come rete
+  di sicurezza.
+- **Lo "sconto" (chaos discount) resta il concetto chiave ma viene
+  declassato da tesi a metrica**: quantifica il costo dell'opzione BOX.
+  Tutta la §5 resta valida così com'è.
+- **La tesi della disuguaglianza non si butta**: diventa il capitolo
+  "quando la scelta non ce l'hai" (LOCKED_OUT, JUST_BEFORE) — dentro il
+  nuovo frame è più forte, perché mostra i limiti dello strumento.
+- **Il controfattuale simulato resta escluso** (come in v1): il
+  controfattuale ce lo dà il "gemello" — il pilota vicino in classifica,
+  in condizioni simili, che ha scelto l'opposto. Il gemello perfetto è
+  il compagno di squadra: stessa macchina, stesso muretto → la vista
+  "stesso box, fortuna diversa" diventa l'esperimento naturale del
+  progetto.
+- **Un solo ricevimento, con tutto fatto**: si porta il progetto
+  completo riorientato; le eventuali correzioni si fanno dopo, sul
+  feedback.
 
-**Cose escluse di proposito:** la classifica controfattuale ("come sarebbe
-finita senza Safety Car") è troppo attaccabile metodologicamente, al massimo
-diventa una vista secondaria. La posizione fisica in pista al momento della
-neutralizzazione richiederebbe dati di telemetria in più: fuori perimetro.
+**Perimetro dati:** invariato — stagioni 2023 e 2024 complete (46 gare,
+42 neutralizzazioni, ~1700 pit stop), 3 gare raccontate a fondo.
+
+**Cose escluse di proposito:** simulazioni di gara e modelli predittivi;
+la classifica controfattuale; la posizione fisica in pista al momento
+della neutralizzazione (servirebbe telemetria); i casi bagnato come
+parametro (stravolgono i riferimenti — limite dichiarato); il punto del
+giro in cui scatta la neutralizzazione (limite di granularità già noto,
+§5.1).
 
 ## 4. Dataset
 
@@ -232,6 +267,129 @@ pilota finisce in una di queste categorie:
 Le soglie (8 giri, 3 auto) sono parametri dichiarati nella pagina
 /methodology del sito, così nessuno ci può accusare di numeri magici.
 
+### 5.6 Il modello della decisione (il layer del pivot)
+
+Per ogni pilota × neutralizzazione, uno **snapshot della decisione**
+calcolato al giro del deploy. È il cuore concettuale nuovo; tutto il
+resto della §5 gli fa da fondamenta.
+
+**Cosa vede il muretto (input).** Tutti derivabili dai dati già
+esportati, verificato sui JSON reali:
+
+- posizione e gap con chi sta davanti/dietro (dai tempi cumulati `ms`
+  per giro);
+- età e mescola gomme (già nei campi `tyreAge` / `tyreCompound` degli
+  outcomes);
+- giri mancanti / fase di gara;
+- soste già fatte vs soste tipiche di quella gara — il pit "gratis" è
+  tale solo se quella sosta andava comunque fatta; se il piano era già
+  completo, è uno stop in più e lo sconto non lo copre quasi mai;
+- cosa fanno gli altri: quota del gruppo che si ferma in quel giro,
+  ordine nel double stack (flag già in pipeline);
+- contesto circuito: prezzo di listino della pista (§5.2, già
+  calcolato), **sorpassabilità** (nuovo: media dei cambi di posizione in
+  giri verdi per circuito, dai nostri stessi dati — la stessa decisione
+  vale l'opposto a Monaco e a Monza) e **caoticità** (frequenza storica
+  di SC/VSC per pista: la scommessa "arriverà un'altra Safety Car" —
+  stima grezza su 2 stagioni, da dichiarare come tale).
+
+**Le due opzioni, quantificate:**
+
+- **BOX** — costo atteso = perdita effettiva scontata (mediana
+  dell'evento, o del campione se l'evento ha pochi pit affidabili);
+  **posizione di rientro prevista** = riposizionamento sul tempo
+  cumulato + costo atteso (si contano le auto che restano davanti);
+  beneficio = gomme fresche (delta di passo stimato dai giri verdi
+  della stessa gara, versione semplice).
+- **STAY** — posizione conservata, gomme invariate; costo differito =
+  prezzo pieno (§5.2) se serve ancora una sosta, con la scommessa
+  implicita su un'altra neutralizzazione (parametro caoticità).
+
+**Il verdetto (retrospettivo):** scelta (BOX / STAY / FORZATA, quando
+l'esito v1 era LOCKED_OUT) × esito (delta posizioni dopo 5 giri, già in
+pipeline: guadagnato / perso / pari). Nei casi-storia il verdetto si
+rafforza col confronto col gemello (definito in §3).
+
+**Decisione presa (dopo lo spike P1.2, v. STATO sotto): niente scatter
+con la pretesa di un confine netto.** La mappa "quando conviene" diventa
+un confronto di **distribuzioni**: l'indice combinato (0,6 × traffico +
+0,4 × margine dietro, entrambi z-score, pesi dichiarati) per chi ha
+guadagnato vs chi ha perso, come istogrammi/densità sovrapposti (non
+scatter a punti). Mostra onestamente quello che c'è nei dati: le due
+popolazioni hanno medie diverse (0,95 vs 0,45) ma si sovrappongono
+molto — un vantaggio statistico reale, non una certezza. Motivazione
+dichiarabile all'esame: è coerente con la letteratura sull'argomento
+(v. STATO sotto), che per fare meglio di una correlazione debole usa
+modelli molto più pesanti (deep learning, reinforcement learning con
+memoria temporale) — 2 variabili e un grafico 2D non bastano per un
+confine netto, ed è onesto dirlo invece di fingere un confine che non
+c'è. I piloti NOT_NEEDED restano esclusi dalla mappa ma visibili nella
+matrice. L'indice combinato è anche un campo dichiarato della scheda
+decisione (tooltip): non "previsione", ma "vantaggio statistico
+stimato" — coerente con l'idea del progetto (§3) che lo strumento aiuta
+la decisione, non la sostituisce.
+
+STATO spike P1.2 (`data-layer/scripts/spike_decision_map.py`): eseguito
+su tutte le neutralizzazioni delle 46 gare, 646 snapshot pilota×evento
+(NOT_NEEDED escluso). Prima condizione necessaria: `tyreAge`/
+`tyreCompound` (usati anche qui, non solo nei tooltip) erano arricchiti
+da `attach_tyre_info` **solo per le 3 gare-caso** — copertura 12% sul
+totale. Risolto estendendo l'arricchimento a ogni gara con almeno una
+neutralizzazione (non tocca costo effettivo/sconto/etichetta, §5.1-5.4,
+resta un campo puramente descrittivo) e rilanciando `build_all.py`:
+copertura ora 93%.
+
+Con la copertura piena, però, **nessuna delle coppie di assi provate
+mostra una separazione visibile** tra decisioni BOX che hanno pagato e
+no (margine dietro × età gomme, età gomme × fase di gara, soste fatte ×
+età gomme, margine dietro × soste fatte — grafici in
+`data-layer/data/spike_plots/`). È coerente con un'altra verifica già
+fatta sui questi dati (`data-layer/scripts/import_stints_all.py`):
+l'età gomme del rivale non prediceva i giri per riscavalcarlo
+(correlazione ~0 su 263 coppie); qui il segnale manca anche nella
+direzione "la mia età gomme e il mio margine predicono se il MIO box
+paga".
+
+Aggiunte due variabili di §5.6 non ancora provate: **sorpassabilità**
+del circuito (nuova, calcolata nello spike: media dei cambi di
+posizione tra giri verdi consecutivi, per circuito, media sulle 2
+stagioni) e **traffico** (quota del gruppo che si ferma nella stessa
+finestra, già derivabile dai pit esistenti). Sorpassabilità non aggiunge
+nulla (correlazione con l'esito ≈ -0.10, come età gomme). Il traffico
+invece un segnale reale ce l'ha: correlazione 0,28 con l'esito a 5 giri
+tra chi ha boxato (contro 0,18 del margine dietro, ≈0 per età gomme e
+sorpassabilità) — coerente con quanto osservato a mano sullo spike
+Jeddah (P1.1): quando tanti si fermano insieme nella stessa finestra,
+si "salvano" a vicenda. Il problema: 0,28 è un segnale reale ma debole
+— anche nella coppia migliore provata (traffico × margine dietro) la
+nuvola dei punti resta troppo rumorosa per un confine visibile, non solo
+per il centroide.
+
+**Indice combinato (round 3, su richiesta).** Pesi dichiarati a mano
+(non ottimizzati sui dati, per non rischiare overfitting su soli 133
+casi BOX guadagnato/perso): 0,6 × z-score(traffico) + 0,4 ×
+z-score(margine dietro) — pesi in proporzione alla correlazione
+individuale misurata (0,28 e 0,18). Risultato: correlazione con l'esito
+**0,34-0,36**, verificata stabile su due metà casuali del campione
+(0,37 e 0,35). Le distribuzioni di chi guadagna e chi perde, sull'indice
+combinato, hanno medie chiaramente diverse (0,95 vs 0,45) ma **si
+sovrappongono pesantemente** (grafico
+`data-layer/data/spike_plots/h2_indice_combinato_distribuzione.png`):
+non è un confine, è uno spostamento di tendenza.
+
+**Ricerca esterna (verifica di sanità, non citata come fonte del
+metodo):** nessun lavoro accademico trovato risolve questo problema con
+2 variabili e uno scatter — chi ci prova usa deep learning su
+telemetria (F1-score 0,81, CI 95% [0,79-0,83]) o reinforcement learning
+con memoria temporale, e nota esplicitamente che lo stato istantaneo
+(gap, gomme) da solo non basta. Conferma che il segnale debole trovato
+qui non è un errore del nostro spike ma la natura del problema — utile
+per rispondere a "perché non un confine netto?" in sede d'esame.
+
+**Cosa NON abbiamo più bisogno di decidere**: la scelta sopra chiude la
+questione aperta durante lo spike (P1.2 in `docs/ROADMAP-2.md`) — P2/P3
+possono partire con l'indice combinato, non con margine×età-gomme.
+
 ## 6. Come arrivano i dati al sito
 
 STATO: implementato (task 2.1), eseguito su tutte le 46 gare 2023-2024.
@@ -272,8 +430,25 @@ Niente backend: sito statico, si carica il JSON della gara quando serve.
 
 ## 7. Le viste
 
-Struttura del sito: la home mostra la tesi sull'insieme delle gare
-(overview), le pagine gara mostrano la prova nei 3 casi scelti (detail).
+Struttura del sito: la home mostra la risposta aggregata al "quando
+conviene" (overview), le pagine gara ricostruiscono le decisioni nei
+3 casi scelti (detail).
+
+**Riorientamento delle viste (pivot v2).** Le descrizioni sotto restano
+la base implementata; questa tabella dice cosa cambia per ciascuna:
+
+| Vista (v1, implementata) | Nel pivot diventa |
+|---|---|
+| 1 — Race trace | Invariata: è il "replay" di contesto, con brush |
+| 2 — Barre degli sconti | Invariata ma riframata: quantifica il costo dell'opzione BOX (sotto SC vs in verde) |
+| 3 — Slope chart | **Il momento della scelta**: si aggiunge una colonna centrale — posizioni al deploy → *rientro previsto se boxi* (calcolo §5.6) → posizioni reali dopo. La distanza tra previsione e realtà È il racconto |
+| 4 — Matrice della lotteria | **Matrice scelta × esito**: stessi dati, etichette nuove (si è fermato/no × guadagnato/perso; LOCKED_OUT → "scelta forzata"). Tooltip arricchito con la scheda decisione |
+| 5 — Stesso box, fortuna diversa | Invariata, promossa a **esperimento naturale** (il gemello perfetto, §3) |
+| 6 — Distribuzione sconti (home) | **La mappa del "quando conviene"**: NON uno scatter — istogrammi/densità sovrapposti dell'indice combinato (§5.6) per guadagnato vs perso, così com'è deciso dopo lo spike P1.2 (nessun confine netto trovato con 2 assi puri, v. §5.6). Il beeswarm attuale scende a sezione di supporto ("quanto costa l'opzione BOX") |
+
+In più: la **scheda decisione** (§5.6) come pannello/tooltip ricco nella
+pagina gara, e le storie delle 3 gare-caso riscritte come storie di
+decisione.
 
 **Vista 1 — Race trace.** Il grafico principale della pagina gara.
 Asse X: i giri. Asse Y: il distacco da un riferimento. Una linea per pilota.
@@ -327,18 +502,25 @@ il "nested model" (4 livelli) e di descrivere il progetto con la loro
 terminologia. Ecco la traduzione, livello per livello, da riusare pari pari
 in relazione:
 
-**Domain situation** (chi usa il sistema e per decidere cosa): appassionati e
-analisti F1; la decisione è verificare o smentire l'ipotesi "la lotteria
-esiste". Le slide chiedono esplicitamente di restringersi a un tipo di utente
-e una decisione: noi lo facciamo, e va detto.
+**Domain situation** (chi usa il sistema e per decidere cosa): l'analista
+di strategia — o il tifoso che vuole giudicare il muretto — e la decisione
+supportata è "il pilota X doveva fermarsi?". Le slide chiedono
+esplicitamente di restringersi a un tipo di utente e una decisione: il
+pivot rende questa risposta molto più netta della v1 ("verificare che la
+lotteria esiste"), e all'esame va rivendicato: il progetto individua un
+problema (la decisione box/no-box è illeggibile e costosa da sbagliare)
+e propone una soluzione (lo strumento che la ricostruisce e la mappa).
 
 **Data e task abstraction** (che dati e che operazioni): serie temporali per
-pilota + eventi (pit, neutralizzazioni) + variabili derivate (gli sconti).
-I task, nella tassonomia di Amar et al. vista a lezione: compute derived
-value (lo sconto), characterize distribution (vista 6), find extremum (le
-barre ordinate), find anomalies (i fregati e gli esclusi), filter e sort
-(brush e ordinamenti), correlate (timing del pit contro sconto), compare
-(compagni di squadra, gara contro gara).
+pilota + eventi (pit, neutralizzazioni) + variabili derivate (sconti,
+snapshot della decisione, verdetti). I task, nella tassonomia di Amar et
+al. vista a lezione: compute derived value (sconto, rientro previsto),
+characterize distribution (la mappa del quando conviene), find extremum (le
+barre ordinate, le scelte più costose), find anomalies (i fregati, gli
+esclusi, le scelte controcorrente), filter e sort (brush, filtri della
+mappa), correlate (condizioni della decisione contro esito — il task
+centrale del pivot), compare (compagni di squadra/gemelli, gara contro
+gara).
 
 **Visual encoding e interaction idioms** (come si disegna e come si
 interagisce): marks = linee, barre, celle, segmenti; channels = posizione per
