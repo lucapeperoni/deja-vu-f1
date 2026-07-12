@@ -7,5 +7,13 @@
   "baselineWindowLaps": 5,
   "baselineMinCleanLaps": 3,
   "minGreenStopsForConfidence": 4,
-  "fieldReferenceMinSamples": 3
+  "fieldReferenceMinSamples": 3,
+  "boxFallbackCostSeconds": 15.5,
+  "verdictGainThreshold": 1,
+  "verdictLossThreshold": -1,
+  "combinedIndexWeights": {
+    "trafficFraction": 0.6,
+    "gapBehind": 0.4
+  },
+  "minSamplesForTyreRegression": 20
 }

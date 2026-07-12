@@ -26,7 +26,7 @@ import sys
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_LAYER_DIR = SCRIPT_DIR.parent
@@ -52,6 +52,18 @@ from app.metrics.effective_pit_loss import (  # noqa: E402
     CONTEXT_UNDER_VSC,
     CONTEXT_JUST_BEFORE,
     calculate_pit_cost,
+)
+from app.metrics.decision_snapshots import (  # noqa: E402
+    BOX_FALLBACK_COST_SECONDS,
+    COMBINED_INDEX_WEIGHTS,
+    MIN_SAMPLES_FOR_TYRE_REGRESSION,
+    VERDICT_GAIN_THRESHOLD,
+    VERDICT_LOSS_THRESHOLD,
+    build_race_decisions,
+    compute_fresh_tyre_delta_per_lap,
+    compute_race_overtakability,
+    fill_combined_index,
+    to_json_record,
 )
 
 YEARS = [2023, 2024]
@@ -461,7 +473,37 @@ def slugify(race_row: Dict, ergast: ErgastData) -> str:
     return f"{race_row['year']}-{circuit_ref}"
 
 
-def attach_tyre_info(race_json: Dict, stints: List[Dict], ergast: ErgastData) -> None:
+def build_number_by_driver_id(ergast: ErgastData) -> Dict[str, int]:
+    number_by_driver_id: Dict[str, int] = {}
+    for driver_id, row in ergast.drivers.items():
+        if row.get("number") not in (None, "", "\\N"):
+            number_by_driver_id[driver_id] = int(row["number"])
+    return number_by_driver_id
+
+
+def build_stints_by_number(stints: List[Dict]) -> Dict[int, List[Dict]]:
+    stints_by_number: Dict[int, List[Dict]] = defaultdict(list)
+    for s in stints:
+        stints_by_number[s["driver_number"]].append(s)
+    return stints_by_number
+
+
+def stint_at(
+    stints_by_number: Dict[int, List[Dict]], number_by_driver_id: Dict[str, int], driver_id: str, lap: int
+) -> Optional[Dict]:
+    number = number_by_driver_id.get(driver_id)
+    if number is None:
+        return None
+    for s in stints_by_number.get(number, []):
+        lap_end = s.get("lap_end") or 9999
+        if s["lap_start"] <= lap <= lap_end:
+            return s
+    return None
+
+
+def attach_tyre_info(
+    race_json: Dict, stints_by_number: Dict[int, List[Dict]], number_by_driver_id: Dict[str, int]
+) -> None:
     """
     Arricchisce una gara con la mescola e l'età delle gomme, lette dagli
     stint OpenF1: aggiunge `compound` a ogni pit stop (la mescola montata
@@ -474,39 +516,64 @@ def attach_tyre_info(race_json: Dict, stints: List[Dict], ergast: ErgastData) ->
     Puramente descrittivo: nessuna nuova metrica derivata, nessun impatto
     su costo effettivo/sconto/etichetta, già validati in §5.1-5.4.
     """
-    number_by_driver_id: Dict[str, int] = {}
-    for driver_id, row in ergast.drivers.items():
-        if row.get("number") not in (None, "", "\\N"):
-            number_by_driver_id[driver_id] = int(row["number"])
-
-    stints_by_number: Dict[int, List[Dict]] = defaultdict(list)
-    for s in stints:
-        stints_by_number[s["driver_number"]].append(s)
-
-    def stint_at(driver_id: str, lap: int) -> Optional[Dict]:
-        number = number_by_driver_id.get(driver_id)
-        if number is None:
-            return None
-        for s in stints_by_number.get(number, []):
-            lap_end = s.get("lap_end") or 9999
-            if s["lap_start"] <= lap <= lap_end:
-                return s
-        return None
-
     for driver in race_json["drivers"]:
         for pit in driver["pits"]:
-            s = stint_at(driver["driverId"], pit["lap"] + 1)  # lo stint dopo il pit, cioe' la gomma montata
+            # lo stint dopo il pit, cioe' la mescola montata all'uscita
+            s = stint_at(stints_by_number, number_by_driver_id, driver["driverId"], pit["lap"] + 1)
             pit["compound"] = s.get("compound") if s else None
 
         for outcome in driver["outcomes"]:
             event = next((e for e in race_json["neutralizations"] if e["eventId"] == outcome["eventId"]), None)
-            s = stint_at(driver["driverId"], event["startLap"]) if event else None
+            s = (
+                stint_at(stints_by_number, number_by_driver_id, driver["driverId"], event["startLap"])
+                if event
+                else None
+            )
             if s:
                 outcome["tyreCompound"] = s.get("compound")
                 outcome["tyreAge"] = s["tyre_age_at_start"] + (event["startLap"] - s["lap_start"])
             else:
                 outcome["tyreCompound"] = None
                 outcome["tyreAge"] = None
+
+
+def compute_fresh_tyre_delta_for_race(
+    race_json: Dict, stints_by_number: Dict[int, List[Dict]], number_by_driver_id: Dict[str, int]
+) -> Optional[float]:
+    """
+    §5.6: "beneficio [dello STAY, in negativo per il BOX] = gomme fresche
+    (delta di passo stimato dai giri verdi della stessa gara, versione
+    semplice)". Un solo valore per gara (non per pilota/evento): pendenza di
+    una regressione grezza tempo-giro (s) su età gomma (giri), sui giri
+    verdi (non neutralizzati, non giro di entrata/uscita da un pit) di TUTTI
+    i piloti della gara. None se il campione è sotto la soglia dichiarata
+    (MIN_SAMPLES_FOR_TYRE_REGRESSION) — tipicamente perché gli stint OpenF1
+    non sono stati recuperati per questa gara.
+    """
+    neutralized_laps = {
+        lap for w in race_json["neutralizations"] for lap in range(w["startLap"], w["endLap"] + 1)
+    }
+
+    samples: List[Tuple[float, float]] = []
+    for driver in race_json["drivers"]:
+        laps_sorted = sorted(driver["laps"], key=lambda l: l["l"])
+        pit_affected_laps = {lap for p in driver["pits"] for lap in (p["lap"], p["lap"] + 1)}
+
+        prev_ms: Optional[float] = None
+        for lap_row in laps_sorted:
+            lap, cum_ms = lap_row["l"], lap_row["ms"]
+            lap_ms = (cum_ms - prev_ms) if (prev_ms is not None and cum_ms is not None) else None
+            prev_ms = cum_ms if cum_ms is not None else prev_ms
+
+            if lap_ms is None or lap in neutralized_laps or lap in pit_affected_laps:
+                continue
+            s = stint_at(stints_by_number, number_by_driver_id, driver["driverId"], lap)
+            if s is None:
+                continue
+            tyre_age = s["tyre_age_at_start"] + (lap - s["lap_start"])
+            samples.append((float(tyre_age), lap_ms / 1000.0))
+
+    return compute_fresh_tyre_delta_per_lap(samples, min_samples=MIN_SAMPLES_FOR_TYRE_REGRESSION)
 
 
 # ---------------------------------------------------------------------------
@@ -522,11 +589,16 @@ async def process_all_races():
     for year in YEARS:
         openf1_sessions_by_year[year] = await fetch_openf1_race_sessions_by_year(client, year)
 
+    number_by_driver_id = build_number_by_driver_id(ergast)
+
     processed = []
     skipped = []
     index_entries = []
     all_pit_rows_for_aggregate = []
     outcome_matrix = []  # righe per aggregate.json: {race, driver, event, category}
+    pending_races = []  # (slug, race_json, out_path, decisions_internal, circuit_ref) - scrittura differita
+    # perche' combinedIndex (§5.6) e' uno z-score sulla popolazione di TUTTE le gare:
+    # va calcolato dopo aver visto ogni decisione, non gara per gara (v. fill_combined_index sotto)
 
     for race_row in race_rows:
         race_id = race_row["raceId"]
@@ -561,19 +633,27 @@ async def process_all_races():
 
         race_json = build_race_json(ergast, race_row, windows)
         slug = slugify(race_row, ergast)
+        circuit_ref = ergast.circuits.get(race_row["circuitId"], {}).get("circuitRef", "unknown")
 
-        if windows:  # l'età gomme serve solo dove c'e' almeno una neutralizzazione da valutare
+        decisions_internal: List[Dict] = []
+        if windows:  # l'età gomme e il layer decisione servono solo dove c'e' almeno una neutralizzazione
             try:
                 stints = await client.get_stints(session_key, meeting_key, year)
-                attach_tyre_info(race_json, stints, ergast)
+                stints_by_number = build_stints_by_number(stints)
+                attach_tyre_info(race_json, stints_by_number, number_by_driver_id)
+                fresh_tyre_delta = compute_fresh_tyre_delta_for_race(race_json, stints_by_number, number_by_driver_id)
             except Exception as exc:  # noqa: BLE001 - descrittivo, non deve bloccare la gara
                 print(f"  [{label}] ATTENZIONE: stint OpenF1 non recuperati ({exc}), pit senza dati mescola")
+                fresh_tyre_delta = None
+            # decision_snapshots.py, §5.6: uno snapshot per pilota x neutralizzazione.
+            # combinedIndex resta None qui: e' uno z-score sulla popolazione di TUTTE
+            # le gare, riempito dopo il ciclo (v. fill_combined_index sotto).
+            decisions_internal = build_race_decisions(race_json, fresh_tyre_delta)
 
         races_dir = PUBLIC_DATA_DIR / "races"
         races_dir.mkdir(parents=True, exist_ok=True)
         out_path = races_dir / f"{slug}.json"
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(race_json, f, ensure_ascii=False)
+        pending_races.append((slug, race_json, out_path, decisions_internal, circuit_ref))
 
         n_neutralizations = len(windows)
         index_entries.append(
@@ -617,20 +697,90 @@ async def process_all_races():
                 )
 
         n_excluded = race_json["race"]["excludedAnomalousLaps"]
-        processed.append((label, n_neutralizations, out_path.stat().st_size, n_excluded))
+        processed.append((label, n_neutralizations, n_excluded, len(decisions_internal)))
         excluded_note = f", {n_excluded} giri anomali esclusi" if n_excluded else ""
-        print(f"  OK  {label}: {n_neutralizations} neutralizzazioni, {out_path.stat().st_size // 1024} KB{excluded_note}")
+        print(f"  OK  {label}: {n_neutralizations} neutralizzazioni, {len(decisions_internal)} decisioni{excluded_note}")
 
         await asyncio.sleep(RATE_LIMIT_SECONDS)
 
     await client.close()
 
+    # --- secondo passaggio: combinedIndex sulla popolazione di TUTTE le decisioni
+    # (§5.6, decisione presa dopo lo spike P1.2), poi scrittura dei file di gara ---
+    all_decisions_internal = [d for _, _, _, decisions, _ in pending_races for d in decisions]
+    fill_combined_index(all_decisions_internal)
+
+    aggregate_decisions = []
+    circuit_overtakability_samples: Dict[str, List[float]] = defaultdict(list)
+    circuit_listino_samples: Dict[str, List[float]] = defaultdict(list)
+    circuit_chaos_count: Dict[str, int] = defaultdict(int)
+
+    for slug, race_json, out_path, decisions_internal, circuit_ref in pending_races:
+        race_json["decisions"] = [to_json_record(d) for d in decisions_internal]
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(race_json, f, ensure_ascii=False)
+
+        for d in race_json["decisions"]:
+            aggregate_decisions.append(
+                {
+                    "raceId": slug,
+                    "eventId": d["eventId"],
+                    "driverId": d["driverId"],
+                    "choice": d["choice"],
+                    "verdict": d["outcome"]["verdict"],
+                    "combinedIndex": d["combinedIndex"],
+                    "notNeeded": d["notNeeded"],
+                }
+            )
+
+        pos_by_lap: Dict[int, Dict[str, int]] = defaultdict(dict)
+        for driver in race_json["drivers"]:
+            for lap_row in driver["laps"]:
+                if lap_row["pos"] is not None:
+                    pos_by_lap[lap_row["l"]][driver["id"]] = lap_row["pos"]
+        neutralized_laps = {
+            lap for w in race_json["neutralizations"] for lap in range(w["startLap"], w["endLap"] + 1)
+        }
+        overtakability = compute_race_overtakability(pos_by_lap, neutralized_laps)
+        if overtakability is not None:
+            circuit_overtakability_samples[circuit_ref].append(overtakability)
+
+        nominal_pit_loss = race_json["race"]["nominalPitLoss"]
+        if nominal_pit_loss is not None:
+            circuit_listino_samples[circuit_ref].append(nominal_pit_loss)
+
+        circuit_chaos_count[circuit_ref] += len(race_json["neutralizations"])
+
+    circuits = {
+        circuit_ref: {
+            "overtakability": (
+                statistics.mean(circuit_overtakability_samples[circuit_ref])
+                if circuit_overtakability_samples.get(circuit_ref)
+                else None
+            ),
+            "listino": (
+                statistics.mean(circuit_listino_samples[circuit_ref])
+                if circuit_listino_samples.get(circuit_ref)
+                else None
+            ),
+            "chaos": circuit_chaos_count[circuit_ref],
+        }
+        for circuit_ref in circuit_chaos_count
+    }
+
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(PUBLIC_DATA_DIR / "index.json", "w", encoding="utf-8") as f:
         json.dump(index_entries, f, ensure_ascii=False, indent=2)
 
+    with open(PUBLIC_DATA_DIR / "circuits.json", "w", encoding="utf-8") as f:
+        json.dump(circuits, f, ensure_ascii=False, indent=2)
+
     with open(PUBLIC_DATA_DIR / "aggregate.json", "w", encoding="utf-8") as f:
-        json.dump({"pitStops": all_pit_rows_for_aggregate, "outcomes": outcome_matrix}, f, ensure_ascii=False)
+        json.dump(
+            {"pitStops": all_pit_rows_for_aggregate, "outcomes": outcome_matrix, "decisions": aggregate_decisions},
+            f,
+            ensure_ascii=False,
+        )
 
     params = {
         "tyreAgeMinLaps": TYRE_AGE_MIN_LAPS,
@@ -642,18 +792,36 @@ async def process_all_races():
         "baselineMinCleanLaps": BASELINE_MIN_CLEAN_LAPS,
         "minGreenStopsForConfidence": MIN_GREEN_STOPS_FOR_CONFIDENCE,
         "fieldReferenceMinSamples": FIELD_REFERENCE_MIN_SAMPLES,
+        "boxFallbackCostSeconds": BOX_FALLBACK_COST_SECONDS,
+        "verdictGainThreshold": VERDICT_GAIN_THRESHOLD,
+        "verdictLossThreshold": VERDICT_LOSS_THRESHOLD,
+        "combinedIndexWeights": COMBINED_INDEX_WEIGHTS,
+        "minSamplesForTyreRegression": MIN_SAMPLES_FOR_TYRE_REGRESSION,
     }
     with open(PUBLIC_DATA_DIR / "params.json", "w", encoding="utf-8") as f:
         json.dump(params, f, ensure_ascii=False, indent=2)
 
-    return processed, skipped, index_entries
+    return processed, skipped, index_entries, all_decisions_internal
+
+
+def _correlation(pairs: List[Tuple[float, float]]) -> Optional[float]:
+    if len(pairs) < 3:
+        return None
+    xs = [p[0] for p in pairs]
+    ys = [p[1] for p in pairs]
+    n = len(xs)
+    mx, my = statistics.mean(xs), statistics.mean(ys)
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / n
+    sx, sy = statistics.pstdev(xs), statistics.pstdev(ys)
+    return cov / (sx * sy) if sx and sy else None
 
 
 def main():
-    processed, skipped, index_entries = asyncio.run(process_all_races())
+    processed, skipped, index_entries, all_decisions_internal = asyncio.run(process_all_races())
 
     total_neutralizations = sum(n for _, n, _, _ in processed)
-    total_excluded_laps = sum(e for _, _, _, e in processed)
+    total_excluded_laps = sum(e for _, _, e, _ in processed)
+    total_decisions = sum(n for _, _, _, n in processed)
 
     print("\n=== Report finale ===")
     print(f"Gare processate: {len(processed)} / {len(processed) + len(skipped)}")
@@ -662,7 +830,8 @@ def main():
         print(f"  - {label}: {reason}")
     print(f"Neutralizzazioni totali trovate: {total_neutralizations}")
     print(f"Giri con tempo anomalo esclusi (bandiere rosse, vedi MAX_PLAUSIBLE_LAP_MS): {total_excluded_laps}")
-    races_with_excluded = [(label, e) for label, _, _, e in processed if e > 0]
+    print(f"Decision snapshot totali (§5.6, pilota x evento): {total_decisions}")
+    races_with_excluded = [(label, e) for label, _, e, _ in processed if e > 0]
     for label, e in races_with_excluded:
         print(f"  - {label}: {e} giri esclusi")
 
@@ -673,10 +842,29 @@ def main():
             f"File di gara: {len(races_files)}, dimensione media {statistics.mean(sizes_kb):.0f} KB, "
             f"massima {max(sizes_kb):.0f} KB"
         )
-    for name in ["index.json", "aggregate.json", "params.json"]:
+    for name in ["index.json", "circuits.json", "aggregate.json", "params.json"]:
         p = PUBLIC_DATA_DIR / name
         if p.exists():
             print(f"{name}: {p.stat().st_size / 1024:.0f} KB")
+
+    # Sanity check (task P2.1): la correlazione combinedIndex/posDelta5 sui BOX
+    # guadagnato/perso deve restare vicina a quella misurata nello spike P1.2
+    # (0,34-0,36) — se si scosta molto, la pipeline industrializzata non
+    # riproduce lo spike validato e va indagato PRIMA di considerare fatto il task.
+    box_pairs = [
+        (d["combined_index"], d["outcome"]["pos_delta5"])
+        for d in all_decisions_internal
+        if d["choice"] == "BOX"
+        and d["outcome"]["verdict"] in ("GAINED", "LOST")
+        and d["combined_index"] is not None
+        and d["outcome"]["pos_delta5"] is not None
+    ]
+    corr = _correlation(box_pairs)
+    corr_str = f"{corr:.3f}" if corr is not None else "n/d (troppi pochi punti)"
+    print(
+        f"\nCorrelazione combinedIndex/posDelta5 (BOX guadagnato/perso, n={len(box_pairs)}): {corr_str} "
+        "(atteso, dallo spike P1.2: 0.34-0.36)"
+    )
 
 
 if __name__ == "__main__":

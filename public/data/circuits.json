@@ -1,0 +1,122 @@
+{
+  "bahrain": {
+    "overtakability": 0.3689814309446341,
+    "listino": 23.539,
+    "chaos": 1
+  },
+  "jeddah": {
+    "overtakability": 0.1511597968307469,
+    "listino": 20.909,
+    "chaos": 2
+  },
+  "albert_park": {
+    "overtakability": 0.18371235836162425,
+    "listino": 32.478,
+    "chaos": 4
+  },
+  "baku": {
+    "overtakability": 0.21977535055888842,
+    "listino": 21.830000000000002,
+    "chaos": 1
+  },
+  "miami": {
+    "overtakability": 0.23566388391969786,
+    "listino": 19.91525,
+    "chaos": 2
+  },
+  "monaco": {
+    "overtakability": 0.07946882844336574,
+    "listino": 39.964,
+    "chaos": 0
+  },
+  "catalunya": {
+    "overtakability": 0.3957940336477308,
+    "listino": 22.423750000000002,
+    "chaos": 0
+  },
+  "villeneuve": {
+    "overtakability": 0.18608076674979385,
+    "listino": 21.903,
+    "chaos": 4
+  },
+  "red_bull_ring": {
+    "overtakability": 0.26141021253596813,
+    "listino": 20.674500000000002,
+    "chaos": 3
+  },
+  "silverstone": {
+    "overtakability": 0.20479078753237107,
+    "listino": 21.348,
+    "chaos": 2
+  },
+  "hungaroring": {
+    "overtakability": 0.2991272070626003,
+    "listino": 20.353749999999998,
+    "chaos": 0
+  },
+  "spa": {
+    "overtakability": 0.4986687395564914,
+    "listino": 17.792,
+    "chaos": 0
+  },
+  "zandvoort": {
+    "overtakability": 0.3799271998441933,
+    "listino": 28.3335,
+    "chaos": 1
+  },
+  "monza": {
+    "overtakability": 0.3603520017993702,
+    "listino": 25.000999999999998,
+    "chaos": 0
+  },
+  "marina_bay": {
+    "overtakability": 0.1921472965058462,
+    "listino": 28.92675,
+    "chaos": 2
+  },
+  "suzuka": {
+    "overtakability": 0.3683283658673322,
+    "listino": 22.07,
+    "chaos": 2
+  },
+  "losail": {
+    "overtakability": 0.4887955928739615,
+    "listino": 28.56275,
+    "chaos": 5
+  },
+  "americas": {
+    "overtakability": 0.3616940729616786,
+    "listino": 20.8395,
+    "chaos": 1
+  },
+  "rodriguez": {
+    "overtakability": 0.2402837613308284,
+    "listino": 34.99525,
+    "chaos": 2
+  },
+  "interlagos": {
+    "overtakability": 0.18752913752913752,
+    "listino": 23.424500000000002,
+    "chaos": 3
+  },
+  "vegas": {
+    "overtakability": 0.5638460302153648,
+    "listino": 22.6545,
+    "chaos": 3
+  },
+  "yas_marina": {
+    "overtakability": 0.38903041882752554,
+    "listino": 22.7485,
+    "chaos": 1
+  },
+  "shanghai": {
+    "overtakability": 0.3903345724907063,
+    "listino": 22.8815,
+    "chaos": 3
+  },
+  "imola": {
+    "overtakability": 0.21674876847290642,
+    "listino": 27.45,
+    "chaos": 0
+  }
+}
