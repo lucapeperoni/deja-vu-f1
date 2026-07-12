@@ -30,7 +30,7 @@ import * as d3 from "d3";
 import clsx from "clsx";
 import {
   HIGHLIGHT_COLOR,
-  DEFAULT_LINE_COLOR,
+  PIT_CONTEXT_COLORS,
   OUTCOME_COLORS,
   NEUTRALIZATION_ACCENT_COLOR,
   TEXT_MUTED_COLOR,
@@ -66,11 +66,16 @@ const WIDTH = 640;
 
 // Colore condiviso dai due segmenti "di risultato" (il secondo, sempre; il
 // primo solo quando non ha boxato, perché li' coincide col movimento
-// reale): stessa palette esiti usata nella matrice della lotteria.
+// reale): stessa palette esiti usata nella matrice delle decisioni. Il
+// caso "nessun cambiamento" riusa lo stesso slate (#94a3b8) della matrice
+// (DECISION_CELL_COLORS.BOX_NEUTRAL/STAY_NEUTRAL) invece di
+// DEFAULT_LINE_COLOR (#4b5563, un grigio diverso): stesso concetto di
+// "esito neutro", stessa pagina gara, deve leggersi come lo stesso colore
+// in entrambe le viste (passata di qualità §7, task P3.3).
 function resultColor(delta: number): string {
   if (delta > 0) return OUTCOME_COLORS.EXPLOITED; // ha fatto meglio del previsto
   if (delta < 0) return OUTCOME_COLORS.FULL_PRICE; // ha fatto peggio del previsto
-  return DEFAULT_LINE_COLOR;
+  return PIT_CONTEXT_COLORS.GREEN;
 }
 
 export default function EventSlopeChart({ raceData }: Props) {
@@ -306,7 +311,7 @@ export default function EventSlopeChart({ raceData }: Props) {
       xMid,
       "middle",
       yMid,
-      9,
+      11,
       (d) => `P${d.posMid}`,
       (d) => d.choice === "BOX"
     );

@@ -169,6 +169,13 @@ export default function DecisionIndexDistribution({ points }: Props) {
       .duration(300)
       .call(d3.axisBottom(xScale).ticks(10).tickFormat((d) => (d as number).toFixed(1)));
 
+    // d3.axisBottom si auto-assegna font-size:10 sul gruppo ad OGNI
+    // chiamata (sorgente della libreria, non un default del browser):
+    // sovrascrive qualunque valore impostato prima, va corretto DOPO ogni
+    // .call(axis), non nel setup una tantum. 10px è sotto la soglia minima
+    // di leggibilità del sito (11px, passata di qualità §7, task P3.3).
+    svg.select(".x-axis").attr("font-size", 11);
+
     const area = d3
       .area<{ x: number; y: number }>()
       .curve(d3.curveMonotoneX)
@@ -291,7 +298,7 @@ export default function DecisionIndexDistribution({ points }: Props) {
       )
       .attr("x", (d) => xScale(d.value))
       .attr("y", (d) => MARGIN.top - 14 - (labelOffsetY[d.id] ?? 0))
-      .text((d) => `media ${d.id === "GAINED" ? "guadagnato" : "perso"}: ${d.value.toFixed(2)}`)
+      .text((d) => `media ${d.id === "GAINED" ? "guadagnato" : "perso"}: ${d.value.toFixed(1)}`)
       .transition()
       .duration(350)
       .style("opacity", 1);
@@ -408,7 +415,7 @@ export default function DecisionIndexDistribution({ points }: Props) {
               gomme: {tooltip.point.tyreAge != null ? `${tooltip.point.tyreAge} giri` : "n/d"}
               {tooltip.point.compound ? ` (${tooltip.point.compound})` : ""}
             </div>
-            <div className="text-neutral-gray">indice combinato: {tooltip.point.combinedIndex.toFixed(2)}</div>
+            <div className="text-neutral-gray">indice combinato: {tooltip.point.combinedIndex.toFixed(1)}</div>
             <div className="text-racing-red mt-1">Clic per aprire la gara →</div>
           </ChartTooltip>
         )}

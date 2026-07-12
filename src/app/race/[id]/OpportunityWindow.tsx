@@ -159,7 +159,7 @@ function buildDecisionCard(
 
   const indexLine =
     combinedIndex != null
-      ? `Vantaggio statistico stimato: ${combinedIndex >= 0 ? "+" : ""}${combinedIndex.toFixed(2)} — ${
+      ? `Vantaggio statistico stimato: ${combinedIndex >= 0 ? "+" : ""}${combinedIndex.toFixed(1)} — ${
           combinedIndex > 0.1 ? "sopra" : combinedIndex < -0.1 ? "sotto" : "nella"
         } media di chi di solito guadagna posizioni fermandosi (indice combinato di traffico e margine, §5.6: un'euristica aggregata su tutto il campione, non una previsione per questo caso).`
       : "Vantaggio statistico stimato: non calcolabile per questo evento (mancano traffico o margine).";
@@ -205,7 +205,10 @@ export default function OpportunityWindow({ raceData }: Props) {
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    const groups = ["column-headers", "row-labels", "cells-group"];
+    // "column-highlight" prima di "cells-group" nel DOM: disegnata sotto le
+    // celle, così la fascia di sfondo della colonna selezionata non copre
+    // il bordo tratteggiato scelto/non scelto (v. sotto).
+    const groups = ["column-highlight", "column-headers", "row-labels", "cells-group"];
     for (const cls of groups) {
       if (svg.select(`.${cls}`).empty()) svg.append("g").attr("class", cls);
     }
@@ -228,6 +231,34 @@ export default function OpportunityWindow({ raceData }: Props) {
 
     const yFor = (rowIndex: number) => MARGIN.top + rowIndex * (CELL_HEIGHT + CELL_GAP);
     const xFor = (colIndex: number) => MARGIN.left + colIndex * (CELL_WIDTH + CELL_GAP);
+    const columnsHeight = drivers.length * (CELL_HEIGHT + CELL_GAP) - CELL_GAP;
+
+    // --- Fascia di sfondo della colonna sincronizzata con lo slope chart:
+    // prima era uno stroke sulle singole celle, spostato qui perché lo
+    // stroke delle celle ora codifica la scelta BOX/STAY (v. sotto) — due
+    // significati sullo stesso attributo avrebbero rotto uno dei due
+    // (regola §7: "se il colore/stroke significa due cose, il grafico
+    // diventa illeggibile"). Opacità impostata dall'effect di
+    // evidenziazione, qui solo il join geometrico.
+    svg
+      .select<SVGGElement>(".column-highlight")
+      .selectAll<SVGRectElement, RaceNeutralization>("rect.column-highlight-rect")
+      .data(events, (d) => d.eventId)
+      .join(
+        (enter) =>
+          enter
+            .append("rect")
+            .attr("class", "column-highlight-rect")
+            .attr("rx", 4)
+            .attr("fill", HIGHLIGHT_COLOR)
+            .style("pointer-events", "none"),
+        (update) => update,
+        (exit) => exit.remove()
+      )
+      .attr("x", (_d, i) => xFor(i) - 3)
+      .attr("y", MARGIN.top - 3)
+      .attr("width", CELL_WIDTH + 6)
+      .attr("height", columnsHeight + 6);
 
     // --- Intestazioni di colonna (le neutralizzazioni): cliccabili, per
     // sincronizzare lo slope chart sullo stesso evento.
@@ -326,7 +357,21 @@ export default function OpportunityWindow({ raceData }: Props) {
         const g = d3.select(this);
         const fill = matrixMode === "decision" ? decisionCellColor(d.decisionCategory) : outcomeColor(d.legacyCategory);
         const fillOpacity = matrixMode === "decision" && d.decisionCategory === "NOT_NEEDED" ? NOT_NEEDED_OPACITY : 1;
-        g.select("rect.cell-rect").attr("fill", fill).attr("fill-opacity", fillOpacity);
+        // Bordo tratteggiato = STAY, pieno = BOX/FORCED: la scelta deve
+        // leggersi anche senza colore (passata di qualità §7, task P3.3).
+        // BOX_GAINED/STAY_LOST e STAY_GAINED/grigio neutro cadono a
+        // distanze RGB borderline sotto simulazione di protanopia/
+        // deuteranopia (Machado-Oliveira-Fernandes 2009): la luminosità
+        // da sola non basta a distinguere la scelta in quei casi. Solo in
+        // "vista decisione": la vista v1 non ha un asse scelta da segnare.
+        const isStay = matrixMode === "decision" && d.decision?.choice === "STAY";
+        g.select("rect.cell-rect")
+          .attr("fill", fill)
+          .attr("fill-opacity", fillOpacity)
+          .attr("stroke", matrixMode === "decision" ? CONTRAST_TEXT_COLOR : "none")
+          .attr("stroke-opacity", 0.55)
+          .attr("stroke-width", 1.5)
+          .attr("stroke-dasharray", isStay ? "3 2" : "none");
         g.select("text").text(d.posDelta != null ? `${d.posDelta > 0 ? "+" : ""}${d.posDelta}` : "");
       })
       .on("pointerenter", function (event, d) {
@@ -364,10 +409,15 @@ export default function OpportunityWindow({ raceData }: Props) {
     svg
       .select<SVGGElement>(".cells-group")
       .selectAll<SVGGElement, CellDatum>("g.cell")
-      .attr("opacity", (d) => (highlightedDriverId && d.driver.id !== highlightedDriverId ? 0.35 : 1))
-      .select<SVGRectElement>("rect.cell-rect")
-      .attr("stroke", (d) => (d.event.eventId === selectedEventId ? HIGHLIGHT_COLOR : "none"))
-      .attr("stroke-width", (d) => (d.event.eventId === selectedEventId ? 2 : 0));
+      .attr("opacity", (d) => (highlightedDriverId && d.driver.id !== highlightedDriverId ? 0.35 : 1));
+
+    // Fascia della colonna sincronizzata con lo slope chart: non più uno
+    // stroke sulle celle (quell'attributo ora codifica la scelta BOX/STAY,
+    // v. effect strutturale), un elemento a parte sotto le celle.
+    svg
+      .select<SVGGElement>(".column-highlight")
+      .selectAll<SVGRectElement, RaceNeutralization>("rect.column-highlight-rect")
+      .attr("opacity", (d) => (d.eventId === selectedEventId ? 0.12 : 0));
 
     svg
       .select<SVGGElement>(".row-labels")
@@ -441,7 +491,16 @@ export default function OpportunityWindow({ raceData }: Props) {
       <div className="flex gap-4 flex-wrap mt-4">
         {legend.map((item) => (
           <div key={item.key} className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
+            <div
+              className="w-3 h-3 rounded-sm"
+              style={{
+                backgroundColor: item.color,
+                // Stesso bordo tratteggiato delle celle STAY (v. effect
+                // strutturale): la legenda deve spiegare la codifica non
+                // solo a colori, non solo dichiararla nel testo.
+                border: item.key.startsWith("STAY_") ? `1.5px dashed ${CONTRAST_TEXT_COLOR}` : "none",
+              }}
+            />
             {item.label}
           </div>
         ))}
