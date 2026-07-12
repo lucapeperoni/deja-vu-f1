@@ -730,6 +730,7 @@ async def process_all_races():
                     "verdict": d["outcome"]["verdict"],
                     "combinedIndex": d["combinedIndex"],
                     "notNeeded": d["notNeeded"],
+                    "unreliableGapReference": d["snapshot"]["unreliableGapReference"],
                 }
             )
 

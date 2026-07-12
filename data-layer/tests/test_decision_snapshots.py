@@ -23,6 +23,7 @@ from app.metrics.decision_snapshots import (
     compute_race_overtakability,
     compute_traffic_fraction,
     fill_combined_index,
+    gap_reference_unreliable,
     ols_slope,
     population_stats,
     to_json_record,
@@ -96,6 +97,28 @@ def test_compute_gap_ahead_behind_leader_has_no_gap_ahead():
     gap_ahead, gap_behind = compute_gap_ahead_behind(pos=1, ms=100_000.0, ms_by_pos_at_deploy=ms_by_pos)
     assert gap_ahead is None
     assert gap_behind == 5.0
+
+
+# ---------------------------------------------------------------------------
+# gap_reference_unreliable (task P2.2: giri con tempo cumulato non piu'
+# confrontabile tra piloti, tipicamente dopo l'esclusione di un giro anomalo
+# di bandiera rossa per uno solo dei due, v. build_laps_and_positions)
+# ---------------------------------------------------------------------------
+
+def test_gap_reference_unreliable_false_when_both_non_negative():
+    assert gap_reference_unreliable(5.0, 7.0) is False
+
+
+def test_gap_reference_unreliable_false_when_missing():
+    assert gap_reference_unreliable(None, None) is False
+
+
+def test_gap_reference_unreliable_true_on_negative_gap_ahead():
+    assert gap_reference_unreliable(-1.0, 7.0) is True
+
+
+def test_gap_reference_unreliable_true_on_negative_gap_behind():
+    assert gap_reference_unreliable(5.0, -1.0) is True
 
 
 # ---------------------------------------------------------------------------

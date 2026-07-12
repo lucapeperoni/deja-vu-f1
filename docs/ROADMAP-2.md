@@ -284,12 +284,39 @@ perché prima di andare avanti.
 
 Dipende da: P2.1
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Distribuzione scelta × esito stampata e plausibile
-- [ ] Nessun snapshot con valori assurdi (gap negativi enormi, età gomme
-      impossibili, rientri previsti fuori griglia)
-- [ ] I casi anomali trovati sono spiegati o esclusi con flag dichiarato
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Distribuzione scelta × esito stampata e plausibile
+- [x] Nessun snapshot con valori assurdi rimasto silenzioso: trovati 14
+      snapshot (su 767) con gapAhead/gapBehind negativi, tutti concentrati
+      in un solo evento (Australian GP 2023, VSC-3, giro 18) — età gomme e
+      rientri previsti sono invece sempre in range plausibile
+- [x] Caso anomalo spiegato e marcato con flag dichiarato (non corretto in
+      silenzio): causa individuata in `build_laps_and_positions`
+      (build_all.py) — i giri con tempo anomalo (bandiera rossa,
+      `MAX_PLAUSIBLE_LAP_MS`) sono esclusi dalla somma cumulata ma non
+      dalla posizione ufficiale, quindi due piloti con un diverso numero
+      di giri esclusi prima del deploy non sono più confrontabili in
+      tempo cumulato pur restando corretto il loro ordine in classifica.
+      Aggiunto `snapshot.unreliableGapReference` (bool, come
+      `lowConfidence` sui pit) in `decision_snapshots.py`, esportato sia
+      nei file di gara sia in `aggregate.json`; il valore del gap non
+      viene alterato, chi consuma il dato decide se escluderlo.
+- [x] Diff letto (solo aggiunta della chiave `unreliableGapReference` sui
+      25 file di gara toccati e su `aggregate.json`, verificato a
+      confronto diretto col contenuto precedente), commit e push
+
+**Nota:** `data-layer/scripts/validate_decisions.py` legge `races/*.json`
+(non `aggregate.json`, che esporta solo i campi minimi per la mappa) e
+stampa distribuzione scelta×esito, istogrammi testuali di gapBehind/
+tyreAge/predictedRejoinPos, i 10 casi più estremi per campo e il conteggio
+dei campi mancanti con causa (gapAhead manca per chi è 1° al deploy,
+gapBehind per l'ultimo in classifica, posDelta5 per chi si ritira prima
+del giro di misura — tutti limiti di bordo attesi, non bug). La pipeline
+completa non è stata rieseguita in questa sessione (mancano i CSV grezzi
+Ergast e l'accesso a OpenF1 in locale): il nuovo campo è stato applicato
+retroattivamente ai JSON già esportati con la stessa regola di
+`gap_reference_unreliable`, e verificato riga per riga uguale all'output
+precedente a meno della chiave aggiunta.
 
 **Prompt da copiare:**
 

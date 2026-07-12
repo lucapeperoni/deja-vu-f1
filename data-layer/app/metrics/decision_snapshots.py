@@ -75,6 +75,7 @@ class SnapshotState(BaseModel):
     stops_done: int = 0
     stops_typical: int = 0
     traffic_fraction: Optional[float] = None
+    unreliable_gap_reference: bool = False
 
 
 class Outcome(BaseModel):
@@ -149,6 +150,21 @@ def compute_gap_ahead_behind(
     gap_ahead = (ms - ahead_ms) / 1000 if ahead_ms is not None else None
     gap_behind = (behind_ms - ms) / 1000 if behind_ms is not None else None
     return gap_ahead, gap_behind
+
+
+def gap_reference_unreliable(gap_ahead: Optional[float], gap_behind: Optional[float]) -> bool:
+    """Un gap negativo e' impossibile per definizione (compute_gap_ahead_behind
+    lo ricava dall'ordine di classifica, che e' sempre crescente in tempo
+    cumulato). Se esce negativo, e' il tempo cumulato ad essere inaffidabile
+    per questo giro, non l'ordine: causa nota, v. build_laps_and_positions in
+    build_all.py — i giri con tempo anomalo (bandiera rossa, soglia
+    MAX_PLAUSIBLE_LAP_MS) vengono esclusi dalla somma cumulata ma NON dalla
+    posizione ufficiale, quindi due piloti con un diverso numero di giri
+    esclusi prima del deploy non sono piu' confrontabili in tempo cumulato
+    anche se il loro ordine in classifica resta corretto. Flag dichiarato
+    (come lowConfidence su calculate_pit_cost), non una correzione silenziosa:
+    chi consuma questo campo decide se escludere il record."""
+    return (gap_ahead is not None and gap_ahead < 0) or (gap_behind is not None and gap_behind < 0)
 
 
 def compute_projected_ms_by_driver(
@@ -328,6 +344,7 @@ def build_event_decisions(race_json: Dict, event: Dict, fresh_tyre_delta_per_lap
 
         pos, ms = snap["pos"], snap["ms"]
         gap_ahead, gap_behind = compute_gap_ahead_behind(pos, ms, ms_by_pos_at_deploy)
+        unreliable_gap = gap_reference_unreliable(gap_ahead, gap_behind)
 
         pits_before = sum(1 for p in d["pits"] if p["lap"] < deploy_lap)
         stops_typical = len(d["pits"])
@@ -355,6 +372,7 @@ def build_event_decisions(race_json: Dict, event: Dict, fresh_tyre_delta_per_lap
                     stops_done=pits_before,
                     stops_typical=stops_typical,
                     traffic_fraction=traffic_fraction,
+                    unreliable_gap_reference=unreliable_gap,
                 ),
                 box_option=BoxOption(
                     expected_loss=expected_cost_s,
@@ -420,6 +438,7 @@ def to_json_record(d: Dict) -> Dict:
             "stopsDone": s["stops_done"],
             "stopsTypical": s["stops_typical"],
             "trafficFraction": s["traffic_fraction"],
+            "unreliableGapReference": s["unreliable_gap_reference"],
         },
         "boxOption": {
             "expectedLoss": b["expected_loss"],
