@@ -15,8 +15,9 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Nemici in casa - F1 Information Visualization",
-  description: "Quanto conta il pilota e quanto conta la macchina nei risultati della Formula 1?",
+  title: "Box, box? — Quando conviene fermarsi in Formula 1",
+  description:
+    "Il pilota X doveva fermarsi ai box durante quella Safety Car? Ricostruiamo ~800 decisioni reali delle stagioni 2023-2024, opzioni quantificate e verdetto, per rispondere.",
 };
 
 export default function RootLayout({

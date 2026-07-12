@@ -1,35 +1,35 @@
 {
   "2023-bahrain": {
-    "title": "Una VSC, una sola finestra: la lotteria allo stato puro",
+    "title": "Bahrain 2023: un momento solo, sei scelte di fermarsi",
     "steps": [
       {
         "lap": 41,
-        "title": "Si apre la finestra",
-        "text": "Al giro 41 la direzione gara richiama la Virtual Safety Car: per due giri (41-42) tutti in pista sono costretti a rallentare. È l'unica neutralizzazione di tutta la gara: qui la lotteria si gioca in un solo momento.",
+        "title": "Un solo momento",
+        "text": "Al giro 41 la direzione gara richiama la Virtual Safety Car: per due giri (41-42) tutti in pista sono costretti a rallentare. È l'unica neutralizzazione di tutta la gara: chi vuole sfruttarla deve decidere lì, senza una seconda occasione più avanti.",
         "eventId": "7953-vsc-1",
         "brushRange": { "startLap": 38, "endLap": 44 },
         "driverIds": []
       },
       {
         "lap": 40,
-        "title": "Sei si fermano quasi gratis",
-        "text": "Nella stessa finestra sei piloti vanno ai box. Gasly fa il colpo migliore: paga 18,1s invece dei 23,6s di listino, 5,5s di sconto. Albon, Sargeant, Tsunoda e Magnussen risparmiano tra 2,6 e 4,8s.",
+        "title": "Sei scelte di fermarsi",
+        "text": "Nella stessa finestra sei piloti vanno ai box — sei chiamate, ma solo quattro muretti diversi: Haas e Williams raddoppiano la posta, fermando entrambe le auto. Gasly fa il colpo migliore: paga 18,1s invece dei 23,6s di listino, 5,5s di sconto. Albon, Sargeant, Tsunoda e Magnussen risparmiano tra 2,6 e 4,8s.",
         "eventId": "7953-vsc-1",
         "brushRange": { "startLap": 39, "endLap": 42 },
         "driverIds": ["GAS", "ALB", "SAR", "TSU", "MAG", "HUL"]
       },
       {
         "lap": 40,
-        "title": "Doppia sosta, sorte diversa",
-        "text": "Hulkenberg e il compagno Magnussen si fermano entrambi nello stesso giro: Hulkenberg non guadagna nulla (-0,2s sul prezzo pieno), Magnussen incassa 2,9s di sconto. Stessa squadra, stesso giro, conto diverso.",
+        "title": "Stessa chiamata, due conti",
+        "text": "Hulkenberg e il compagno Magnussen si fermano entrambi nello stesso giro, stessa squadra, stessa decisione: Hulkenberg non guadagna nulla (-0,2s sul prezzo pieno), Magnussen incassa 2,9s di sconto. La stessa scelta, giocata due volte, con due esiti diversi.",
         "eventId": "7953-vsc-1",
         "brushRange": { "startLap": 39, "endLap": 42 },
         "driverIds": ["HUL", "MAG"]
       },
       {
         "lap": 41,
-        "title": "Chi resta escluso",
-        "text": "Norris e Zhou restano tagliati fuori dalla finestra, ma per motivi opposti: Norris ha gomme hard montate solo 3 giri prima, troppo fresche per un altro cambio; Zhou è già su soft usate da 11 giri, ma rientrerebbe dritto nel traffico. Stesso risultato — nessuno dei due si muove in classifica — da due vincoli diversi.",
+        "title": "Chi la scelta non ce l'ha",
+        "text": "Norris e Zhou restano tagliati fuori dalla finestra, per motivi opposti: Norris ha gomme hard montate solo 3 giri prima, troppo fresche per un altro cambio; Zhou è già su soft usate da 11 giri, ma rientrerebbe dritto nel traffico. Per loro due non c'è una strategia da giudicare — è la griglia in cui si sono trovati quando è scattata la neutralizzazione: qui la lotteria è la posizione in pista, non la scelta.",
         "eventId": "7953-vsc-1",
         "brushRange": { "startLap": 38, "endLap": 44 },
         "driverIds": ["NOR", "ZHO"]
@@ -49,8 +49,8 @@
       },
       {
         "lap": 7,
-        "title": "Quattordici ne approfittano",
-        "text": "Quattordici piloti si fermano nello stesso giro. Ocon se la cava meglio di tutti: paga solo 8,1s, 12,8s in meno del prezzo pieno. Tsunoda e Bottas risparmiano circa 11s a testa.",
+        "title": "Quattordici scelgono di fermarsi",
+        "text": "Quattordici piloti si fermano nello stesso giro — quattordici chiamate, tutte nella stessa direzione. Ocon se la cava meglio di tutti: paga solo 8,1s, 12,8s in meno del prezzo pieno. Tsunoda e Bottas risparmiano circa 11s a testa.",
         "eventId": "9480-sc-1",
         "brushRange": { "startLap": 6, "endLap": 9 },
         "driverIds": ["OCO", "TSU", "BOT", "ALO", "PER", "VER", "LEC", "RUS", "ALB", "PIA", "SAR", "BEA", "MAG"]
@@ -65,37 +65,37 @@
       },
       {
         "lap": 8,
-        "title": "Chi resta tagliato fuori",
-        "text": "Hamilton, Hulkenberg, Norris e Zhou non possono sfruttare la finestra: perdono rispettivamente 5, 5, 5 e 8 posizioni nel corso dell'evento — lo split più netto delle tre gare-caso (14 dentro, 6 fuori). Tutti e quattro erano sulle stesse gomme medium montate al via, vecchie di 6 giri: a decidere chi resta fuori qui non è la gomma, ma solo dove ti trovi in pista quando esce la Safety Car.",
+        "title": "Chi la scelta non ce l'ha",
+        "text": "Hamilton, Hulkenberg e Norris restano tagliati fuori dalla finestra (gomme troppo fresche o troppo indietro nel traffico) e nei tre giri successivi salgono perfino di 5 posizioni ciascuno — Zhou addirittura di 8: tutti gli altri sono ancora imbottigliati in corsia box. Ma è un vantaggio che dura poco: prima o poi devono fermarsi comunque, stavolta in verde, senza sconto. Hamilton paga 18,7s, Norris esattamente il prezzo pieno di 20,9s, Zhou peggio ancora — 46,3s, 25,4s sopra il listino, e chiude 18°. Con Gasly e Stroll già fuori gara prima ancora che uscisse la Safety Car, sono in sei a non aver avuto voce in capitolo: qui la lotteria è la griglia, non la mescola — tutti e quattro erano sulle stesse gomme medium di 6 giri.",
         "eventId": "9480-sc-1",
-        "brushRange": { "startLap": 5, "endLap": 15 },
+        "brushRange": { "startLap": 5, "endLap": 20 },
         "driverIds": ["HAM", "HUL", "NOR", "ZHO"]
       }
     ]
   },
   "2023-albert_park": {
-    "title": "Tre neutralizzazioni, due lotterie opposte",
+    "title": "Australia 2023: tre finestre, la decisione doppia del double stack",
     "steps": [
       {
         "lap": 1,
         "title": "Il via è già caos",
-        "text": "La Safety Car entra al giro 1: solo 5 piloti (tra cui Perez e Sargeant, che passano da gomme hard nuove a medium) riescono a infilare un pit stop nella finestra, gli altri 14 restano tagliati fuori — la lotteria più esclusiva delle tre gare-caso.",
+        "text": "La Safety Car entra al giro 1: solo 5 piloti riescono a infilare un pit stop nella finestra. Perez e Sargeant si fermano perfino due volte in pochi giri — prima montano gomme medium, poi tornano ai box e le cambiano per hard, la sequenza tipica di una ripartenza dopo bandiera rossa. Gli altri 14 restano fuori dalla finestra: qui la lotteria è la griglia in cui ti trovi quando scatta la Safety Car, non la strategia.",
         "eventId": "7787-sc-1",
         "brushRange": { "startLap": 1, "endLap": 4 },
         "driverIds": ["PER", "SAR", "BOT", "OCO", "ZHO"]
       },
       {
         "lap": 8,
-        "title": "La seconda Safety Car ribalta tutto",
-        "text": "Una SC molto più lunga (giri 7-18): stavolta 18 piloti su 19 sfruttano la sosta, quasi l'opposto della prima neutralizzazione della stessa gara.",
+        "title": "Tutti si fermano, stavolta",
+        "text": "Una SC molto più lunga (giri 7-18): con Albon già fuori gara, restano 18 piloti in pista — e si fermano tutti e 18 in questa finestra, quasi l'opposto della prima neutralizzazione della stessa gara.",
         "eventId": "7787-sc-2",
         "brushRange": { "startLap": 6, "endLap": 10 },
         "driverIds": []
       },
       {
         "lap": 8,
-        "title": "Otto squadre in doppia sosta",
-        "text": "Al giro 8 otto team su dieci fermano entrambe le auto nello stesso giro: Mercedes, Red Bull, Alfa Romeo, Alpine, Haas, Aston Martin, McLaren e AlphaTauri — la finestra più affollata del campione.",
+        "title": "La decisione doppia",
+        "text": "Al giro 8 otto team su dieci fermano entrambe le auto nello stesso giro: Mercedes, Red Bull, Alfa Romeo, Alpine, Haas, Aston Martin, McLaren e AlphaTauri — la finestra più affollata del campione. Una sola chiamata del muretto, due conti diversi: alla Haas, Hulkenberg perde una posizione, il compagno Magnussen ne guadagna quattro. Il modello prevedeva P6 per Hulkenberg e P18 per Magnussen — cioè nessun cambiamento per nessuno dei due: quando quasi tutta la griglia si ferma insieme, anche il rientro previsto smette di saper distinguere chi salirà e chi scenderà.",
         "eventId": "7787-sc-2",
         "brushRange": { "startLap": 7, "endLap": 9 },
         "driverIds": ["HAM", "RUS", "VER", "PER", "BOT", "ZHO", "OCO", "GAS", "HUL", "MAG", "ALO", "STR", "NOR", "PIA", "TSU", "DEV"]
@@ -103,7 +103,7 @@
       {
         "lap": 18,
         "title": "La VSC che non serve quasi a nessuno",
-        "text": "Appena finita la seconda Safety Car arriva una VSC breve (giri 18-19): chi si era già fermato poco prima non ne ha più bisogno, e 13 piloti restano tagliati fuori da questa terza finestra.",
+        "text": "Appena finita la seconda Safety Car arriva una VSC breve (giri 18-19): chi si era già fermato poco prima non ne ha più bisogno, e 13 piloti restano tagliati fuori da questa terza finestra — la decisione, qui, conta ormai poco.",
         "eventId": "7787-vsc-3",
         "brushRange": { "startLap": 17, "endLap": 20 },
         "driverIds": []

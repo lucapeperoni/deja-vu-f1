@@ -97,11 +97,12 @@ function RaceAnatomyContent({ raceData, story }: { raceData: RaceData; story?: R
 
       <section>
         <div className="mb-6">
-          <h2 className="font-condensed text-2xl font-bold uppercase text-white">La matrice della lotteria</h2>
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white">La matrice delle decisioni</h2>
           <p className="text-sm text-text-secondary">
-            Per ogni neutralizzazione, chi ha sfruttato la finestra, chi ne è rimasto escluso, chi l&apos;ha pagata
-            piena. Passa il mouse su una riga o su una cella per i dettagli, clicca l&apos;intestazione di una
-            colonna per sincronizzarla con la classifica deformata qui sopra.
+            Per ogni neutralizzazione, chi ha scelto di fermarsi e come è andata, chi è rimasto fuori, chi la
+            scelta non l&apos;ha proprio avuta. Passa il mouse su una riga o su una cella per la scheda decisione
+            completa, clicca l&apos;intestazione di una colonna per sincronizzarla con la classifica deformata qui
+            sopra.
           </p>
         </div>
         <OpportunityWindow raceData={raceData} />
@@ -111,8 +112,9 @@ function RaceAnatomyContent({ raceData, story }: { raceData: RaceData; story?: R
         <div className="mb-6">
           <h2 className="font-condensed text-2xl font-bold uppercase text-white">Stesso box, fortuna diversa</h2>
           <p className="text-sm text-text-secondary">
-            Due compagni di squadra davanti alla stessa neutralizzazione: chi si è fermato gratis, chi ha pagato
-            prezzo pieno o è rimasto escluso. Unica vista del sito dove è ammesso il colore team.
+            L&apos;esperimento naturale del progetto (sezione 3 della progettazione): stessa macchina, stesso
+            muretto, stessa neutralizzazione — eppure spesso una scelta diversa, o la stessa scelta con un esito
+            opposto. Unica vista del sito dove è ammesso il colore team.
           </p>
         </div>
         <TeammateMirror raceData={raceData} />

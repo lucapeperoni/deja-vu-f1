@@ -385,7 +385,7 @@ export default function OpportunityWindow({ raceData }: Props) {
   if (events.length === 0) {
     return (
       <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 text-sm text-text-secondary italic">
-        Nessuna neutralizzazione in questa gara: la matrice della lotteria non si applica (è la gara di controllo).
+        Nessuna neutralizzazione in questa gara: la matrice delle decisioni non si applica (è la gara di controllo).
       </div>
     );
   }

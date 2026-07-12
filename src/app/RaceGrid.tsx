@@ -18,9 +18,9 @@ interface Props {
 
 // Griglia gare della home (docs/PROGETTAZIONE.md, sezione 6): niente D3 qui,
 // sono card di navigazione verso la pagina gara — il terzo atto del
-// racconto ("la lotteria") si vede lì, nella matrice degli esiti. Le 3
-// gare-caso (sezione 9) sono segnalate perché sono quelle raccontate a
-// fondo nella relazione.
+// racconto ("doveva fermarsi?") si vede lì, nella matrice scelta × esito.
+// Le 3 gare-caso (sezione 9) sono segnalate perché sono quelle raccontate
+// a fondo nella relazione.
 export default function RaceGrid({ races, caseRaceIds }: Props) {
   const caseSet = new Set(caseRaceIds);
 

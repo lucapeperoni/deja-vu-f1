@@ -206,10 +206,10 @@ export default function MethodologyPage() {
           </p>
         </section>
 
-        {/* 3. Etichette e lotteria */}
+        {/* 3. Etichette ed esiti */}
         <section className="space-y-8">
           <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
-            Le etichette dei pit, e gli esiti della lotteria
+            Le etichette dei pit, e l&apos;esito di ogni scelta
           </h2>
           <p className="text-text-secondary leading-relaxed">
             Ogni pit stop riceve un&apos;etichetta in base a quando è avvenuto rispetto alla neutralizzazione più

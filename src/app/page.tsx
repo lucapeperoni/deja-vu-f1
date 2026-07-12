@@ -265,15 +265,16 @@ export default async function Home() {
         <PitStopBeeswarm points={pitPoints} listinoTipico={listinoTipico} />
       </section>
 
-      {/* Terzo atto: la lotteria — solo accennata qui, si vede per intero
-          nella matrice degli esiti di ogni pagina gara (vista 4). */}
+      {/* Terzo atto: la decisione ricostruita gara per gara — si vede per
+          intero nella matrice scelta × esito di ogni pagina gara (vista 4). */}
       <section className="px-6 py-20 max-w-7xl mx-auto w-full border-t border-graphite">
         <div className="mb-10">
-          <h3 className="font-condensed text-4xl font-bold uppercase text-white mb-3">La lotteria, gara per gara</h3>
+          <h3 className="font-condensed text-4xl font-bold uppercase text-white mb-3">Gara per gara: doveva fermarsi?</h3>
           <p className="text-text-secondary max-w-3xl">
-            Ogni gara del campione ha la sua pagina: la race trace, gli sconti, la classifica deformata, la matrice
-            di chi ha sfruttato la finestra e chi ne è rimasto escluso, e il confronto tra compagni di squadra
-            davanti alla stessa neutralizzazione. Le tre gare con la stella sono raccontate a fondo in relazione.
+            Ogni gara del campione ha la sua pagina: la race trace, gli sconti, la classifica deformata con il
+            rientro previsto, la matrice di chi ha scelto di fermarsi e come è andata, e il confronto tra compagni
+            di squadra davanti alla stessa neutralizzazione — l&apos;esperimento naturale del progetto. Le tre gare
+            con la stella sono raccontate a fondo in relazione.
           </p>
         </div>
         <RaceGrid races={raceGridEntries} caseRaceIds={CASE_RACE_IDS} />

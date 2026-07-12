@@ -507,7 +507,8 @@ export default function TeammateMirror({ raceData }: Props) {
   if (allRows.length === 0) {
     return (
       <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 text-sm text-text-secondary italic">
-        Nessun team ha un pit stop vicino a una neutralizzazione in questa gara: la vista non si applica.
+        Nessun team ha un pit stop vicino a una neutralizzazione in questa gara: l&apos;esperimento naturale non si
+        applica qui.
       </div>
     );
   }
@@ -516,8 +517,9 @@ export default function TeammateMirror({ raceData }: Props) {
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
         <p className="text-xs text-neutral-gray max-w-2xl">
-          Una riga per ogni team davanti a una neutralizzazione in cui almeno uno dei due compagni si è fermato: a
-          sinistra e a destra, a specchio, l&apos;esito di ciascuno.
+          Stessa macchina, stesso muretto, stessa neutralizzazione: una riga per ogni team davanti a un evento in
+          cui almeno uno dei due compagni si è fermato, a specchio l&apos;esito di ciascuno — il controfattuale più
+          pulito che il dataset possa dare, senza bisogno di simulare nulla.
           {eventOptions.length > 1 && " Con più eventi, isola quello che ti interessa dai filtri qui sotto."}
         </p>
         <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md">
