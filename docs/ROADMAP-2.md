@@ -200,13 +200,38 @@ da sapere adesso).
 
 Dipende da: P1.2 (milestone)
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] `races/*.json` contengono il blocco `decisions` per ogni evento
-- [ ] `aggregate.json` (o `decisions.json`) contiene tutti gli snapshot
-- [ ] `params.json` aggiornato con le nuove soglie/costanti
-- [ ] Nessun file di gara oltre ~500 KB
-- [ ] I valori di Jeddah coincidono con lo spike P1.1
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] `races/*.json` contengono il blocco `decisions` per ogni evento
+      (767 snapshot totali su 46 gare; verificato via diff JSON che
+      l'unica differenza sui file è l'aggiunta di questa chiave, nessun
+      impatto sui calcoli esistenti §5.1-5.4)
+- [x] `aggregate.json` contiene tutti gli snapshot (chiave `decisions`,
+      campi minimi per la mappa: raceId, eventId, driverId, choice,
+      verdict, combinedIndex, notNeeded)
+- [x] `params.json` aggiornato con le nuove soglie/costanti
+      (boxFallbackCostSeconds, verdictGainThreshold/LossThreshold,
+      combinedIndexWeights, minSamplesForTyreRegression)
+- [x] Nessun file di gara oltre ~500 KB (max osservato: 155 KB)
+- [x] I valori di Jeddah coincidono con lo spike P1.1 (predictedRejoinPos
+      ed expectedLoss identici riga per riga)
+- [x] Diff letto, commit e push (commit `ca71d56`)
+
+**Nota (verifica extra chiesta dal prompt): la correlazione combinedIndex/
+posDelta5 sull'intero dataset è uscita 0,284, sotto l'atteso 0,34-0,36 —
+indagato prima di chiudere il task, causa trovata e non è un bug.** Il
+prompt definisce `choice = BOX` per pit con contesto UNDER_SC **o**
+UNDER_VSC; lo spike P1.2 contava solo UNDER_SC (limite dello spike, non
+notato prima). Isolando i soli eventi SC la correlazione torna a 0,342
+(n=133, come lo spike); sui soli eventi VSC scende a 0,102 (n=48). Non e'
+un errore di calcolo (Jeddah, solo SC, combacia esattamente) — è una
+scoperta reale: il meccanismo del traffico ("tanti si fermano insieme,
+si salvano a vicenda") tiene sotto Safety Car piena ma è molto più
+debole sotto Virtual Safety Car, probabilmente perché la VSC impone un
+delta-time invece di compattare fisicamente il gruppo. Coerente con un
+limite già dichiarato altrove nel progetto (VSC ha numeri meno puliti
+della SC piena, §5.1). Da portare in metodologia (P4.1) e da valutare
+come filtro tipo evento nella mappa (P3.1) — non ancora deciso, segnalo
+qui perché non vada perso.
 
 **Prompt da copiare:**
 
