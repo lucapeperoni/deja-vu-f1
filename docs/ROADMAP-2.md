@@ -20,11 +20,11 @@ secondarie, testi e storie.
 
 ## Avanzamento generale
 
-- [ ] Fase P0 — Allineamento sul pivot
+- [ ] Fase P0 — Allineamento sul pivot (item residui: conferme di lettura/ruoli, non verificabili da codice)
 - [x] Fase P1 — Spike di de-risking ⚠ MILESTONE
-- [ ] Fase P2 — Pipeline delta
-- [ ] Fase P3 — Viste delta
-- [ ] Fase P4 — Consolidamento per ricevimento ed esame
+- [x] Fase P2 — Pipeline delta (P2.1, P2.2 completi)
+- [x] Fase P3 — Viste delta (P3.1-P3.5 completi, verificati in browser)
+- [ ] Fase P4 — Consolidamento per ricevimento ed esame (P4.1, P4.2 fatti; resta P4.3, prova generale a voce)
 
 ---
 
@@ -61,7 +61,7 @@ Dipende da: P0.1
       finestra (non solo il pilota in esame), errore mediano 1.0
       posizione su 37 confronti nelle 3 gare-caso
 - [x] I 6 LOCKED_OUT di Jeddah risultano "scelta forzata" con motivazione
-- [ ] Diff letto, commit e push
+- [x] Diff letto, commit e push (commit `c275fad`)
 
 **Prompt da copiare:**
 
@@ -110,7 +110,7 @@ Dipende da: P1.1 (per il formato dello snapshot)
       combinato (0,6 traffico + 0,4 margine dietro) su istogrammi
       sovrapposti, NON scatter a 2 assi puri. §5.6 aggiornato**
 - [x] **MILESTONE: comunicato ad A e C che P2/P3 possono partire** — **sì, con la vista ridefinita (v. DECISIONE)**
-- [ ] Diff letto, commit e push
+- [x] Diff letto, commit e push (commit `c275fad`)
 
 **⚠ STOP scattato e risolto (regola di famiglia, Fase P1: "se i numeri
 non tornano, STOP") — cronologia sotto, la DECISIONE finale è più giù.**
@@ -416,13 +416,15 @@ statistica"). Build e verifica.
 
 Dipende da: P2.1
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok, provato su Jeddah 2024
-- [ ] Colonna centrale = rientro previsto, visivamente distinta (es.
-      tratteggiata) e spiegata in un sottotitolo
-- [ ] La distanza previsione/realtà si legge a colpo d'occhio
-- [ ] Hover coordinato invariato
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok, provato su Jeddah 2024 (verificato in browser: 3 colonne
+      "Al deployment / Rientro previsto (se boxa) / +3 giri dopo la fine")
+- [x] Colonna centrale = rientro previsto, visivamente distinta (segmento
+      tratteggiato) e spiegata in un sottotitolo
+- [x] La distanza previsione/realtà si legge a colpo d'occhio (secondo
+      segmento colorato verde/vermiglio in base allo scarto)
+- [x] Hover coordinato invariato (context `useRaceInteraction` condiviso)
+- [x] Diff letto, commit e push (commit `ba628b0`)
 
 **Prompt da copiare:**
 
@@ -444,13 +446,15 @@ prova su 2024-jeddah (14 box, 6 forzati: il caso più leggibile).
 
 Dipende da: P2.1 · in parallelo a P3.2
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok
-- [ ] Celle rietichettate (scelta × esito, FORCED distinto)
-- [ ] Tooltip = scheda decisione completa (§5.6)
-- [ ] Le categorie v1 restano disponibili (toggle o testo nel tooltip)
-      per il capitolo disuguaglianza
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok
+- [x] Celle rietichettate (scelta × esito, FORCED distinto — verificato
+      in browser: "SI È FERMATO, HA GUADAGNATO/PERSO", "SCELTA FORZATA")
+- [x] Tooltip = scheda decisione completa (§5.6, verificato: gap, gomme,
+      sconto, esito Δpos, double stack)
+- [x] Le categorie v1 restano disponibili (toggle "VISTA OPPORTUNITÀ (V1)"
+      verificato in browser)
+- [x] Diff letto, commit e push (commit `dcf0e11`)
 
 **Prompt da copiare:**
 
@@ -480,15 +484,17 @@ Hover coordinato invariato. Build e prova su una gara con più eventi
 
 Dipende da: P3.1, P3.2, P3.3
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok
-- [ ] Le storie delle 3 gare-caso parlano di decisioni (chi doveva
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok
+- [x] Le storie delle 3 gare-caso parlano di decisioni (chi doveva
       fermarsi, chi ha sbagliato), con numeri verificati sui dati
-- [ ] La vista 5 ha il sottotitolo "esperimento naturale" e i testi
-      parlano di scelte del muretto
-- [ ] Nessun testo del sito dice più che la tesi è "la lotteria":
-      la disuguaglianza è presentata come "quando la scelta non ce l'hai"
-- [ ] Diff letto, commit e push
+      (3 errori fattuali trovati e corretti, v. commit)
+- [x] La vista 5 ha il sottotitolo "esperimento naturale" e i testi
+      parlano di scelte del muretto (verificato in browser)
+- [x] Nessun testo del sito dice più che la tesi è "la lotteria": grep su
+      src/ e stories.json — la parola resta solo nel capitolo "quando la
+      scelta non ce l'hai" (LOCKED_OUT/FORCED)
+- [x] Diff letto, commit e push (commit `f1ecba8`)
 
 **Prompt da copiare:**
 
@@ -516,13 +522,19 @@ La v1 ha già passato il task 5.2 (qualità visiva e accessibilità), ma
 mappa, slope a 3 colonne, matrice rietichettata e scheda decisione sono
 nate DOPO quella passata: va ripetuta solo sui delta.
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] L'elenco dei problemi trovati esiste (se è vuoto, insospettirsi)
-- [ ] Tutti i colori nuovi vengono da colors.ts, palette scelta/esito
-      verificata per protanopia/deuteranopia e coerente tra home e matrice
-- [ ] Forma BOX/STAY distinguibile anche in bianco e nero
-- [ ] Leggibile a 1280px, dignitoso a 768px; hover senza scatti
-- [ ] Build ok, diff letto, commit e push
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] L'elenco dei problemi trovati esiste: 5 problemi (font <11px,
+      precisione a 2 decimali invece di 1, BOX/STAY solo su luminosità
+      senza tenuta protanopia/deuteranopia, due grigi diversi per lo
+      stesso esito neutro)
+- [x] Tutti i colori nuovi vengono da colors.ts, palette scelta/esito
+      verificata per protanopia/deuteranopia (matrici Machado-Oliveira-
+      Fernandes) e unificata tra home e matrice
+- [x] Forma BOX/STAY distinguibile anche in bianco e nero (bordo
+      tratteggiato per STAY, solido per BOX/FORCED)
+- [x] Leggibile a 1280px, dignitoso a 768px (verificato in browser);
+      hover senza scatti
+- [x] Build ok, diff letto, commit e push (commit `d40ef6e`)
 
 **Prompt da copiare:**
 
@@ -593,7 +605,7 @@ Dipende da: P2.2, P3.4
 - [x] `docs/NUMERI.md` aggiornato con la sezione v2
 - [x] Ogni numero indica file e regola di provenienza
 - [x] I numeri coincidono con quelli citati nelle storie (P3.4)
-- [ ] Diff letto, commit e push
+- [x] Diff letto, commit e push (commit `84af192`)
 
 **Prompt da copiare:**
 
