@@ -624,8 +624,9 @@ Esegui e aggiorna docs/NUMERI.md.
 
 ## P4.3 — Tutti · Prova generale per il ricevimento (a voce, senza prompt)
 
-- [ ] La demo regge: home (mappa) → gara-caso (scheda decisione, slope a
+- [x] La demo regge: home (mappa) → gara-caso (scheda decisione, slope a
       3 colonne) → "quando la scelta non ce l'hai" → metodologia
+      (verificato in browser, nessun errore console: 2026-07-13)
 - [ ] Tutti sanno dire in 2 minuti problema → soluzione (§1)
 - [ ] Tutti sanno rispondere a: "come definite 'scelta giusta'?"
 - [ ] Tutti sanno rispondere a: "perché niente modello predittivo?"
