@@ -75,11 +75,15 @@ verificare che coincidano con le storie.
 
 ### Bahrain Grand Prix 2023 (`2023-bahrain`)
 
-_Una VSC, una sola finestra: la lotteria allo stato puro_
+_Bahrain 2023: un momento solo, sei scelte di fermarsi_
 
 - **1 sola neutralizzazione** in tutta la gara (VSC, giri 41-42) — la lotteria si gioca in un solo momento. Fonte: `neutralizations` nel file di gara.
 - **6 pit stop** nella finestra, contro un prezzo di listino di 23.6s. Fonte: `drivers[].pits[]` filtrati per `eventId == "7953-vsc-1"`.
 - Il miglior colpo: **GAS** paga 18.1s (+5.5s di sconto). Fonte: stesso array, campo `discount`.
+- Lettura decisionale: **6 BOX**, **0 STAY**, **2 FORZATE** (8 decisioni reali, NOT_NEEDED escluse); tra chi ha scelto BOX, **3/6** ha guadagnato posizioni a 5 giri.
+  Fonte: `public/data/races/2023-bahrain.json`, campo `decisions[]` (choice, outcome.verdict).
+- Errore mediano del rientro previsto in questa gara: **0.0 posizioni** (n=6 pit BOX confrontabili).
+  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con `drivers[].pits[].posAfter` dello stesso evento (stessa regola dello spike P1.1, v. `rejoin_errors_for_race` in questo script).
 
 ### Saudi Arabian Grand Prix 2024 (`2024-jeddah`)
 
@@ -88,13 +92,48 @@ _Una Safety Car, uno split netto: chi può e chi no_
 - **Safety Car ai giri 7-9**, prezzo di listino 20.9s. Fonte: `neutralizations` e `race.nominalPitLoss`.
 - Split netto: **14 EXPLOITED contro 6 LOCKED_OUT** su 20 esiti registrati per l'evento. Fonte: `drivers[].outcomes[]` filtrati per `eventId`, conteggio per `category`.
 - Il miglior colpo: **OCO** paga 8.1s (+12.8s di sconto) su 14 pit nella finestra.
+- Lettura decisionale: **14 BOX**, **0 STAY**, **4 FORZATE** (18 decisioni reali, NOT_NEEDED escluse); tra chi ha scelto BOX, **1/14** ha guadagnato posizioni a 5 giri.
+  Fonte: `public/data/races/2024-jeddah.json`, campo `decisions[]` (choice, outcome.verdict).
+- Errore mediano del rientro previsto in questa gara: **1.0 posizioni** (n=14 pit BOX confrontabili).
+  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con `drivers[].pits[].posAfter` dello stesso evento (stessa regola dello spike P1.1, v. `rejoin_errors_for_race` in questo script).
 
 ### Australian Grand Prix 2023 (`2023-albert_park`)
 
-_Tre neutralizzazioni, due lotterie opposte_
+_Australia 2023: tre finestre, la decisione doppia del double stack_
 
 - **3 neutralizzazioni** nella stessa gara con esiti opposti: sul primo SC (giri 1-3) 5 EXPLOITED contro 14 LOCKED_OUT; sul secondo SC (giri 7-18) si ribalta: 18 EXPLOITED contro 1 LOCKED_OUT.
   Fonte: `drivers[].outcomes[]` filtrati per ciascun `eventId`.
 - **42 pit stop in double stack**, distribuiti su **8 team diversi** — non concentrati su una sola squadra.
   Fonte: `drivers[].pits[]`, campo `doubleStack`, raggruppati per `team`.
+- Lettura decisionale: **23 BOX**, **3 STAY**, **27 FORZATE** (53 decisioni reali, NOT_NEEDED escluse); tra chi ha scelto BOX, **12/23** ha guadagnato posizioni a 5 giri.
+  Fonte: `public/data/races/2023-albert_park.json`, campo `decisions[]` (choice, outcome.verdict).
+- Errore mediano del rientro previsto in questa gara: **0.0 posizioni** (n=23 pit BOX confrontabili).
+  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con `drivers[].pits[].posAfter` dello stesso evento (stessa regola dello spike P1.1, v. `rejoin_errors_for_race` in questo script).
+
+## 8. v2 — la decisione
+
+Numeri del layer del pivot (`decision_snapshots.py`, §5.6): uno snapshot per pilota × neutralizzazione, con le due opzioni quantificate, la scelta e il verdetto a 5 giri. Fonte per tutta la sezione: `public/data/races/*.json`, campo `decisions[]` di ogni gara (non `aggregate.json`, che ne tiene solo un sottoinsieme di campi per la mappa).
+
+Attenzione al segno: qui `posDelta5` positivo significa **guadagno** di posizioni (regola `classify_verdict` in `decision_snapshots.py`) — l'opposto della convenzione di `outcomes[].posDelta` usata nella sezione 6, dove positivo è un peggioramento. Sono due campi diversi con regole di segno diverse, non un'incoerenza tra le sezioni.
+
+- **767 decisioni** pilota×evento nel campione, di cui **121 NOT_NEEDED** (non gli serviva fermarsi: escluse dalla mappa e da questa sezione) e **290 FORZATE** (LOCKED_OUT: non poteva scegliere) — restano **646 decisioni reali** (scelta libera tra BOX e STAY).
+  Fonte: `decisions[].notNeeded` e `decisions[].choice`, conteggio su tutte le 46 gare.
+
+- **Soglia di margine usata sotto**: la mediana dell'indice combinato sulle decisioni reali, **-0.2** (per costruzione, media 0 sulla popolazione usata per gli z-score in `fill_combined_index`; la mediana calcolata qui puo' scostarsi leggermente per asimmetria del campione).
+  Fonte: mediana di `decisions[].combinedIndex` non nulli, esclusi i NOT_NEEDED.
+
+- **BOX ha guadagnato posizioni nel 28.9% dei casi** (88/304) sull'intero campione; **29.4%** (72/245) quando l'indice combinato e' sopra la soglia di margine, **16.2%** (6/37) quando e' sotto — lo scarto tra le due condizioni e' la prova numerica della tendenza dichiarata in `/methodology` (correlazione indice/esito 0,34-0,36, non un confine netto).
+  Fonte: `decisions[]` con `choice == "BOX"`, `outcome.verdict == "GAINED"`, filtrati per `combinedIndex` sopra/sotto la mediana qui sopra.
+
+- **STAY ha guadagnato posizioni nel 25.0% dei casi** (13/52); **42.1%** (8/19) sopra la soglia di margine, **14.3%** (4/28) sotto. L'indice combinato e' costruito e verificato sulla scelta BOX (v. `/methodology`): questa riga e' un controllo di coerenza, non la sua base di validazione.
+  Fonte: `decisions[]` con `choice == "STAY"`, stessa regola della riga precedente.
+
+- **Errore mediano del rientro previsto: 1.0 posizioni** (n=303 pit BOX confrontabili su tutte le 46 gare, non solo le 3 gare-caso dello spike P1.1).
+  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con `drivers[].pits[].posAfter` dello stesso pilota/evento (contesto UNDER_SC/UNDER_VSC); vedi `rejoin_errors_for_race` in questo script.
+
+- **La scelta più clamorosamente sbagliata**: Kevin Magnussen (MAG), Austrian Grand Prix 2023 (`2023-red_bull_ring`), evento 9118-sc-1 — indice combinato 0.8 (sopra la soglia di margine: condizioni statisticamente favorevoli a BOX), eppure -12 posizioni a 5 giri (verdetto LOST). La prova più netta che l'indice è una tendenza, non una garanzia sul singolo caso.
+  Fonte: `decisions[]` con `choice == "BOX"` e `combinedIndex` sopra la soglia di margine, minimo di `outcome.posDelta5`.
+
+- **La scelta più perfetta nonostante i numeri contrari**: Oscar Piastri (PIA), Japanese Grand Prix 2023 (`2023-suzuka`), evento 9173-vsc-2 — indice combinato -0.6 (sotto la soglia di margine: condizioni statisticamente sfavorevoli a BOX), eppure +3 posizioni a 5 giri (verdetto GAINED).
+  Fonte: `decisions[]` con `choice == "BOX"` e `combinedIndex` sotto la soglia di margine, massimo di `outcome.posDelta5`.
 

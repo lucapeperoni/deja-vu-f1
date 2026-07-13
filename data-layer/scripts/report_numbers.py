@@ -35,6 +35,11 @@ OUTPUT_PATH = REPO_ROOT / "docs" / "NUMERI.md"
 # task 2.2) e raccontate in public/data/stories.json (task 5.1).
 CASE_RACES = ["2023-bahrain", "2024-jeddah", "2023-albert_park"]
 
+# Contesti di pit che contano come scelta BOX nel layer della decisione
+# (docs/PROGETTAZIONE.md §5.6, data-layer/app/metrics/decision_snapshots.py
+# BOX_CONTEXTS): un pit JUST_AFTER non conta come BOX, e' STAY.
+BOX_CONTEXTS = {"UNDER_SC", "UNDER_VSC"}
+
 CATEGORY_LABELS = {
     "EXPLOITED": "ha sfruttato la finestra",
     "LOCKED_OUT": "escluso (gomme fresche o traffico)",
@@ -69,6 +74,34 @@ def fmt_signed(value: Optional[float], decimals: int = 1) -> str:
 
 def median_or_none(values: List[float]) -> Optional[float]:
     return statistics.median(values) if values else None
+
+
+def rejoin_errors_for_race(race: dict) -> List[float]:
+    """Errore di previsione del rientro (§5.6, spike P1.1): |predictedRejoinPos -
+    posAfter reale|, solo per le decisioni con scelta BOX il cui pit corrispondente
+    (stesso driverId, stesso eventId, contesto UNDER_SC/UNDER_VSC) e' presente e ha
+    una posizione dopo la sosta registrata. Stessa regola di confronto usata in
+    data-layer/scripts/spike_decision_snapshot.py (rientro previsto vs posAfter),
+    qui estesa a tutte le 46 gare invece che alle sole 3 gare-caso dello spike."""
+    drivers_by_id = {d["driverId"]: d for d in race["drivers"]}
+    errors: List[float] = []
+    for dec in race["decisions"]:
+        if dec["choice"] != "BOX":
+            continue
+        predicted = dec["boxOption"]["predictedRejoinPos"]
+        if predicted is None:
+            continue
+        driver = drivers_by_id.get(dec["driverId"])
+        if driver is None:
+            continue
+        pit = next(
+            (p for p in driver["pits"] if p.get("eventId") == dec["eventId"] and p["context"] in BOX_CONTEXTS),
+            None,
+        )
+        if pit is None or pit.get("posAfter") is None:
+            continue
+        errors.append(abs(predicted - pit["posAfter"]))
+    return errors
 
 
 def main():
@@ -294,6 +327,165 @@ def main():
             w(f"  Fonte: `drivers[].outcomes[]` filtrati per ciascun `eventId`.")
             w(f"- **{total_ds} pit stop in double stack**, distribuiti su **{len(ds_by_team)} team diversi** — non concentrati su una sola squadra.")
             w(f"  Fonte: `drivers[].pits[]`, campo `doubleStack`, raggruppati per `team`.")
+
+        # --- lettura decisionale (§5.6, task P2.1): stessa gara, layer nuovo ---
+        real_decisions = [d for d in race["decisions"] if not d["notNeeded"]]
+        choice_counts = Counter(d["choice"] for d in real_decisions)
+        box_decisions = [d for d in real_decisions if d["choice"] == "BOX"]
+        box_gained_race = sum(1 for d in box_decisions if d["outcome"]["verdict"] == "GAINED")
+        race_errors = rejoin_errors_for_race(race)
+        w(
+            f"- Lettura decisionale: **{choice_counts.get('BOX', 0)} BOX**, "
+            f"**{choice_counts.get('STAY', 0)} STAY**, **{choice_counts.get('FORCED', 0)} FORZATE** "
+            f"({len(real_decisions)} decisioni reali, NOT_NEEDED escluse); tra chi ha scelto BOX, "
+            f"**{box_gained_race}/{len(box_decisions)}** ha guadagnato posizioni a 5 giri."
+        )
+        w(f"  Fonte: `public/data/races/{slug}.json`, campo `decisions[]` (choice, outcome.verdict).")
+        if race_errors:
+            w(
+                f"- Errore mediano del rientro previsto in questa gara: "
+                f"**{median_or_none(race_errors):.1f} posizioni** (n={len(race_errors)} pit BOX confrontabili)."
+            )
+            w(
+                f"  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con "
+                f"`drivers[].pits[].posAfter` dello stesso evento (stessa regola dello spike P1.1, "
+                f"v. `rejoin_errors_for_race` in questo script)."
+            )
+        w()
+
+    # ------------------------------------------------------------------
+    # 8. v2 — la decisione (§5.6, task P2.1/P2.2/P4.2)
+    # ------------------------------------------------------------------
+    all_decisions = [dec for race in races.values() for dec in race["decisions"]]
+    n_decisions_total = len(all_decisions)
+    n_not_needed = sum(1 for d in all_decisions if d["notNeeded"])
+    n_forced = sum(1 for d in all_decisions if d["choice"] == "FORCED")
+    real_decisions = [d for d in all_decisions if not d["notNeeded"]]
+    n_real = len(real_decisions)
+
+    combined_values = [d["combinedIndex"] for d in real_decisions if d["combinedIndex"] is not None]
+    combined_median = median_or_none(combined_values)
+
+    def verdict_rate(choice: str, index_filter=None) -> tuple:
+        pool = [
+            d
+            for d in real_decisions
+            if d["choice"] == choice
+            and (index_filter is None or (d["combinedIndex"] is not None and index_filter(d["combinedIndex"])))
+        ]
+        n = len(pool)
+        n_gained = sum(1 for d in pool if d["outcome"]["verdict"] == "GAINED")
+        pct = 100.0 * n_gained / n if n else 0.0
+        return n, n_gained, pct
+
+    box_n, box_gained, box_pct = verdict_rate("BOX")
+    box_above_n, box_above_gained, box_above_pct = verdict_rate("BOX", lambda v: v > combined_median)
+    box_below_n, box_below_gained, box_below_pct = verdict_rate("BOX", lambda v: v <= combined_median)
+
+    stay_n, stay_gained, stay_pct = verdict_rate("STAY")
+    stay_above_n, stay_above_gained, stay_above_pct = verdict_rate("STAY", lambda v: v > combined_median)
+    stay_below_n, stay_below_gained, stay_below_pct = verdict_rate("STAY", lambda v: v <= combined_median)
+
+    all_rejoin_errors = [err for race in races.values() for err in rejoin_errors_for_race(race)]
+
+    w("## 8. v2 — la decisione")
+    w()
+    w(
+        "Numeri del layer del pivot (`decision_snapshots.py`, §5.6): uno snapshot per "
+        "pilota × neutralizzazione, con le due opzioni quantificate, la scelta e il "
+        "verdetto a 5 giri. Fonte per tutta la sezione: `public/data/races/*.json`, "
+        "campo `decisions[]` di ogni gara (non `aggregate.json`, che ne tiene solo un "
+        "sottoinsieme di campi per la mappa)."
+    )
+    w()
+    w(
+        "Attenzione al segno: qui `posDelta5` positivo significa **guadagno** di posizioni "
+        "(regola `classify_verdict` in `decision_snapshots.py`) — l'opposto della convenzione "
+        "di `outcomes[].posDelta` usata nella sezione 6, dove positivo è un peggioramento. Sono "
+        "due campi diversi con regole di segno diverse, non un'incoerenza tra le sezioni."
+    )
+    w()
+    w(
+        f"- **{n_decisions_total} decisioni** pilota×evento nel campione, di cui "
+        f"**{n_not_needed} NOT_NEEDED** (non gli serviva fermarsi: escluse dalla mappa "
+        f"e da questa sezione) e **{n_forced} FORZATE** (LOCKED_OUT: non poteva scegliere) "
+        f"— restano **{n_real} decisioni reali** (scelta libera tra BOX e STAY)."
+    )
+    w(f"  Fonte: `decisions[].notNeeded` e `decisions[].choice`, conteggio su tutte le 46 gare.")
+    w()
+    w(
+        f"- **Soglia di margine usata sotto**: la mediana dell'indice combinato sulle "
+        f"decisioni reali, **{combined_median:.1f}** (per costruzione, media 0 sulla "
+        f"popolazione usata per gli z-score in `fill_combined_index`; la mediana calcolata "
+        f"qui puo' scostarsi leggermente per asimmetria del campione)."
+    )
+    w(f"  Fonte: mediana di `decisions[].combinedIndex` non nulli, esclusi i NOT_NEEDED.")
+    w()
+    w(
+        f"- **BOX ha guadagnato posizioni nel {box_pct:.1f}% dei casi** ({box_gained}/{box_n}) "
+        f"sull'intero campione; **{box_above_pct:.1f}%** ({box_above_gained}/{box_above_n}) "
+        f"quando l'indice combinato e' sopra la soglia di margine, **{box_below_pct:.1f}%** "
+        f"({box_below_gained}/{box_below_n}) quando e' sotto — lo scarto tra le due condizioni "
+        f"e' la prova numerica della tendenza dichiarata in `/methodology` (correlazione "
+        f"indice/esito 0,34-0,36, non un confine netto)."
+    )
+    w(f"  Fonte: `decisions[]` con `choice == \"BOX\"`, `outcome.verdict == \"GAINED\"`, filtrati per `combinedIndex` sopra/sotto la mediana qui sopra.")
+    w()
+    w(
+        f"- **STAY ha guadagnato posizioni nel {stay_pct:.1f}% dei casi** ({stay_gained}/{stay_n}); "
+        f"**{stay_above_pct:.1f}%** ({stay_above_gained}/{stay_above_n}) sopra la soglia di margine, "
+        f"**{stay_below_pct:.1f}%** ({stay_below_gained}/{stay_below_n}) sotto. L'indice combinato e' "
+        f"costruito e verificato sulla scelta BOX (v. `/methodology`): questa riga e' un controllo "
+        f"di coerenza, non la sua base di validazione."
+    )
+    w(f"  Fonte: `decisions[]` con `choice == \"STAY\"`, stessa regola della riga precedente.")
+    w()
+    if all_rejoin_errors:
+        w(
+            f"- **Errore mediano del rientro previsto: {median_or_none(all_rejoin_errors):.1f} posizioni** "
+            f"(n={len(all_rejoin_errors)} pit BOX confrontabili su tutte le 46 gare, non solo le 3 "
+            f"gare-caso dello spike P1.1)."
+        )
+        w(
+            f"  Fonte: `decisions[].boxOption.predictedRejoinPos` confrontato con `drivers[].pits[].posAfter` "
+            f"dello stesso pilota/evento (contesto UNDER_SC/UNDER_VSC); vedi `rejoin_errors_for_race` in "
+            f"questo script."
+        )
+        w()
+
+    # caso piu' clamorosamente sbagliato / piu' perfetto, nel campione della mappa (solo scelta BOX,
+    # v. P3.1: la mappa in home plotta solo BOX guadagnato/perso)
+    flat_box = [
+        {**d, "raceId": slug, "raceName": races[slug]["race"]["name"], "year": races[slug]["race"]["year"]}
+        for slug in races
+        for d in races[slug]["decisions"]
+        if d["choice"] == "BOX" and d["combinedIndex"] is not None and d["outcome"]["posDelta5"] is not None
+    ]
+    above = [d for d in flat_box if d["combinedIndex"] > combined_median]
+    below = [d for d in flat_box if d["combinedIndex"] <= combined_median]
+    worst_surprise = min(above, key=lambda d: d["outcome"]["posDelta5"]) if above else None
+    best_surprise = max(below, key=lambda d: d["outcome"]["posDelta5"]) if below else None
+
+    if worst_surprise:
+        w(
+            f"- **La scelta più clamorosamente sbagliata**: {names.get(worst_surprise['driverId'], worst_surprise['driverId'])}, "
+            f"{worst_surprise['raceName']} {worst_surprise['year']} (`{worst_surprise['raceId']}`), evento "
+            f"{worst_surprise['eventId']} — indice combinato {worst_surprise['combinedIndex']:.1f} (sopra la soglia "
+            f"di margine: condizioni statisticamente favorevoli a BOX), eppure {fmt_signed(worst_surprise['outcome']['posDelta5'], 0)} "
+            f"posizioni a 5 giri (verdetto {worst_surprise['outcome']['verdict']}). La prova più netta che l'indice "
+            f"è una tendenza, non una garanzia sul singolo caso."
+        )
+        w(f"  Fonte: `decisions[]` con `choice == \"BOX\"` e `combinedIndex` sopra la soglia di margine, minimo di `outcome.posDelta5`.")
+        w()
+    if best_surprise:
+        w(
+            f"- **La scelta più perfetta nonostante i numeri contrari**: {names.get(best_surprise['driverId'], best_surprise['driverId'])}, "
+            f"{best_surprise['raceName']} {best_surprise['year']} (`{best_surprise['raceId']}`), evento "
+            f"{best_surprise['eventId']} — indice combinato {best_surprise['combinedIndex']:.1f} (sotto la soglia di "
+            f"margine: condizioni statisticamente sfavorevoli a BOX), eppure {fmt_signed(best_surprise['outcome']['posDelta5'], 0)} "
+            f"posizioni a 5 giri (verdetto {best_surprise['outcome']['verdict']})."
+        )
+        w(f"  Fonte: `decisions[]` con `choice == \"BOX\"` e `combinedIndex` sotto la soglia di margine, massimo di `outcome.posDelta5`.")
         w()
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

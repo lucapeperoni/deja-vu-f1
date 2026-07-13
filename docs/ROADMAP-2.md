@@ -589,10 +589,10 @@ limiti v1 già dichiarati restano. Build.
 
 Dipende da: P2.2, P3.4
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] `docs/NUMERI.md` aggiornato con la sezione v2
-- [ ] Ogni numero indica file e regola di provenienza
-- [ ] I numeri coincidono con quelli citati nelle storie (P3.4)
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] `docs/NUMERI.md` aggiornato con la sezione v2
+- [x] Ogni numero indica file e regola di provenienza
+- [x] I numeri coincidono con quelli citati nelle storie (P3.4)
 - [ ] Diff letto, commit e push
 
 **Prompt da copiare:**
