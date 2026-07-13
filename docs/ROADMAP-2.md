@@ -549,15 +549,15 @@ poi build.
 
 Dipende da: P2.1, P2.2
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
-- [ ] Build ok
-- [ ] Il modello della decisione è spiegato per un lettore non tecnico
-- [ ] Soglie e costanti lette da params.json, non scritte a mano
-- [ ] Nuovi limiti dichiarati (rientro previsto = stima; indice
+- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Build ok
+- [x] Il modello della decisione è spiegato per un lettore non tecnico
+- [x] Soglie e costanti lette da params.json, non scritte a mano
+- [x] Nuovi limiti dichiarati (rientro previsto = stima; indice
       combinato = tendenza statistica non predizione, con la
       correlazione misurata dichiarata; caoticità su 2 stagioni;
       NOT_NEEDED esclusi dalla mappa; casi bagnato)
-- [ ] Diff letto, commit e push
+- [x] Diff letto, commit e push
 
 **Prompt da copiare:**
 

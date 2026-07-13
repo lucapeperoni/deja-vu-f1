@@ -12,6 +12,7 @@ import {
   TEXT_MUTED_COLOR,
   TEXT_PRIMARY_COLOR,
   HIGHLIGHT_COLOR,
+  VERDICT_COLORS,
 } from "@/lib/colors";
 
 // Pagina /methodology (docs/PROGETTAZIONE.md, sezioni 5 e 10): spiega, per
@@ -32,6 +33,11 @@ interface Params {
   baselineMinCleanLaps: number;
   minGreenStopsForConfidence: number;
   fieldReferenceMinSamples: number;
+  boxFallbackCostSeconds: number;
+  verdictGainThreshold: number;
+  verdictLossThreshold: number;
+  combinedIndexWeights: { trafficFraction: number; gapBehind: number };
+  minSamplesForTyreRegression: number;
 }
 
 function readParams(): Params {
@@ -128,6 +134,101 @@ function PitCostDiagram() {
 
       <text x={20} y={246} fontSize={12} fill={TEXT_PRIMARY_COLOR}>
         costo effettivo del pit = Δ(giro di entrata) + Δ(giro di uscita)
+      </text>
+    </svg>
+  );
+}
+
+// --- Diagramma statico del rientro previsto -------------------------------
+// Cinque auto al giro del deploy (colonna sinistra, ordinate per tempo
+// cumulato). Chi sceglierebbe BOX viene proiettato in avanti del costo atteso
+// (§5.6): anche i rivali che boxano davvero si spostano, non solo il pilota in
+// esame — è la correzione trovata nello spike P1.1 (senza, il pilota sembrava
+// scivolare più indietro del reale). La posizione di rientro prevista è
+// 1 + quanti restano davanti nel tempo proiettato. SVG statico apposta:
+// l'idea non cambia gara per gara, solo i numeri nella scheda decisione.
+function RejoinDiagram() {
+  const before = [
+    { id: "TU", y: 40, boxes: true },
+    { id: "A", y: 76, boxes: false },
+    { id: "B", y: 112, boxes: true },
+    { id: "C", y: 148, boxes: false },
+    { id: "D", y: 184, boxes: true },
+  ];
+  // Tempo proiettato: chi boxa si sposta in avanti (in basso); "TU" boxa e
+  // finisce dietro ad A e C, che restano fermi al loro tempo del giro.
+  const after = [
+    { id: "A", y: 40 },
+    { id: "C", y: 76 },
+    { id: "TU", y: 112 },
+    { id: "B", y: 148 },
+    { id: "D", y: 184 },
+  ];
+  const leftX = 70;
+  const rightX = 330;
+
+  return (
+    <svg
+      viewBox="0 0 400 230"
+      width="100%"
+      role="img"
+      aria-label="Diagramma: la posizione di rientro prevista conta quante auto, proiettate in avanti se boxano, restano davanti al pilota in esame"
+    >
+      <text x={leftX} y={16} fontSize={11} textAnchor="middle" fill={TEXT_MUTED_COLOR}>
+        al giro del deploy
+      </text>
+      <text x={rightX} y={16} fontSize={11} textAnchor="middle" fill={TEXT_MUTED_COLOR}>
+        tempo proiettato (se boxi)
+      </text>
+
+      {before.map((d) => {
+        const isYou = d.id === "TU";
+        const target = after.find((a) => a.id === d.id)!;
+        return (
+          <g key={d.id}>
+            <line
+              x1={leftX + 14}
+              y1={d.y}
+              x2={rightX - 14}
+              y2={target.y}
+              stroke={isYou ? HIGHLIGHT_COLOR : MUTED_FILL_COLOR}
+              strokeWidth={isYou ? 2 : 1}
+              strokeDasharray={d.boxes ? undefined : "3 3"}
+            />
+            <circle
+              cx={leftX}
+              cy={d.y}
+              r={12}
+              fill={isYou ? VERDICT_COLORS.GAINED : MUTED_FILL_COLOR}
+            />
+            <text x={leftX} y={d.y + 4} fontSize={10} textAnchor="middle" fill={TEXT_PRIMARY_COLOR}>
+              {d.id}
+            </text>
+          </g>
+        );
+      })}
+      {after.map((d) => {
+        const isYou = d.id === "TU";
+        return (
+          <g key={d.id}>
+            <circle
+              cx={rightX}
+              cy={d.y}
+              r={12}
+              fill={isYou ? VERDICT_COLORS.GAINED : MUTED_FILL_COLOR}
+            />
+            <text x={rightX} y={d.y + 4} fontSize={10} textAnchor="middle" fill={TEXT_PRIMARY_COLOR}>
+              {d.id}
+            </text>
+          </g>
+        );
+      })}
+
+      <text x={rightX + 26} y={112 + 4} fontSize={11} fill={HIGHLIGHT_COLOR}>
+        ← rientri 3°
+      </text>
+      <text x={20} y={222} fontSize={11} fill={TEXT_MUTED_COLOR}>
+        tratteggio = non boxa in questa finestra, resta al tempo del deploy
       </text>
     </svg>
   );
@@ -250,6 +351,135 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        {/* 4. Lo snapshot della decisione */}
+        <section className="space-y-6">
+          <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
+            Lo snapshot della decisione: le due opzioni
+          </h2>
+          <p className="text-text-secondary leading-relaxed">
+            Per ogni pilota, a ogni neutralizzazione, ricostruiamo la decisione com&apos;era in quel momento — non con
+            il senno di poi. Da posizione, gap con chi sta davanti e dietro, età e mescola delle gomme, soste già
+            fatte rispetto a quelle tipiche di quella gara, e quanti altri si stanno fermando nella stessa finestra,
+            quantifichiamo le due opzioni che il muretto aveva davanti:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 text-white">
+            <li>
+              <strong>BOX</strong> — il costo atteso è la mediana dello sconto effettivo (§5.1-5.3) dei pit affidabili
+              già avvenuti in quello stesso evento; se l&apos;evento non ne ha nessuno, usiamo un valore di riserva
+              dichiarato ({params.boxFallbackCostSeconds}s, la mediana dell&apos;intero campione). Da questo costo
+              deriviamo la <strong>posizione di rientro prevista</strong>: proiettiamo in avanti il tempo cumulato di
+              ogni pilota che boxa davvero in quella finestra (anche i rivali, non solo il pilota in esame — altrimenti
+              lo si farebbe scivolare più indietro di quanto accadrà per davvero) e contiamo quante auto restano
+              proiettate davanti.
+            </li>
+            <li>
+              <strong>STAY</strong> — la posizione si conserva, le gomme restano le stesse; il costo è solo
+              differito: se serve ancora una sosta, prima o poi si paga il prezzo pieno (§5.2), con la scommessa
+              implicita che arrivi un&apos;altra neutralizzazione (la caoticità del circuito, sotto).
+            </li>
+          </ul>
+          <div className="bg-panel border border-graphite p-6">
+            <RejoinDiagram />
+          </div>
+          <p className="text-text-secondary leading-relaxed">
+            Nel disegno, il pilota evidenziato boxa: nel tempo proiettato due rivali che restano fuori (tratteggiati,
+            fermi al loro tempo del giro del deploy) lo scavalcano, mentre chi boxa insieme a lui si sposta anch&apos;esso
+            in avanti. La posizione di rientro prevista conta solo chi resta davanti nel tempo proiettato — è una
+            stima, non un replay di gara: il suo errore tipico è dichiarato più sotto, tra i limiti.
+          </p>
+        </section>
+
+        {/* 5. Cos'è la scelta giusta */}
+        <section className="space-y-6">
+          <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
+            Cos&apos;è la &quot;scelta giusta&quot;, e perché non simuliamo il controfattuale
+          </h2>
+          <p className="text-text-secondary leading-relaxed">
+            Diamo un verdetto retrospettivo a ogni scelta guardando il delta di posizioni 5 giri dopo la fine della
+            finestra: guadagnato se il pilota è salito di almeno{" "}
+            {params.verdictGainThreshold} posizione, perso se ne ha perse almeno {Math.abs(params.verdictLossThreshold)}
+            , pari negli altri casi (incluso quando il dato non è calcolabile). Nessuna simulazione: guardiamo cosa è
+            successo davvero in pista.
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            Per rafforzare il verdetto nei casi-storia, lo confrontiamo con il <strong>gemello</strong>: il pilota
+            vicino in classifica, nelle stesse condizioni, che ha scelto l&apos;opposto. Il gemello perfetto è il
+            compagno di squadra — stessa macchina, stesso muretto — che rende la vista &quot;stesso box, fortuna
+            diversa&quot; un esperimento naturale: l&apos;unica variabile che cambia davvero è la scelta.
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            Deliberatamente <strong>non</strong> costruiamo una classifica controfattuale simulando la gara che
+            sarebbe successa con la scelta opposta: richiederebbe di modellare sorpassi, difesa della posizione e gap
+            reali in pista, cose che i nostri dati (tempi per giro, non telemetria) non permettono di ricostruire in
+            modo difendibile. Il confronto con il gemello dà lo stesso tipo di risposta — &quot;cosa succede a chi ha
+            scelto diversamente, in condizioni simili&quot; — usando solo cose che sono davvero accadute.
+          </p>
+        </section>
+
+        {/* 6. L'indice combinato */}
+        <section className="space-y-6">
+          <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
+            La mappa del &quot;quando conviene&quot;: l&apos;indice combinato
+          </h2>
+          <p className="text-text-secondary leading-relaxed">
+            Aggregando centinaia di decisioni BOX, la domanda diventa: quali condizioni distinguono chi ha guadagnato
+            posizioni da chi ne ha perse? Abbiamo provato prima le coppie di variabili più ovvie in uno scatter a due
+            assi (margine dietro × età gomme, età gomme × fase di gara, soste fatte × età gomme, margine dietro ×
+            soste fatte): <strong>nessuna mostrava un confine visibile</strong> tra chi guadagna e chi perde — solo
+            nuvole di punti sovrapposte. Per questo la mappa in home non è uno scatter: un confine netto a 2 assi non
+            c&apos;è nei dati, e disegnarlo comunque sarebbe disonesto.
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            Le due variabili con un segnale reale, misurato correlando ciascuna da sola con l&apos;esito a 5 giri tra
+            chi ha scelto BOX, sono il <strong>traffico</strong> (quota del gruppo che si ferma nella stessa finestra:
+            correlazione 0,28 — chi si ferma in tanti si &quot;salva&quot; a vicenda) e il <strong>margine dietro</strong>{" "}
+            (correlazione 0,18). Le combiniamo in un indice unico, pesato in proporzione a quelle correlazioni
+            individuali (pesi dichiarati a mano, non ottimizzati sui dati — il campione di casi BOX guadagnato/perso è
+            troppo piccolo per un fit affidabile senza overfitting):
+          </p>
+          <div className="bg-panel border border-graphite p-6 font-mono text-sm text-white">
+            indice combinato = {params.combinedIndexWeights.trafficFraction} × z-score(traffico) +{" "}
+            {params.combinedIndexWeights.gapBehind} × z-score(margine dietro)
+          </div>
+          <p className="text-text-secondary leading-relaxed">
+            Sull&apos;intero campione, l&apos;indice combinato correla con l&apos;esito a 5 giri{" "}
+            <strong>0,34-0,36</strong> (verificato stabile su due metà casuali del campione). È più del segnale di
+            ciascuna variabile presa da
+            sola, ma resta un segnale <strong>debole</strong>: le distribuzioni di chi guadagna e chi perde, sull&apos;indice,
+            hanno medie chiaramente diverse ma si sovrappongono pesantemente. Per questo la mappa in home confronta
+            due distribuzioni sovrapposte (non un confine), e il testo la dichiara esplicitamente come una{" "}
+            <strong>tendenza statistica</strong> — un vantaggio reale ma modesto — mai come una previsione: lo
+            strumento aiuta la decisione, non la sostituisce.
+          </p>
+        </section>
+
+        {/* 7. Sorpassabilità e caoticità */}
+        <section className="space-y-6">
+          <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
+            Il contesto del circuito: sorpassabilità e caoticità
+          </h2>
+          <p className="text-text-secondary leading-relaxed">
+            Due parametri di circuito completano la scheda decisione, calcolati sui nostri stessi dati:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 text-white">
+            <li>
+              <strong>Sorpassabilità</strong> — la media dei cambi di posizione tra giri verdi consecutivi, per
+              circuito, sulle due stagioni: quanto si muove normalmente la classifica quando la pista non è
+              neutralizzata (la stessa decisione vale l&apos;opposto a Monaco e a Monza). L&apos;abbiamo provata come
+              possibile terza variabile dell&apos;indice combinato, ma non porta segnale (correlazione con l&apos;esito
+              ≈ -0,10, come l&apos;età gomme): <strong>non entra nell&apos;indice</strong>, resta solo un filtro di
+              contesto dichiarato nella mappa (es. per confrontare le distribuzioni solo sulle piste dove sorpassare è
+              più facile).
+            </li>
+            <li>
+              <strong>Caoticità</strong> — quante neutralizzazioni (SC + VSC) ha avuto quella pista, sommate sulle
+              due stagioni del campione: è la base della scommessa implicita di STAY (&quot;arriverà un&apos;altra
+              Safety Car?&quot;). È una stima grezza su solo 2 stagioni per pista — poche gare per pista per dirla con
+              sicurezza — dichiarata come tale, non un tasso di probabilità affidabile.
+            </li>
+          </ul>
+        </section>
+
         {/* 4. Le soglie */}
         <section className="space-y-6">
           <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
@@ -299,8 +529,8 @@ export default function MethodologyPage() {
             I limiti che dichiariamo
           </h2>
           <p className="text-text-secondary leading-relaxed">
-            Nessun metodo è perfetto. Questi sono i tre limiti che conosciamo e che non abbiamo risolto — li
-            dichiariamo qui invece di lasciarli scoperti.
+            Nessun metodo è perfetto. Questi sono i limiti che conosciamo e che non abbiamo risolto — li dichiariamo
+            qui invece di lasciarli scoperti.
           </p>
           <ol className="list-decimal pl-6 space-y-4 text-text-secondary leading-relaxed">
             <li>
@@ -334,6 +564,35 @@ export default function MethodologyPage() {
               di un pit stop ({params.trafficMinCars}, la soglia qui sopra) e a trattare quel numero come traffico
               sufficiente per considerare il pilota escluso. È una semplificazione dichiarata, non una stima del
               traffico reale.
+            </li>
+            <li>
+              <span className="text-white font-bold">La posizione di rientro prevista è una stima, non un replay.</span>{" "}
+              Nello spike sulla gara campione l&apos;errore mediano tra posizione prevista e posizione reale dopo la
+              finestra è di 1 posizione: buono per giudicare il senso della scelta, non un numero da leggere alla
+              singola posizione come fosse certo.
+            </li>
+            <li>
+              <span className="text-white font-bold">L&apos;indice combinato della mappa è una tendenza, non una certezza.</span>{" "}
+              Correla con l&apos;esito a 5 giri 0,34-0,36: un vantaggio statistico reale, misurato su tutto il
+              campione, ma le distribuzioni di chi guadagna e chi perde si sovrappongono pesantemente. Non è, e non
+              vuole essere, una regola che predice il singolo caso.
+            </li>
+            <li>
+              <span className="text-white font-bold">La caoticità del circuito poggia su sole 2 stagioni.</span> Il
+              conteggio delle neutralizzazioni per pista (2023-2024) è la scommessa implicita dietro STAY, ma con
+              1-2 gare per pista a stagione è una stima grezza, non un tasso di probabilità storico affidabile.
+            </li>
+            <li>
+              <span className="text-white font-bold">I piloti senza bisogno di fermarsi non entrano nella mappa.</span>{" "}
+              Chi era in categoria NOT_NEEDED (aveva già completato le soste previste) resta visibile nella matrice
+              della lotteria ma è escluso dalla mappa e dall&apos;indice combinato: non è una decisione box/stay
+              reale, includerlo sposterebbe le distribuzioni senza motivo.
+            </li>
+            <li>
+              <span className="text-white font-bold">Le gare bagnate non hanno un trattamento a parte.</span> Come
+              in v1, la pioggia non è un parametro della decisione: cambia radicalmente i riferimenti (gomme,
+              tempi, convenienza del box) e trattarla assieme al resto avrebbe sporcato tutte le altre metriche —
+              un limite dichiarato, non un caso raro da inseguire.
             </li>
           </ol>
         </section>
