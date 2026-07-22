@@ -11,10 +11,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-from app.api.routes import sessions
 
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "race_dynamics_data_layer"}
-
-app.include_router(sessions.router, prefix="/api/sessions", tags=["Sessions"])

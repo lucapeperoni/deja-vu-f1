@@ -52,7 +52,9 @@ interface FactsFile {
 }
 
 function readJson<T>(...segments: string[]): T {
-  return JSON.parse(fs.readFileSync(path.join(process.cwd(), ...segments), "utf-8")) as T;
+  return JSON.parse(
+    fs.readFileSync(path.join(/* turbopackIgnore: true */ process.cwd(), ...segments), "utf-8")
+  ) as T;
 }
 
 function paramsKey(parametri: Record<string, number | string>): string {

@@ -14,7 +14,6 @@ const OUT_DIR = path.join(__dirname, '../public/data');
 interface Race { raceId: number; year: number; round: number; circuitId: number; name: string; date: string; }
 interface Driver { driverId: number; driverRef: string; forename: string; surname: string; code: string; }
 interface Constructor { constructorId: number; constructorRef: string; name: string; }
-interface Status { statusId: number; status: string; }
 interface Result {
     resultId: number; raceId: number; driverId: number; constructorId: number;
     number: number | null; grid: number | null; position: number | null;
@@ -26,15 +25,34 @@ interface Qualifying {
     number: number; position: number; q1: string; q2: string; q3: string;
 }
 
+interface RaceComparison {
+    raceId: number; year: number; round: number; constructorId: number;
+    driverA: number; driverB: number;
+    posA: number; posB: number;
+    pointsA: number; pointsB: number;
+    gridA: number | null; gridB: number | null;
+    statusA: number; statusB: number;
+    raceWinner: number | null;
+    qualyWinner: number | null;
+    gridDelta: number | null;
+    posDelta: number;
+}
+
+interface RivalryEntry {
+    id: string; year: number; constructorId: number;
+    driverA: number; driverB: number;
+    races: RaceComparison[];
+}
+
 // Helper to parse CSV
-function parseCSV<T>(filename: string, transform?: (val: string, field: string | number) => any): T[] {
+function parseCSV<T>(filename: string, transform?: (val: string, field: string | number) => unknown): T[] {
     const filePath = path.join(DATA_DIR, filename);
     if (!fs.existsSync(filePath)) {
         console.warn(`File not found: ${filePath}`);
         return [];
     }
     const fileContent = fs.readFileSync(filePath, 'utf8');
-    const result = Papa.parse<any>(fileContent, {
+    const result = Papa.parse<Record<string, unknown>>(fileContent, {
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
@@ -55,7 +73,6 @@ async function main() {
     const races = parseCSV<Race>('races.csv');
     const drivers = parseCSV<Driver>('drivers.csv');
     const constructors = parseCSV<Constructor>('constructors.csv');
-    const status = parseCSV<Status>('status.csv');
     const results = parseCSV<Result>('results.csv');
     const qualifying = parseCSV<Qualifying>('qualifying.csv');
 
@@ -70,9 +87,7 @@ async function main() {
     // STEP 1: INDEXING
     // =========================================================================
     const racesMap = new Map<number, Race>(races.map(r => [r.raceId, r]));
-    const driversMap = new Map<number, Driver>(drivers.map(d => [d.driverId, d]));
-    const constructorsMap = new Map<number, Constructor>(constructors.map(c => [c.constructorId, c]));
-    
+
     // Group qualifying by raceId and driverId for quick lookup
     const qualyMap = new Map<string, Qualifying>();
     for (const q of qualifying) {
@@ -90,10 +105,10 @@ async function main() {
         raceConstructorResults.get(key)!.push(res);
     }
 
-    const teammateRaceComparisons: any[] = [];
-    const rivalryMap = new Map<string, any>(); // key: "year-constructorId-driverA-driverB" (sorted driver IDs)
+    const teammateRaceComparisons: RaceComparison[] = [];
+    const rivalryMap = new Map<string, RivalryEntry>(); // key: "year-constructorId-driverA-driverB" (sorted driver IDs)
 
-    for (const [key, teamResults] of raceConstructorResults.entries()) {
+    for (const [, teamResults] of raceConstructorResults.entries()) {
         if (teamResults.length < 2) continue; // No teammates in this race for this constructor
         
         // Ensure we only compare pairs (if 3 drivers, compare all combinations, though rare)
@@ -157,7 +172,7 @@ async function main() {
                         races: []
                     });
                 }
-                rivalryMap.get(rivalryKey).races.push(comparison);
+                rivalryMap.get(rivalryKey)!.races.push(comparison);
             }
         }
     }
@@ -170,8 +185,8 @@ async function main() {
         let raceWinsA = 0, raceWinsB = 0;
         let qualyWinsA = 0, qualyWinsB = 0, validQualy = 0;
         let totalPointsA = 0, totalPointsB = 0;
-        let posDeltas: number[] = [];
-        let gridDeltas: number[] = [];
+        const posDeltas: number[] = [];
+        const gridDeltas: number[] = [];
 
         for (const race of r.races) {
             if (race.raceWinner === r.driverA) raceWinsA++;
@@ -192,8 +207,7 @@ async function main() {
 
         // Calculate metrics
         const sharedRaces = r.races.length;
-        const raceWinRateA = raceWinsA / (raceWinsA + raceWinsB || 1); // Avoid div by zero
-        
+
         let teamPointsShareA = 0.5; // Default if 0 points scored by both
         if (totalPointsA + totalPointsB > 0) {
             teamPointsShareA = totalPointsA / (totalPointsA + totalPointsB);
@@ -213,8 +227,8 @@ async function main() {
 
         // TDI Weights (sum to 1)
         const weights = { race: 0.30, qualy: 0.25, points: 0.20, pos: 0.15, grid: 0.10 };
-        let TDI_raw = 
-            (h2hRaceNorm * weights.race) + 
+        const TDI_raw =
+            (h2hRaceNorm * weights.race) +
             (h2hQualyNorm * weights.qualy) + 
             (pointShareNorm * weights.points) + 
             (posDeltaNorm * weights.pos) + 

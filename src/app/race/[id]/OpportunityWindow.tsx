@@ -312,7 +312,7 @@ export default function OpportunityWindow({ raceData }: Props) {
       .on("click", (_event, d) => toggleLockedDriverId(d.id));
 
     // --- Celle ---
-    const cellData: CellDatum[] = drivers.flatMap((driver, rowIndex) =>
+    const cellData: CellDatum[] = drivers.flatMap((driver) =>
       events.map((event, eventIndex) => {
         const decision = decisionByKey.get(`${event.eventId}-${driver.driverId}`);
         const legacyCategory = driver.outcomes.find((o) => o.eventId === event.eventId)?.category ?? "NEUTRAL";

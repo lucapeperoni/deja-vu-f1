@@ -256,9 +256,19 @@ export default function TeammateMirror({ raceData }: Props) {
     }
   }, []);
 
-  useEffect(() => {
+  // Un tooltip aperto potrebbe riferirsi a una riga colorata/filtrata
+  // diversamente dopo il cambio: colorMode e selectedEventId sono stato
+  // locale impostato solo dai click qui sotto, quindi si chiude il tooltip
+  // direttamente in quegli handler invece che con un effect a parte.
+  function selectColorMode(mode: ColorMode) {
+    setColorMode(mode);
     setTooltip(null);
-  }, [colorMode, selectedEventId]);
+  }
+
+  function selectEventId(id: "all" | string) {
+    setSelectedEventId(id);
+    setTooltip(null);
+  }
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -524,7 +534,7 @@ export default function TeammateMirror({ raceData }: Props) {
         </p>
         <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md">
           <button
-            onClick={() => setColorMode("context")}
+            onClick={() => selectColorMode("context")}
             className={clsx(
               "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
               colorMode === "context" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
@@ -533,7 +543,7 @@ export default function TeammateMirror({ raceData }: Props) {
             Colora per contesto
           </button>
           <button
-            onClick={() => setColorMode("team")}
+            onClick={() => selectColorMode("team")}
             className={clsx(
               "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
               colorMode === "team" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
@@ -547,7 +557,7 @@ export default function TeammateMirror({ raceData }: Props) {
       {eventOptions.length > 1 && (
         <div className="flex flex-wrap gap-1.5 mb-4">
           <button
-            onClick={() => setSelectedEventId("all")}
+            onClick={() => selectEventId("all")}
             className={clsx(
               "px-3 py-1 text-xs font-condensed uppercase tracking-wider rounded-full border transition-colors",
               selectedEventId === "all"
@@ -560,7 +570,7 @@ export default function TeammateMirror({ raceData }: Props) {
           {eventOptions.map(({ event, count }) => (
             <button
               key={event.eventId}
-              onClick={() => setSelectedEventId(event.eventId)}
+              onClick={() => selectEventId(event.eventId)}
               className={clsx(
                 "px-3 py-1 text-xs font-condensed uppercase tracking-wider rounded-full border transition-colors",
                 selectedEventId === event.eventId

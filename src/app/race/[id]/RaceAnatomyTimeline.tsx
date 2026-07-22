@@ -592,6 +592,11 @@ export default function RaceAnatomyTimeline({ raceData, story }: Props) {
         setHoveredDriverId(null);
         setTooltip(null);
       });
+    // MARGIN/HEIGHT sono derivati da `story` (già in questa lista): non sono
+    // oggetti stabili, aggiungerli letteralmente farebbe ripartire l'effetto
+    // a ogni render mentre `hasStory` è true, senza cambiare cosa viene
+    // disegnato.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     raceData,
     totalLaps,

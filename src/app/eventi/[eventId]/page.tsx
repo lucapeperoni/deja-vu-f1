@@ -68,7 +68,9 @@ interface EventDetailFile {
 }
 
 function readJson<T>(...segments: string[]): T {
-  return JSON.parse(fs.readFileSync(path.join(process.cwd(), ...segments), "utf-8")) as T;
+  return JSON.parse(
+    fs.readFileSync(path.join(/* turbopackIgnore: true */ process.cwd(), ...segments), "utf-8")
+  ) as T;
 }
 
 // Chiave canonica di un oggetto parametri, indipendente dall'ordine delle

@@ -91,12 +91,17 @@ export default function PitCostDumbbell({ raceData }: Props) {
     }
   }, []);
 
-  // Se cambia l'intervallo selezionato (o l'insieme dei pit visibili), un
-  // tooltip aperto potrebbe riferirsi a una barra appena rimossa dal
-  // filtro: lo si chiude per sicurezza invece di lasciarlo "appeso".
-  useEffect(() => {
+  // Se cambia l'intervallo selezionato, un tooltip aperto potrebbe
+  // riferirsi a una barra appena rimossa dal filtro: lo si chiude per
+  // sicurezza invece di lasciarlo "appeso". Adeguamento di stato durante il
+  // render (non in un effect): si confronta il valore corrente con quello
+  // dell'ultimo render, pattern raccomandato da React per "resettare uno
+  // stato quando cambia una prop" senza un giro di re-render in più.
+  const [prevBrushRange, setPrevBrushRange] = useState(brushRange);
+  if (prevBrushRange !== brushRange) {
+    setPrevBrushRange(brushRange);
     setTooltip(null);
-  }, [brushRange]);
+  }
 
   // --- Effect strutturale: dipende da raceData/brushRange (il brush è un
   // filtro esplicito, non un hover: qui è corretto ricalcolare posizioni e
