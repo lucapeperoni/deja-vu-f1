@@ -745,7 +745,7 @@
     "siccitaGareCorrente": 15,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Circuit Gilles Villeneuve",
-    "pesoEditoriale": 0.35
+    "pesoEditoriale": 0.25
   },
   {
     "eventId": "doppio_ritiro_stessa_causa",
@@ -767,7 +767,7 @@
     "siccitaGareCorrente": 16,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Circuit de Monaco",
-    "pesoEditoriale": 0.4
+    "pesoEditoriale": 0.3
   },
   {
     "eventId": "prima_vittoria_costruttore",
@@ -965,7 +965,7 @@
     "siccitaGareCorrente": 0,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Yas Marina Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -999,7 +999,7 @@
     "siccitaGareCorrente": 3,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1033,7 +1033,7 @@
     "siccitaGareCorrente": 0,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Yas Marina Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1067,7 +1067,7 @@
     "siccitaGareCorrente": 12,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Silverstone Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1101,7 +1101,7 @@
     "siccitaGareCorrente": 1,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Losail International Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1135,7 +1135,7 @@
     "siccitaGareCorrente": 63,
     "siccitaAnniCorrente": 2,
     "ultimaOccorrenza": "2022 Miami International Autodrome",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1169,7 +1169,7 @@
     "siccitaGareCorrente": 90,
     "siccitaAnniCorrente": 4,
     "ultimaOccorrenza": "2020 Yas Marina Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "ritiro_per_causa_specifica",
@@ -1203,7 +1203,7 @@
     "siccitaGareCorrente": 45,
     "siccitaAnniCorrente": 1,
     "ultimaOccorrenza": "2023 Bahrain International Circuit",
-    "pesoEditoriale": 0.3
+    "pesoEditoriale": 0.2
   },
   {
     "eventId": "causa_non_vista_da_anni",
@@ -1465,7 +1465,7 @@
     "siccitaGareCorrente": 0,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Yas Marina Circuit",
-    "pesoEditoriale": 0.5
+    "pesoEditoriale": 0.4
   },
   {
     "eventId": "rimonta_almeno_n_posizioni",
@@ -1495,7 +1495,7 @@
     "siccitaGareCorrente": 0,
     "siccitaAnniCorrente": 0,
     "ultimaOccorrenza": "2024 Yas Marina Circuit",
-    "pesoEditoriale": 0.5
+    "pesoEditoriale": 0.4
   },
   {
     "eventId": "rimonta_almeno_n_posizioni",
@@ -1525,7 +1525,7 @@
     "siccitaGareCorrente": 249,
     "siccitaAnniCorrente": 12,
     "ultimaOccorrenza": "2012 Yas Marina Circuit",
-    "pesoEditoriale": 0.5
+    "pesoEditoriale": 0.4
   },
   {
     "eventId": "vincitore_con_almeno_n_soste",

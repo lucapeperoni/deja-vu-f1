@@ -23,6 +23,7 @@ import DoveMappa from "@/components/charts/DoveMappa";
 import GrigliaArrivo, { type GrigliaPoint } from "@/components/charts/GrigliaArrivo";
 import {
   formatDrought,
+  formatParameterValue,
   formatRarityPercent,
   formatWindow,
   parameterSuffix,
@@ -31,7 +32,7 @@ import {
   type CircuitGeo,
   type CircuitStat,
 } from "@/lib/eventCatalog";
-import { FAMILY_LEGEND, familyColor, PIT_CONTEXT_LABELS } from "@/lib/colors";
+import { FAMILY_LEGEND, familyColor } from "@/lib/colors";
 
 export interface EnrichedOccurrence {
   raceId: number;
@@ -57,6 +58,12 @@ interface Props {
   variants: ParameterVariant[];
   circuitsGeo: CircuitGeo[];
   cloud: { griglia: (number | null)[]; arrivo: (number | null)[] };
+  // Indice iniziale dello slider (sezione 7, vista 6: "link all'evento" da
+  // una scheda gara con un parametro specifico, es. N=10 — senza questo, il
+  // link atterrerebbe sempre sul parametro di default e mostrerebbe un
+  // numero diverso da quello appena letto nella scheda gara). Risolto
+  // server-side da page.tsx leggendo ?<paramKey>=<valore> dall'URL.
+  initialSliderIndex?: number;
 }
 
 const PAGE_SIZE = 50;
@@ -73,17 +80,19 @@ function humanizeKey(key: string): string {
     .toLowerCase();
 }
 
-function formatParamValue(paramKey: string, value: number | string): string {
-  if (paramKey === "contesto") return PIT_CONTEXT_LABELS[value as keyof typeof PIT_CONTEXT_LABELS] ?? String(value);
-  return String(value);
-}
-
-export default function CompositoreClient({ catalogEvents, eventId, variants, circuitsGeo, cloud }: Props) {
+export default function CompositoreClient({
+  catalogEvents,
+  eventId,
+  variants,
+  circuitsGeo,
+  cloud,
+  initialSliderIndex,
+}: Props) {
   const router = useRouter();
   const base = variants[0];
 
   const [selectedFamily, setSelectedFamily] = useState(base.famiglia);
-  const [sliderIndex, setSliderIndex] = useState(0);
+  const [sliderIndex, setSliderIndex] = useState(initialSliderIndex ?? 0);
   const [yearFilter, setYearFilter] = useState<[number, number] | null>(null);
   const [visibleRows, setVisibleRows] = useState(PAGE_SIZE);
   const [sort, setSort] = useState<{ column: "anno" | "gara"; direction: "asc" | "desc" }>({
@@ -142,7 +151,7 @@ export default function CompositoreClient({ catalogEvents, eventId, variants, ci
 
   const trackPoints: ParameterVariantPoint[] = orderedVariants.map((v) => ({
     key: paramsKey(v.parametri),
-    label: paramKey ? formatParamValue(paramKey, v.parametri[paramKey]) : v.nome,
+    label: paramKey ? formatParameterValue(paramKey, v.parametri[paramKey]) : v.nome,
     rarita: v.rarita,
     occorrenze: v.occorrenze,
   }));
@@ -251,7 +260,7 @@ export default function CompositoreClient({ catalogEvents, eventId, variants, ci
             <div className="mb-6">
               <div className="flex justify-between text-xs uppercase tracking-widest text-neutral-gray mb-2">
                 <span>Parametro: {paramKey}</span>
-                <span className="text-white font-bold">{formatParamValue(paramKey, currentVariant.parametri[paramKey])}</span>
+                <span className="text-white font-bold">{formatParameterValue(paramKey, currentVariant.parametri[paramKey])}</span>
               </div>
               <input
                 type="range"

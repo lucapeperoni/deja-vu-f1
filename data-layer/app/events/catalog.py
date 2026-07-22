@@ -424,7 +424,14 @@ def _osservazioni_doppio_ritiro_stessa_causa(dataset: Dataset) -> List[Observati
     parametri=[],
     anno_da=1950,
     anno_a=2024,
-    peso_editoriale=0.35,
+    # Peso abbassato da 0.35 a 0.25 (QA vista 6, sezione 10 rischio 1): su un
+    # campione di 5 gare a caso questo evento compariva in 4/5 delle
+    # classifiche di notevolezza, quasi sempre alla stessa notevolezza — un
+    # artefatto di essere valutato per team dentro una gara con 8-16 team:
+    # anche una rarita' vera del 20% per team diventa "quasi sempre almeno
+    # un team" a livello di gara. Da riverificare su un campione più ampio
+    # dopo la modifica.
+    peso_editoriale=0.25,
     descrizione="Entrambe le auto dello stesso team si sono ritirate, per qualunque causa.",
 )
 def doppio_ritiro(team_results: List[Result], **_: object) -> bool:
@@ -442,7 +449,9 @@ def doppio_ritiro(team_results: List[Result], **_: object) -> bool:
     parametri=[],
     anno_da=1950,
     anno_a=2024,
-    peso_editoriale=0.4,
+    # Peso abbassato da 0.4 a 0.3 (stesso motivo di doppio_ritiro sopra: QA
+    # vista 6, compariva nella top-5 di TUTTE le 5 gare campionate).
+    peso_editoriale=0.3,
     descrizione="Entrambe le auto dello stesso team si sono ritirate per la stessa causa.",
 )
 def doppio_ritiro_stessa_causa(team_results: List[Result], **_: object) -> bool:
@@ -719,7 +728,13 @@ def _osservazioni_ritiro_per_causa(dataset: Dataset) -> List[Observation]:
     parametri=[ParameterSpec("causa", _CAUSE_RITIRO_PARAMETRO)],
     anno_da=1950,
     anno_a=2024,
-    peso_editoriale=0.3,
+    # Peso abbassato da 0.3 a 0.2 (stesso motivo di doppio_ritiro e rimonta
+    # sopra: QA vista 6, compariva nella top-5 di 12 gare su 12 campionate —
+    # il caso più forte tra i quattro. Valutato per pilota × causa dentro
+    # una gara con ~20 piloti e ~8 cause possibili, quindi "qualche ritiro
+    # per qualche causa" è quasi certo ogni gara anche se ogni singola causa
+    # è vera-rara).
+    peso_editoriale=0.2,
     descrizione="Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
 )
 def ritiro_per_causa_specifica(result: Result, *, causa: int) -> bool:
@@ -885,7 +900,10 @@ def _osservazioni_rimonta(dataset: Dataset) -> List[Observation]:
     parametri=[ParameterSpec("N", [10, 15, 20])],
     anno_da=1950,
     anno_a=2024,
-    peso_editoriale=0.5,
+    # Peso abbassato da 0.5 a 0.4 (stesso motivo: QA vista 6, compariva in
+    # 3/5 gare campionate a notevolezza quasi identica — valutato per ogni
+    # pilota in griglia, ~20 per gara, compensa lo stesso effetto).
+    peso_editoriale=0.4,
     descrizione="Il pilota ha guadagnato almeno N posizioni tra griglia e arrivo.",
 )
 def rimonta_almeno_n_posizioni(rimonta: int, *, N: int) -> bool:

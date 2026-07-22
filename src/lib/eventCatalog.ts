@@ -5,6 +5,8 @@
 // legge solo questi campi già precalcolati dalla pipeline
 // (data-layer/scripts/build_events.py).
 
+import { PIT_CONTEXT_LABELS } from "./colors";
+
 export type EventUnit = "GARA" | "RISULTATO" | "TEAM_GARA";
 
 export interface CatalogEventEntry {
@@ -81,13 +83,23 @@ export function dedupeToDefaultParams(entries: CatalogEventEntry[]): CatalogEven
   return result;
 }
 
+// Etichetta leggibile di un valore di parametro: per "contesto" (famiglia
+// neutralizzazioni) riusa le etichette PIT_CONTEXT_LABELS già validate
+// invece del codice grezzo ("UNDER_SC" -> "Sotto Safety Car") — fissato qui
+// perché il compositore (vista 2) e la scheda gara (vista 6) devono
+// mostrare la STESSA etichetta per lo stesso parametro.
+export function formatParameterValue(key: string, value: number | string): string {
+  if (key === "contesto") return PIT_CONTEXT_LABELS[value as keyof typeof PIT_CONTEXT_LABELS] ?? String(value);
+  return String(value);
+}
+
 // Etichetta del parametro corrente, se l'evento ne ha uno (es. "N=10",
 // "causa=5"): compare accanto al nome nell'etichetta e nel tooltip, perché
 // "vittoria da griglia" senza soglia è un nome ambiguo.
-export function parameterSuffix(entry: CatalogEventEntry): string {
+export function parameterSuffix(entry: Pick<CatalogEventEntry, "parametri">): string {
   const keys = Object.keys(entry.parametri);
   if (keys.length === 0) return "";
-  return ` (${keys.map((k) => `${k}=${entry.parametri[k]}`).join(", ")})`;
+  return ` (${keys.map((k) => `${k}=${formatParameterValue(k, entry.parametri[k])}`).join(", ")})`;
 }
 
 export function formatWindow(entry: Pick<CatalogEventEntry, "annoDa" | "annoA">): string {

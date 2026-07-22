@@ -101,8 +101,15 @@ function extractDriverIds(occ: Record<string, unknown>): number[] {
   return ids;
 }
 
-export default async function EventoPage({ params }: { params: Promise<{ eventId: string }> }) {
+export default async function EventoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ eventId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { eventId } = await params;
+  const query = await searchParams;
 
   const detailPath = path.join(process.cwd(), "public", "data", "events", `${eventId}.json`);
   if (!fs.existsSync(detailPath)) return notFound();
@@ -212,6 +219,20 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
     return { ...entry, occorrenzeDettaglio, perStagione: p.perStagione ?? {}, perCircuito, highlightedPoints };
   });
 
+  // Link preciso da un'altra vista (es. la scheda gara, vista 6: "N volte
+  // su M" con N=10, non il default): ?<paramKey>=<valore> nell'URL sceglie
+  // la stessa variante invece di ricadere sempre sul parametro di default.
+  const paramKey = Object.keys(detail.parametriDisponibili)[0];
+  let initialSliderIndex: number | undefined;
+  if (paramKey) {
+    const queryValue = query[paramKey];
+    const raw = Array.isArray(queryValue) ? queryValue[0] : queryValue;
+    if (raw !== undefined) {
+      const idx = detail.parametriDisponibili[paramKey].findIndex((v) => String(v) === raw);
+      if (idx >= 0) initialSliderIndex = idx;
+    }
+  }
+
   return (
     <CompositoreClient
       key={eventId}
@@ -220,6 +241,7 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
       variants={variants}
       circuitsGeo={circuitsGeo}
       cloud={cloud}
+      initialSliderIndex={initialSliderIndex}
     />
   );
 }
