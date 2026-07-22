@@ -1,657 +1,531 @@
-# Box, box? — Documento di progettazione (v2)
+# È già successo? — Documento di progettazione (v3)
 
 Progetto per il corso di Visualizzazione delle Informazioni.
-Gruppo di 3 studenti. Visualizzazione interattiva in D3.js su dati reali di Formula 1.
+Gruppo di 3 studenti. Visualizzazione interattiva in D3.js su dati reali di
+Formula 1.
 
-Ultimo aggiornamento: 12 luglio 2026 — **pivot dopo il feedback del
-professore** (v1 "Chaos Discount": il progetto descriveva un fenomeno ma
-non individuava un problema né proponeva una soluzione). Le sezioni 1-3
-sono riscritte per il nuovo frame; metriche (§5), pipeline (§6) e gran
-parte delle viste (§7) restano valide e già implementate — vedi
-`docs/ROADMAP-2.md` per il piano dei soli delta.
+Ultimo aggiornamento: 22 luglio 2026 — **secondo pivot dopo il ricevimento**.
+La v2 ("Box, box?") aveva riorientato il progetto verso il supporto alla
+decisione, ma il professore ha ripetuto l'obiezione della v1: il progetto
+non risolve un problema. Il suo esempio testuale: *un giornalista che ha
+bisogno al volo di un'informazione e la cerca sulla nostra soluzione — per
+esempio quante volte e dove è successo un determinato evento*; e
+l'avvertimento che la Safety Car da sola rischia di essere banale.
+
+Le versioni precedenti non si buttano: la pipeline delle neutralizzazioni
+2023-2024 diventa **una famiglia di eventi tra le altre** (§5.5, §12).
 
 ---
 
 ## 1. Il problema e la soluzione (l'idea in due righe)
 
-**Il problema.** Quando entra una Safety Car (SC) o una Virtual Safety Car
-(VSC), ogni muretto ha pochi secondi per rispondere alla chiamata radio
-"box, box?": fermarsi adesso costa molto meno del normale (15,5s mediani
-contro 22,5s in verde, misurato dalla nostra pipeline su 46 gare), ma si
-rientra nel traffico; restare fuori conserva la posizione, con gomme più
-vecchie e la scommessa di dover pagare prezzo pieno più avanti. La
-decisione dipende da parametri che interagiscono (gap, gomme, piano soste,
-cosa fanno gli altri) e da fuori — TV, timing screen, classifica — è
-invisibile: si vede solo l'esito, mai le carte che il muretto aveva in
-mano. Persino i top team la sbagliano (Ferrari a Monaco 2022, Mercedes ad
-Abu Dhabi 2021).
+**Il problema.** Durante e subito dopo una gara succede qualcosa che *sembra*
+straordinario — una vittoria dal fondo della griglia, una volata decisa per
+pochi millesimi, un doppio ritiro identico, una gara senza un solo cambio al
+comando. Chi deve raccontarla (giornalista, commentatore, redattore sotto
+scadenza) ha bisogno in pochi minuti di sapere **se è davvero raro, quante
+volte è successo prima, dove e quando**. Oggi quell'informazione esiste ma è
+inutilizzabile: Wikipedia e i siti di statistiche danno albi d'oro e record
+già confezionati, non permettono di *comporre* la condizione che serve
+adesso ("vittoria partendo oltre la decima piazza"), non normalizzano per
+quante gare ha ospitato ogni circuito, e non dicono mai su quale finestra
+temporale la risposta è valida. Il risultato pratico sono affermazioni
+sbagliate dette in diretta, o interessanti e mai dette.
 
-**La soluzione.** Uno strumento di visualizzazione che, per ogni
-neutralizzazione delle stagioni 2023-2024: (a) ricostruisce la decisione
-com'era in quel momento, pilota per pilota, con le due opzioni
-quantificate; (b) mostra la scelta fatta e com'è andata; (c) aggrega
-~800 decisioni reali in una mappa empirica del "quando conviene fermarsi".
+**La soluzione.** Uno strumento di interrogazione visuale su **75 stagioni
+(1950-2024, 1125 gare)** che: (a) lascia comporre un evento con pochi
+parametri e risponde **quante volte, dove, quando**, con la rarità
+calcolata e la finestra di validità dichiarata; (b) mette l'evento in
+contesto dentro la nuvola di tutti i risultati, così si vede *perché* è
+raro; (c) data una gara, genera **da solo** i fatti notevoli, ordinati per
+rarità, per chi non sa ancora cosa cercare.
 
 ## 2. Domanda di ricerca
 
-**Quando conviene fermarsi ai box durante una neutralizzazione?**
+**Quanto è raro quello che ho appena visto, e quando e dove era già
+successo?**
 
 In pratica il progetto risponde a tre domande:
 
-1. Che decisione aveva davanti ciascun pilota? (ricostruzione: opzioni
-   BOX e STAY quantificate — §5.6)
-2. Chi ha scelto bene e chi ha sbagliato? (verdetto retrospettivo:
-   esito dopo 5 giri, confronto col "gemello")
-3. Quali condizioni rendono conveniente fermarsi? (la mappa empirica
-   su due stagioni di scelte vere)
+1. Quante volte è successo questo evento, e su quale finestra di dati è
+   lecito dirlo? (rarità e copertura — §5.1, §5.2)
+2. Dove e quando è successo? (distribuzione nel tempo e sui circuiti,
+   normalizzata — §5.3)
+3. Cosa c'è di notevole in *questa* gara, che io non ho pensato di
+   chiedere? (generatore di fatti per rarità — §5.4)
 
 Utente di riferimento e decisione supportata (richiesti dalle slide):
-l'analista di strategia — o il tifoso che vuole giudicare il muretto —
-che si chiede "il pilota X doveva fermarsi?".
+il **giornalista sportivo sotto scadenza** — e, secondariamente, il tifoso
+informato — che deve decidere **se un fatto merita di essere raccontato e
+come inquadrarlo**. La decisione è editoriale, non sportiva: "questo è il
+titolo, o è una banalità?".
 
-Cosa il progetto NON è: non un modello predittivo né una simulazione
-(fuori scopo per un corso di InfoViz e metodologicamente attaccabile).
-La risposta al "quando conviene" emerge facendo parlare le scelte reali
-e i loro esiti — che è esattamente il mestiere della visualizzazione
-delle informazioni.
+Cosa il progetto NON è: non un modello predittivo, non una simulazione, non
+un tentativo di spiegare *perché* un evento accade. È uno strumento
+descrittivo di interrogazione — che è esattamente quello che il professore
+ha indicato come sufficiente e appropriato.
 
 ## 3. Decisioni prese
 
-**Pivot di luglio 2026 (feedback del professore).** La v1 dimostrava che
-"la lotteria esiste" (descrittivo, nessun problema da risolvere). Il
-riorientamento trasforma lo stesso dataset e la stessa pipeline in uno
-strumento di supporto alla decisione. Regole del pivot:
+**Pivot del 22 luglio 2026.** Regole:
 
-- **La pipeline validata non si tocca.** Il layer decisionale
-  (`decision_snapshots`) si costruisce SOPRA i JSON già esportati: se il
-  nuovo layer avesse problemi, il progetto v1 resta in piedi come rete
-  di sicurezza.
-- **Lo "sconto" (chaos discount) resta il concetto chiave ma viene
-  declassato da tesi a metrica**: quantifica il costo dell'opzione BOX.
-  Tutta la §5 resta valida così com'è.
-- **La tesi della disuguaglianza non si butta**: diventa il capitolo
-  "quando la scelta non ce l'hai" (LOCKED_OUT, JUST_BEFORE) — dentro il
-  nuovo frame è più forte, perché mostra i limiti dello strumento.
-- **Il controfattuale simulato resta escluso** (come in v1): il
-  controfattuale ce lo dà il "gemello" — il pilota vicino in classifica,
-  in condizioni simili, che ha scelto l'opposto. Il gemello perfetto è
-  il compagno di squadra: stessa macchina, stesso muretto → la vista
-  "stesso box, fortuna diversa" diventa l'esperimento naturale del
-  progetto.
-- **Un solo ricevimento, con tutto fatto**: si porta il progetto
-  completo riorientato; le eventuali correzioni si fanno dopo, sul
-  feedback.
+- **Si allarga il perimetro a tutto Ergast (1950-2024).** Il vincolo
+  2023-2024 esisteva solo perché OpenF1 serve per la Safety Car: cioè
+  l'unico evento che il professore ha indicato come rischioso ci stava
+  costando il 97% del dataset. Le neutralizzazioni restano, come famiglia
+  con finestra ridotta.
+- **L'unità di lavoro non è più la gara ma l'evento.** Il sistema è un
+  motore di eventi dichiarativi: ogni evento è un predicato + una finestra
+  di copertura + una descrizione in italiano. Aggiungere un evento deve
+  costare poche righe, non un componente nuovo.
+- **La rarità si dichiara sempre insieme alla sua finestra.** "Mai successo
+  prima" significa "mai da quando il dato esiste". È la regola che
+  trasforma un limite dei dati in una garanzia di onestà, ed è il cuore
+  della pagina metodologia.
+- **Niente numeri grezzi dove serve un tasso.** Un circuito che ha ospitato
+  70 gare avrà più occorrenze di uno che ne ha ospitate 8: si mostra
+  sempre anche il tasso per gara ospitata.
+- **La pipeline v2 non si tocca.** `build_all.py` e i suoi JSON restano;
+  il motore di eventi è un layer nuovo che gli sta accanto, non sopra. Se
+  il layer nuovo avesse problemi, il progetto v2 resta in piedi.
+- **Le viste già implementate si riusano dove il task lo giustifica**, non
+  per affezione: la race trace e la matrice sopravvivono dentro il capitolo
+  delle neutralizzazioni (§7, vista 7).
 
-**Perimetro dati:** invariato — stagioni 2023 e 2024 complete (46 gare,
-42 neutralizzazioni, ~1700 pit stop), 3 gare raccontate a fondo.
+**Perimetro dati:** 1950-2024, 1125 gare, 26.759 risultati, 862 piloti,
+77 circuiti, 105 cause di ritiro effettivamente usate. Finestre ridotte per
+alcune famiglie (§5.2).
 
-**Cose escluse di proposito:** simulazioni di gara e modelli predittivi;
-la classifica controfattuale; la posizione fisica in pista al momento
-della neutralizzazione (servirebbe telemetria); i casi bagnato come
-parametro (stravolgono i riferimenti — limite dichiarato); il punto del
-giro in cui scatta la neutralizzazione (limite di granularità già noto,
-§5.1).
+**Cose escluse di proposito:** qualunque modello predittivo o causale; il
+confronto diretto tra piloti di ere diverse in termini di "chi era più
+forte" (i dati non lo reggono); la ricostruzione di eventi non presenti nei
+dati (bandiere rosse prima del 2023, penalità, meteo); l'integrazione con
+fonti testuali (cronache, comunicati).
 
 ## 4. Dataset
 
-Usiamo due fonti che si incastrano:
+- **Ergast/Kaggle (i CSV in `data/raw/`)** — è il dataset principale
+  richiesto dal corso e ora è **la fonte primaria del progetto**: 14
+  tabelle, 1950-2024. Da qui vengono tutti gli eventi del catalogo.
+- **OpenF1 (API, già collegata nel data-layer)** — resta la fonte delle
+  finestre SC/VSC, 2023-2024, per la sola famiglia "neutralizzazioni".
 
-- **Ergast/Kaggle (i CSV in data/raw/)** — è il dataset principale richiesto
-  dal corso. Ci dà: gare, piloti, team, risultati, i tempi di ogni giro di
-  ogni pilota (lap_times) e i pit stop con giro e durata (pit_stops).
-- **OpenF1 (API, già collegata nel data-layer)** — ci dà quello che a Ergast
-  manca: QUANDO c'era Safety Car o VSC. I messaggi della direzione gara
-  ("SAFETY CAR DEPLOYED", "ENDING"...) hanno il numero di giro, quindi
-  l'aggancio con Ergast si fa per numero di giro, semplice.
-
-OpenF1 copre solo dal 2023 in poi: è questo che fissa il perimetro 2023-2024.
+Il catalogo concreto degli eventi verificati sui dati, con i conteggi reali,
+è in **`docs/CATALOGO-EVENTI.md`** — documento fratello di questo, prodotto
+scavando nei CSV prima di scrivere una riga di codice.
 
 ## 5. Le metriche (il cuore del progetto)
 
-### 5.1 Quanto costa davvero un pit stop
+### 5.1 Che cos'è un evento
 
-STATO: implementato e validato su una gara vera (task 1.1 e 1.2 della
-roadmap). Quello che segue è il calcolo effettivamente in uso in
-`data-layer/app/metrics/effective_pit_loss.py`, non più solo la proposta
-iniziale.
+Un evento è un **predicato dichiarativo** valutato su un'unità di
+osservazione. Le unità sono tre:
 
-Il costo di un pit stop NON è la durata in pit lane (la pit_duration di
-OpenF1): quella è uguale in verde e sotto Safety Car, l'abbiamo verificato
-sui dati veri (è sempre nulla nel data-layer, comunque). Lo sconto nasce da
-un'altra cosa: mentre attraversi la pit lane, il "prezzo" dipende da quanto
-stavano andando piano anche gli altri in quello stesso giro.
+- **gara** (es. "meno di 8 classificati", "nessun cambio di leader");
+- **risultato pilota×gara** (es. "vittoria partendo 10° o peggio",
+  "ritiro per causa X");
+- **coppia team×gara** (es. "doppio ritiro per la stessa causa").
 
-Per un pit al giro L, il costo effettivo è:
+Ogni evento è definito da: identificatore, nome in italiano, famiglia,
+unità di osservazione, funzione predicato, eventuali **parametri**
+(la soglia N di "partendo N° o peggio"), finestra di copertura, e una
+frase di descrizione che compare nell'interfaccia. La definizione vive in
+un unico file Python; il frontend non sa nulla di come si calcola.
+
+### 5.2 Rarità e finestra di copertura
+
+Per ogni evento:
+
+    rarità = occorrenze / unità osservabili nella finestra di copertura
+
+La finestra non è una scelta editoriale, è imposta dai dati:
+
+| Dati | Copertura | Gare | Cosa abilita |
+|---|---|---|---|
+| `results`, `races`, `status`, standings | **1950-2024** | 1125 | griglia, arrivo, punti, ritiri, classifiche |
+| `qualifying` (Q1/Q2/Q3) | 1994-2024 | 494 | eventi di qualifica dettagliati |
+| `lap_times` | 1996-2024 | 544 | comando in pista, cambi di leader |
+| `results.rank` (giro veloce) | 2004-2024 | 412 | hat-trick, giro veloce |
+| `pit_stops` | 2011-2024 | 285 | numero di soste, strategie |
+| OpenF1 (SC/VSC) | 2023-2024 | 46 | neutralizzazioni |
+
+**Regola vincolante:** ogni numero mostrato nell'interfaccia porta con sé la
+sua finestra, sempre visibile (non in un tooltip nascosto). Un evento che
+vale su 285 gare e uno che vale su 1125 non si confrontano: l'interfaccia
+deve impedire visivamente il confronto scorretto.
+
+### 5.3 Distribuzione nel tempo e nello spazio
+
+Per ogni evento si calcolano:
+
+- **quando**: occorrenze per stagione, più la **siccità corrente** (gare o
+  anni trascorsi dall'ultima occorrenza) — la metrica più giornalistica di
+  tutte: "non succedeva dal 1961";
+- **dove**: occorrenze per circuito **e** tasso per gara ospitata. I
+  circuiti hanno `lat`/`lng` in `circuits.csv`, quindi la vista "dove" può
+  essere geografica;
+- **chi**: pilota, costruttore, nazionalità coinvolti, per il drill-down.
+
+### 5.4 Il punteggio di notevolezza (il generatore automatico)
+
+Data una gara, il motore valuta **tutti** gli eventi del catalogo e
+restituisce quelli occorsi, ordinati per notevolezza:
+
+    notevolezza = w1 · (1 − rarità normalizzata)
+                + w2 · siccità normalizzata
+                + w3 · peso editoriale dell'evento
+
+I tre pesi sono dichiarati a mano e scritti in `params.json` (come già si fa
+in v2 per le soglie): la rarità pura premierebbe sempre gli eventi assurdi e
+irrilevanti, la siccità da sola premierebbe i ritorni banali, il peso
+editoriale (0-1, assegnato una volta per evento nel catalogo) tiene conto
+del fatto che "prima vittoria in carriera" interessa più di "quinto posto
+partendo settimo". **Non è un modello**: è una regola di ordinamento
+trasparente e ispezionabile, e va presentata così — è la differenza tra uno
+strumento onesto e una scatola nera.
+
+### 5.5 La famiglia "neutralizzazioni" (eredità della v2)
+
+Tutta la §5 della v2 — costo effettivo del pit stop, prezzo di listino,
+sconto, etichette dei pit, esiti pilota×evento — resta valida e diventa il
+motore di una singola famiglia del catalogo, con finestra 2023-2024 (46
+gare). Il testo integrale è conservato in **§12** per la relazione e per
+l'esame. Eventi interrogabili di questa famiglia: "pit stop sotto Safety
+Car", "pilota escluso dalla finestra (LOCKED_OUT)", "double stack",
+"gara con almeno N neutralizzazioni".
+
+### 5.6 Le trappole nei dati (che diventano contenuto)
+
+Cinque problemi reali trovati scavando (dettagli e numeri in
+`docs/CATALOGO-EVENTI.md` §11). Non sono ostacoli: sono il contenuto della
+pagina `/methodology` e la prova che il gruppo ha guardato i dati.
+
+1. **Indianapolis 500.** 19 gare a Indianapolis nel dataset, di cui
+   1950-1960 sono la 500 Miglia: contava per il mondiale ma non era una
+   gara di Formula 1. Inquina i record (la "rimonta più grande di sempre"
+   risulta Indy 1957, 30 posizioni). Filtro esplicito, attivo di default,
+   disattivabile dall'utente con una spiegazione.
+2. **"Ritiro" ≠ "non partito".** In `status` ci sono 1025 *Did not
+   qualify*, 331 *Did not prequalify*, 248 *Withdrew*. Contati come ritiri
+   gonfiano ogni statistica di affidabilità degli anni '80-'90. Tassonomia
+   esplicita: non-qualificato / non-partito / ritiro tecnico / ritiro per
+   incidente / classificato.
+3. **Campi vuoti.** `position` vuoto nel 41% dei risultati (i non
+   classificati), `time`/`milliseconds` nel 71%, giro veloce nel 69%
+   (esiste solo dal 2004). Ogni evento deve dichiarare da quali campi
+   dipende, e le unità con campo mancante escono dal denominatore, non
+   contate come "non è successo".
+4. **`grid = 0`** significa partenza dalla pit lane, non "posizione zero":
+   va normalizzato a "ultimo + 1" o trattato come categoria a sé.
+5. **Punti non comparabili tra ere.** Il sistema di punteggio è cambiato
+   più volte: confronti in punti solo dentro la stessa era, o normalizzati.
+
+## 6. Come arrivano i dati al sito
+
+Nessun backend, sito statico: come in v2, tutto è precalcolato in JSON.
+Si aggiunge una pipeline accanto a quella esistente.
+
+**Nuovo: `data-layer/scripts/build_events.py`.** Legge i CSV Ergast (e, per
+la famiglia neutralizzazioni, i JSON già prodotti da `build_all.py`), valuta
+ogni evento del catalogo su tutte le unità della sua finestra, e scrive:
+
+- **`public/data/events/index.json`** — il catalogo: per ogni evento id,
+  nome, famiglia, unità, parametri disponibili, finestra di copertura,
+  occorrenze totali, denominatore, rarità, siccità corrente, peso
+  editoriale. È il file che alimenta la home e il compositore.
+- **`public/data/events/<eventId>.json`** — un file per evento: l'elenco
+  completo delle occorrenze (gara, anno, circuito, piloti/team coinvolti,
+  valore della grandezza misurata), le serie per stagione e per circuito
+  già aggregate. Budget: sotto i 300 KB (l'evento più numeroso, "doppio
+  ritiro", ha 2964 occorrenze).
+- **`public/data/facts/<anno>-<circuitRef>.json`** — per ogni gara, i fatti
+  notevoli già ordinati (§5.4), con il rimando all'evento di origine.
+- **`public/data/races-index.json`** — l'elenco delle 1125 gare per il
+  selettore e per la vista di contesto.
+- **`public/data/params.json`** — esteso: soglie, pesi della notevolezza,
+  regole delle trappole (§5.6). Lo legge `/methodology`.
+
+Gli eventi con parametro (soglia N) si precalcolano su una griglia di valori
+dichiarata nel catalogo (es. N ∈ {3, 5, 10, 15, 20}): niente calcolo lato
+client sui CSV, che sono 17 MB solo per `lap_times`.
+
+## 7. Le viste
+
+Struttura del sito, coerente col mantra di Shneiderman: la **home** è la
+panoramica della rarità (overview), il **compositore** filtra (zoom and
+filter), la **scheda evento** e la **scheda gara** danno i dettagli
+(details-on-demand).
+
+| # | Vista | Ruolo | Da dove parte |
+|---|---|---|---|
+| 1 | La scala della rarità (home) | overview: tutti gli eventi del catalogo ordinati per rarità, con la finestra dichiarata | da zero |
+| 2 | Il compositore di eventi | l'interrogazione: filtri parametrici → risposta "N volte su M" | da zero |
+| 3 | Quando: la striscia storica | 75 stagioni, occorrenze e siccità | riusa l'impianto assi/brush della race trace |
+| 4 | Dove: la mappa dei circuiti | occorrenze e **tasso** per gara ospitata | da zero |
+| 5 | Il piano griglia × arrivo | il contesto: 26.759 risultati come nuvola, l'evento evidenziato | riusa lo slope/scatter esistente |
+| 6 | La scheda gara | i fatti notevoli auto-generati, ordinati per rarità | riusa la struttura della pagina gara v2 |
+| 7 | Il capitolo neutralizzazioni | la famiglia 2023-2024 con race trace e matrice | **già implementato** (v2) |
+
+**Vista 1 — La scala della rarità (home).** Tutti gli eventi del catalogo su
+un asse di rarità logaritmico: da "vittoria dalla pole" (481 volte) a
+"vittoria al debutto assoluto" (3 volte). Ogni evento è un segno posizionato
+sulla rarità, con la **finestra di copertura codificata visivamente** (per
+esempio la lunghezza o l'opacità di un segmento sull'asse temporale
+affiancato), perché il confronto tra un evento su 1125 gare e uno su 285
+dev'essere visibilmente diverso, non solo scritto. Click → vista 2 con
+l'evento caricato. È la vista che, da sola, dice cosa fa il sito.
+
+**Vista 2 — Il compositore di eventi.** Il pannello di interrogazione: si
+sceglie una famiglia, un evento e si muovono i suoi parametri (la soglia N).
+La risposta è grande e leggibile — *"40 volte su 1125 gare (3,6%), l'ultima
+2024 San Paolo, mai su questo circuito"* — e sotto compaiono, coordinate, le
+viste 3, 4 e 5 sullo stesso evento. Muovendo la soglia, tutte si aggiornano
+in transizione: è qui che si vede la rarità *diventare* rarità (10° o
+peggio: 40 volte; 15°: 9; 20°: 1).
+
+**Vista 3 — Quando.** Asse X: le 75 stagioni. Le occorrenze come segni sulla
+striscia; sopra, il conteggio per stagione. La **siccità** è resa come lo
+spazio vuoto tra i segni: il vuoto di 63 anni della tripletta 1-2-3 si vede
+prima di leggerlo. Brush sull'asse anni che filtra le altre viste.
+
+**Vista 4 — Dove.** I 77 circuiti sulle loro coordinate reali. Due
+codifiche commutabili (interruttore = idiom *encode* di Yi et al.):
+conteggio grezzo e tasso per gara ospitata — e il passaggio tra le due
+ribalta la classifica, che è di per sé una lezione di lettura dei dati.
+Alternativa a barre ordinate sempre disponibile, perché la mappa è bella ma
+la barra è precisa.
+
+**Vista 5 — Il piano griglia × arrivo.** Tutti i 26.759 risultati come
+nuvola densa (posizione di partenza × posizione di arrivo); le occorrenze
+dell'evento selezionato si illuminano. Serve a rispondere alla domanda che
+viene subito dopo "quante volte?": **perché** è raro. Le 40 vittorie da
+oltre la decima piazza si vedono come una manciata di punti in un angolo
+quasi vuoto.
+
+**Vista 6 — La scheda gara.** Si sceglie una gara tra le 1125 e il sistema
+mostra i suoi fatti notevoli ordinati per notevolezza (§5.4), ognuno con
+rarità, finestra e link all'evento. È la vista che risponde all'esempio
+letterale del professore, e la più facile da dimostrare a voce all'esame:
+si apre una gara a caso e il sistema dice qualcosa di vero e non ovvio.
+
+**Vista 7 — Il capitolo neutralizzazioni.** Le viste v2 già implementate
+(race trace, sconti, matrice, compagni di squadra) diventano il
+approfondimento della famiglia SC/VSC, con la sua finestra dichiarata di 46
+gare. Non si riscrive nulla: si reinquadra con un'intestazione onesta.
+
+Interazione comune: hover per evidenziare, click per bloccare, tooltip con i
+numeri e sempre la finestra di copertura.
+
+**Regola vincolante sul colore:** il colore codifica la **famiglia**
+dell'evento (variabile nominale, poche classi, colormap categoriale
+colorblind-safe), mai la rarità — che è quantitativa e va sulla posizione.
+L'unica codifica quantitativa in colore ammessa è il tasso per circuito
+nella vista 4 (colormap sequenziale).
+
+**Regola sul D3 (requisito del corso):** D3 possiede l'SVG — scale, assi,
+data join, transizioni e brush dentro un `useEffect`; React fa da
+contenitore, routing e stato. Vale per tutti i componenti nuovi; il
+componente esistente `D3Chart.tsx` resta la base.
+
+## 8. Aggancio al corso (per la relazione e l'esame)
+
+Impianto di Munzner, nested model a 4 livelli:
+
+**Domain situation.** Utente: il giornalista sportivo sotto scadenza (e il
+tifoso informato). Decisione supportata: *questo fatto merita di essere
+raccontato, e come lo inquadro?* Il problema è concreto e verificabile: la
+verifica di rarità oggi richiede minuti e fonti che non si incrociano; il
+sistema la porta a secondi, con la finestra di validità esplicita.
+
+**Data e task abstraction.** Dati: tabelle di risultati (item con attributi
+categoriali, ordinali e quantitativi) + serie temporali + attributi
+geografici dei circuiti. Task, nella tassonomia di Amar et al.:
+**retrieve value** ("quante volte?"), **filter** (il compositore),
+**compute derived value** (rarità, siccità, notevolezza), **characterize
+distribution** (le occorrenze nel tempo), **find extremum** (il margine più
+stretto, la siccità più lunga), **find anomalies** (gli eventi occorsi una
+volta sola), **sort** (la scala della rarità), **cluster** (le famiglie),
+**correlate** (griglia × arrivo).
+
+**Visual encoding e interaction idioms.** Marks: punti, segmenti, barre,
+celle, linee. Channels: posizione (rarità, anni, griglia×arrivo — il canale
+più preciso, riservato alle quantità che contano), lunghezza (conteggi),
+colore hue (famiglia, nominale), colore saturazione (tasso, sequenziale),
+dimensione (occorrenze per circuito). Le sei categorie di Yi et al. sono
+tutte coperte: **select** (click sull'evento), **explore** (selettore gara,
+pan sulla mappa), **reconfigure** (ordinamento della scala), **encode**
+(interruttore conteggio/tasso nella vista 4), **abstract/elaborate**
+(tooltip e drill-down alla gara), **filter** (i parametri del compositore,
+il brush sugli anni), **connect** (brushing and linking tra viste 3-4-5).
+
+**Algorithm.** Precalcolo Python offline, rendering D3 su JSON statici. Il
+caso più pesante (26.759 punti nella vista 5) è gestibile in SVG; se non lo
+fosse, canvas per la nuvola e SVG per gli assi e l'evidenziazione — decisione
+da prendere in fase P3 con misura alla mano, non a priori.
+
+Sul colore (lezione 060): famiglia = nominale → colormap categoriale entro
+il limite di distinguibilità; tasso = quantitativo senza zero significativo
+→ sequenziale, colorblind-safe.
+
+Sulle serie temporali (lezione 100): la vista 3 è una striscia di eventi
+puntuali, non una serie continua — la scelta va motivata all'esame proprio
+così (gli eventi sono rari e discreti, una linea suggerirebbe continuità
+che non esiste).
+
+Perché non un grafo (lezioni 150-250): i dati sono tabellari, temporali e
+geografici, non relazionali; la scelta discende dalla task abstraction.
+
+## 9. I casi dimostrativi
+
+Non più "3 gare-caso" ma **tre dimostrazioni da 30 secondi** per il
+ricevimento e per l'esame, scelte perché coprono i tre modi di usare lo
+strumento:
+
+1. **La domanda mirata** (vista 2): *"quante volte si è vinto partendo
+   oltre la decima piazza?"* → 40 su 1125, l'ultima San Paolo 2024
+   (Verstappen dalla 17ª), massima concentrazione a Spa. Poi si alza la
+   soglia a 15 (9 volte) e a 20 (una sola volta, Long Beach 1983): la
+   rarità che si vede muovendo uno slider.
+2. **La domanda che non sapevi di avere** (vista 6): si apre una gara e si
+   legge il fatto più notevole che il sistema ha trovato da solo.
+3. **Il limite dichiarato** (vista 1 + `/methodology`): due eventi con
+   rarità simile ma finestre diverse, e perché non si possono confrontare.
+   È la dimostrazione che il progetto sa cosa non può dire — la risposta
+   pronta alla domanda più pericolosa dell'esame.
+
+Fatti già verificati sui dati, disponibili come materiale per le demo (fonte:
+`docs/CATALOGO-EVENTI.md`): margine sotto un decimo 5 volte in 75 anni (la
+più stretta Monza 1971, 0,010s); vittoria conquistata solo all'ultimo giro
+6 volte dal 1996, l'ultima Abu Dhabi 2021; tripletta 1-2-3 ferma al 1961;
+38 cause di ritiro con 5 o meno occorrenze in 75 anni; gli americani non
+vincono dal 1978.
+
+## 10. Rischi noti e come li gestiamo
+
+1. **"È solo un motore di ricerca di curiosità".** È il rischio principale
+   e si combatte con tre cose, tutte già nel progetto: la rarità
+   quantificata (non l'aneddoto), la finestra dichiarata (non l'assoluto
+   vago), il generatore automatico (non solo ricerca ma proposta). Da
+   dichiarare in apertura, non da nascondere.
+2. **Il catalogo troppo piccolo.** Se gli eventi implementati sono 5, la
+   vista 1 è vuota e il generatore banale. Soglia minima: **20 eventi in
+   almeno 5 famiglie** entro la fase E2, tutti già verificati in
+   `docs/CATALOGO-EVENTI.md`.
+3. **Le trappole dei dati (§5.6) trattate come dettagli.** Se il filtro
+   Indy non c'è, il primo record che il professore controlla è sbagliato.
+   Il filtro è un requisito della fase E1, non una rifinitura.
+4. **Il peso della vista 5** (26.759 punti in SVG). Da misurare in E3, con
+   il piano B (canvas) già deciso.
+5. **La dispersione**: 75 anni di dati invitano a fare tutto. Il perimetro
+   è il catalogo, e il catalogo si chiude alla fine di E2.
+6. **Il lavoro v2 dimenticato.** La famiglia neutralizzazioni va davvero
+   collegata (vista 7), altrimenti settimane di lavoro validato spariscono
+   dalla relazione. Task esplicito in E3.
+7. **Codice morto ereditato**: `export_frontend.py` e
+   `app/api/routes/sessions.py` chiamano ancora la vecchia firma di
+   `calculate_pit_cost` e sono rotti (eredità v2, rischio #4 di allora).
+   Da rimuovere in E4.
+
+## 11. Divisione del lavoro
+
+Persona **A** — dati e motore di eventi: catalogo, `build_events.py`,
+trappole, rarità e notevolezza, numeri per la relazione.
+
+Persona **B** — viste principali: scala della rarità (1), compositore (2),
+piano griglia×arrivo (5).
+
+Persona **C** — viste secondarie e racconto: striscia storica (3), mappa
+(4), scheda gara (6), reinquadramento del capitolo neutralizzazioni (7),
+`/methodology`, testi.
+
+Milestone che de-rischia tutto (fine fase E1): il motore valuta 6 eventi
+di famiglie diverse e i conteggi coincidono con quelli di
+`docs/CATALOGO-EVENTI.md`, **con le trappole applicate**. Se non
+coincidono, ci si ferma e si sistema prima di andare avanti.
+
+---
+
+## 12. Appendice — la metrica delle neutralizzazioni (eredità v2)
+
+Questa sezione conserva integralmente il modello della v2, che resta valido
+e implementato: alimenta la famiglia "neutralizzazioni" del catalogo (§5.5)
+e la vista 7. Serve per la relazione e per l'esame; non è materiale morto.
+
+### 12.1 Quanto costa davvero un pit stop
+
+Il costo di un pit stop non è la durata in pit lane. Per un pit al giro L:
 
     costo effettivo = (giro di entrata L − riferimento(L))
                      + (giro di uscita L+1 − riferimento(L+1))
 
-Il "riferimento" di un giro non è sempre lo stesso, e questa è la parte che
-in fase di ideazione avevamo sbagliato:
-
-- **se il giro è in condizioni normali**, il riferimento è la baseline
-  personale del pilota: la mediana dei suoi giri puliti (senza pit, senza
-  SC/VSC) in una finestra di ±5 giri, esclusi i giri di entrata/uscita di
-  QUALSIASI suo pit stop nella gara; se restano meno di 3 giri puliti, la
-  finestra si allarga ai confini dello stint (dal pit precedente al
-  successivo);
-- **se il giro è sotto una neutralizzazione (SC/VSC)**, il riferimento non
-  è più la baseline personale, ma il ritmo del gruppo in quello stesso
-  giro: la mediana dei tempi di chi ha percorso quel giro senza fermarsi
-  (con almeno 3 piloti disponibili, altrimenti si ricade sulla baseline
-  personale per mancanza di dati).
-
-Perché questa distinzione è necessaria, e non un dettaglio: validando la
-pipeline sulla gara campione (Gran Premio di Singapore 2023, vedi
-`data-layer/scripts/validate_sample_race.py`) il calcolo con la sola
-baseline personale dava sconti *negativi* di 60-100 secondi per i pit
-sotto Safety Car — il contrario di quanto ci si aspetta. Il motivo: sotto
-SC rallenta TUTTO il gruppo, non solo chi si ferma; confrontare il giro di
-un pilota fermo ai box con il suo ritmo normale scambiava il rallentamento
-imposto a tutti dalla Safety Car per costo del pit stop. Con il
-riferimento "di gruppo" per i giri neutralizzati, sulla stessa gara i pit
-sotto SC mostrano sconti coerenti (+4/+17 secondi, in linea con l'atteso).
-
-Limite noto e non ancora risolto: per la Virtual Safety Car (finestre
-molto brevi, 1-2 giri) i numeri restano meno puliti dello sconto sotto SC
-piena. Ipotesi più probabile: l'allineamento per numero di giro intero non
-cattura *in che punto del giro* è scattata la VSC — un pilota che entra ai
-box può aver percorso quasi tutto il giro a ritmo verde e solo l'ultima
-parte sotto VSC. È un limite di granularità dei dati, da dichiarare in
-`/methodology` (task 4.2), non un bug da inseguire ora.
-
-### 5.1bis Due problemi emersi eseguendo la pipeline su tutte le 46 gare (task 2.1)
-
-**Le bandiere rosse gonfiano il costo a migliaia di secondi — RISOLTO.**
-In `lap_times.csv` alcuni giri durano diverse migliaia di secondi: sono
-bandiere rosse, il tempo del giro include l'intera sospensione della gara,
-non è un giro di corsa vero. Il sistema oggi non modella le bandiere rosse
-come evento (solo SC/VSC), quindi se un pit stop cade proprio su uno di
-questi giri il suo costo effettivo esplodeva a livelli assurdi (osservato:
-sconti fino a -2561s / +2464s sull'aggregato delle due stagioni). Verificato
-sui dati: 152 giri su 46 gare superano i 240 secondi (4 minuti), soglia
-ben separata dal giro più lento plausibile anche sotto Safety Car pesante
-(230s osservati). Questi giri corrispondono esattamente a 8 gare con
-bandiere rosse realmente documentate nel 2023-2024 (tra cui Australia 2023,
-Messico 2023, San Paolo 2023 e 2024, Giappone 2024, Monaco 2024).
-
-Correzione applicata in `build_all.py` (`MAX_PLAUSIBLE_LAP_MS = 240000`):
-i giri con tempo sopra soglia sono esclusi dal calcolo del tempo/costo
-(il pit che ci cade sopra risulta con costo non calcolabile, `None`,
-invece che assurdo), ma **non** dalla posizione — la classifica in quel
-giro resta un dato valido anche quando il tempo non lo è. Limite noto da
-dichiarare in `/methodology`: le gare con bandiera rossa non sono
-modellate come evento a sé, i giri coinvolti sono trattati come dati
-mancanti.
-
-**Un residuo di sconti estremi in gare "caotiche" — RISOLTO (verificando la
-home, task 3.6): i pit senza riferimento affidabile ora si scartano invece
-di calcolarsi male.** Il problema era sempre lo stesso individuato sopra:
-il riferimento "di gruppo" per i giri sotto neutralizzazione richiede
-almeno `FIELD_REFERENCE_MIN_SAMPLES` (3) piloti che in quel giro non si
-sono fermati. Quando **quasi tutti si fermano insieme** (pit di massa
-sotto una SC pesante — è proprio il momento in cui conviene farlo) restano
-meno di 3 piloti "puliti", e il vecchio codice ripiegava silenziosamente
-sulla baseline personale del pilota: esattamente l'errore che il
-riferimento di gruppo esiste per evitare, e che gonfiava il costo a
-centinaia di secondi (osservato: Qatar 2024, giri 35-36, 150-180s di
-"costo" per un pit stop).
-
-Prova concreta trovata verificando la home (vista 6): su 42 finestre di
-neutralizzazione dell'intero campione, 5 avevano meno di 3 piloti liberi
-in almeno un giro: bastava a spiegare perché la mediana dei pit sotto SC
-(26,0s) risultava più ALTA di quella dei pit in verde (22,5s) — il
-contrario della tesi del progetto.
-
-Correzione applicata in `effective_pit_loss.py`: quando il riferimento di
-gruppo manca per un giro sotto neutralizzazione, il pit stop viene
-**scartato** (`effective_pit_loss_seconds = None`, `discount_seconds =
-None`) invece di calcolato sulla baseline personale; il nuovo campo
-`missing_field_reference` (propagato come `lowConfidence` nei JSON)
-segnala il perché. 110 pit stop su 1737 (6,3%, quasi tutti sotto Safety
-Car piena: 109/251, contro 1/82 sotto VSC — coerente con VSC che rallenta
-il gruppo molto meno) sono ora esclusi dal calcolo invece di avere un
-numero sbagliato. Dopo la correzione, la mediana sotto Safety Car scende a
-15,5s (sotto i 22,5s del verde, lo sconto atteso), quella sotto VSC resta
-vicina al verde (23,1s) — coerente col limite di granularità già
-dichiarato sopra (finestre VSC troppo brevi per allinearle bene al singolo
-giro).
-
-Non è più un limite "da dichiarare e basta": i numeri che restano nel
-grafico ora sono tutti calcolati in modo affidabile. Il limite di
-granularità della VSC (paragrafo precedente) resta invece dichiarato in
-`/methodology`, perché quello è un problema di risoluzione dei dati non
-risolvibile scartando pit stop.
-
-### 5.2 Il prezzo di listino
-
-Il "prezzo di listino" di una gara è la mediana dei costi effettivi dei pit
-fatti in condizioni normali (bandiera verde) in quella gara. Se sono meno di
-4, si usa la mediana della stessa pista sulle due stagioni.
-
-### 5.3 Lo sconto (chaos discount)
-
-    sconto = prezzo di listino − costo effettivo di quel pit
-
-Positivo: la neutralizzazione ti ha fatto risparmiare. Zero: prezzo pieno.
-Negativo: hai pagato più del normale (es. traffico in corsia box).
-
-Controllo di sanità mentale per la settimana 1: un pit in verde deve venire
-sui 20-25 secondi, uno sotto VSC deve mostrare 8-12 secondi di sconto, sotto
-SC anche di più. Se i numeri non tornano, è rotta la pipeline, non la F1.
-
-### 5.4 Etichetta di ogni pit stop
-
-Ogni pit stop riceve un'etichetta, che è anche il suo colore nei grafici:
-
-- GREEN — pit normale, nessuna neutralizzazione
-- UNDER_VSC / UNDER_SC — pit durante la neutralizzazione (gli sconti)
-- JUST_BEFORE — pit in verde fino a 3 giri PRIMA della neutralizzazione:
-  i "fregati", hanno pagato prezzo pieno per sfortuna
-- JUST_AFTER — pit entro 2 giri dopo la fine
-- più un flag double_stack se i due piloti dello stesso team si fermano
-  nello stesso giro (il secondo perde tempo in coda al primo)
-
-### 5.5 Esito di ogni pilota per ogni neutralizzazione
-
-Per la "matrice della lotteria" (vedi viste): a ogni neutralizzazione, ogni
-pilota finisce in una di queste categorie:
-
-- EXPLOITED — si è fermato nella finestra: ha preso lo sconto
-- FULL_PRICE — si era fermato nei 3 giri prima: fregato
-- LOCKED_OUT — non poteva fermarsi: gomme troppo fresche (meno di 8 giri)
-  oppure sarebbe rientrato dietro ad almeno 3 auto
-- NOT_NEEDED — non aveva bisogno di fermarsi
-- NEUTRAL — nessuna delle precedenti
-
-Le soglie (8 giri, 3 auto) sono parametri dichiarati nella pagina
-/methodology del sito, così nessuno ci può accusare di numeri magici.
-
-### 5.6 Il modello della decisione (il layer del pivot)
-
-Per ogni pilota × neutralizzazione, uno **snapshot della decisione**
-calcolato al giro del deploy. È il cuore concettuale nuovo; tutto il
-resto della §5 gli fa da fondamenta.
-
-**Cosa vede il muretto (input).** Tutti derivabili dai dati già
-esportati, verificato sui JSON reali:
-
-- posizione e gap con chi sta davanti/dietro (dai tempi cumulati `ms`
-  per giro);
-- età e mescola gomme (già nei campi `tyreAge` / `tyreCompound` degli
-  outcomes);
-- giri mancanti / fase di gara;
-- soste già fatte vs soste tipiche di quella gara — il pit "gratis" è
-  tale solo se quella sosta andava comunque fatta; se il piano era già
-  completo, è uno stop in più e lo sconto non lo copre quasi mai;
-- cosa fanno gli altri: quota del gruppo che si ferma in quel giro,
-  ordine nel double stack (flag già in pipeline);
-- contesto circuito: prezzo di listino della pista (§5.2, già
-  calcolato), **sorpassabilità** (nuovo: media dei cambi di posizione in
-  giri verdi per circuito, dai nostri stessi dati — la stessa decisione
-  vale l'opposto a Monaco e a Monza) e **caoticità** (frequenza storica
-  di SC/VSC per pista: la scommessa "arriverà un'altra Safety Car" —
-  stima grezza su 2 stagioni, da dichiarare come tale).
-
-**Le due opzioni, quantificate:**
-
-- **BOX** — costo atteso = perdita effettiva scontata (mediana
-  dell'evento, o del campione se l'evento ha pochi pit affidabili);
-  **posizione di rientro prevista** = riposizionamento sul tempo
-  cumulato + costo atteso (si contano le auto che restano davanti);
-  beneficio = gomme fresche (delta di passo stimato dai giri verdi
-  della stessa gara, versione semplice).
-- **STAY** — posizione conservata, gomme invariate; costo differito =
-  prezzo pieno (§5.2) se serve ancora una sosta, con la scommessa
-  implicita su un'altra neutralizzazione (parametro caoticità).
-
-**Il verdetto (retrospettivo):** scelta (BOX / STAY / FORZATA, quando
-l'esito v1 era LOCKED_OUT) × esito (delta posizioni dopo 5 giri, già in
-pipeline: guadagnato / perso / pari). Nei casi-storia il verdetto si
-rafforza col confronto col gemello (definito in §3).
-
-**Decisione presa (dopo lo spike P1.2, v. STATO sotto): niente scatter
-con la pretesa di un confine netto.** La mappa "quando conviene" diventa
-un confronto di **distribuzioni**: l'indice combinato (0,6 × traffico +
-0,4 × margine dietro, entrambi z-score, pesi dichiarati) per chi ha
-guadagnato vs chi ha perso, come istogrammi/densità sovrapposti (non
-scatter a punti). Mostra onestamente quello che c'è nei dati: le due
-popolazioni hanno medie diverse (0,95 vs 0,45) ma si sovrappongono
-molto — un vantaggio statistico reale, non una certezza. Motivazione
-dichiarabile all'esame: è coerente con la letteratura sull'argomento
-(v. STATO sotto), che per fare meglio di una correlazione debole usa
-modelli molto più pesanti (deep learning, reinforcement learning con
-memoria temporale) — 2 variabili e un grafico 2D non bastano per un
-confine netto, ed è onesto dirlo invece di fingere un confine che non
-c'è. I piloti NOT_NEEDED restano esclusi dalla mappa ma visibili nella
-matrice. L'indice combinato è anche un campo dichiarato della scheda
-decisione (tooltip): non "previsione", ma "vantaggio statistico
-stimato" — coerente con l'idea del progetto (§3) che lo strumento aiuta
-la decisione, non la sostituisce.
-
-STATO spike P1.2 (`data-layer/scripts/spike_decision_map.py`): eseguito
-su tutte le neutralizzazioni delle 46 gare, 646 snapshot pilota×evento
-(NOT_NEEDED escluso). Prima condizione necessaria: `tyreAge`/
-`tyreCompound` (usati anche qui, non solo nei tooltip) erano arricchiti
-da `attach_tyre_info` **solo per le 3 gare-caso** — copertura 12% sul
-totale. Risolto estendendo l'arricchimento a ogni gara con almeno una
-neutralizzazione (non tocca costo effettivo/sconto/etichetta, §5.1-5.4,
-resta un campo puramente descrittivo) e rilanciando `build_all.py`:
-copertura ora 93%.
-
-Con la copertura piena, però, **nessuna delle coppie di assi provate
-mostra una separazione visibile** tra decisioni BOX che hanno pagato e
-no (margine dietro × età gomme, età gomme × fase di gara, soste fatte ×
-età gomme, margine dietro × soste fatte — grafici in
-`data-layer/data/spike_plots/`). È coerente con un'altra verifica già
-fatta sui questi dati (`data-layer/scripts/import_stints_all.py`):
-l'età gomme del rivale non prediceva i giri per riscavalcarlo
-(correlazione ~0 su 263 coppie); qui il segnale manca anche nella
-direzione "la mia età gomme e il mio margine predicono se il MIO box
-paga".
-
-Aggiunte due variabili di §5.6 non ancora provate: **sorpassabilità**
-del circuito (nuova, calcolata nello spike: media dei cambi di
-posizione tra giri verdi consecutivi, per circuito, media sulle 2
-stagioni) e **traffico** (quota del gruppo che si ferma nella stessa
-finestra, già derivabile dai pit esistenti). Sorpassabilità non aggiunge
-nulla (correlazione con l'esito ≈ -0.10, come età gomme). Il traffico
-invece un segnale reale ce l'ha: correlazione 0,28 con l'esito a 5 giri
-tra chi ha boxato (contro 0,18 del margine dietro, ≈0 per età gomme e
-sorpassabilità) — coerente con quanto osservato a mano sullo spike
-Jeddah (P1.1): quando tanti si fermano insieme nella stessa finestra,
-si "salvano" a vicenda. Il problema: 0,28 è un segnale reale ma debole
-— anche nella coppia migliore provata (traffico × margine dietro) la
-nuvola dei punti resta troppo rumorosa per un confine visibile, non solo
-per il centroide.
-
-**Indice combinato (round 3, su richiesta).** Pesi dichiarati a mano
-(non ottimizzati sui dati, per non rischiare overfitting su soli 133
-casi BOX guadagnato/perso): 0,6 × z-score(traffico) + 0,4 ×
-z-score(margine dietro) — pesi in proporzione alla correlazione
-individuale misurata (0,28 e 0,18). Risultato: correlazione con l'esito
-**0,34-0,36**, verificata stabile su due metà casuali del campione
-(0,37 e 0,35). Le distribuzioni di chi guadagna e chi perde, sull'indice
-combinato, hanno medie chiaramente diverse (0,95 vs 0,45) ma **si
-sovrappongono pesantemente** (grafico
-`data-layer/data/spike_plots/h2_indice_combinato_distribuzione.png`):
-non è un confine, è uno spostamento di tendenza.
-
-**Ricerca esterna (verifica di sanità, non citata come fonte del
-metodo):** nessun lavoro accademico trovato risolve questo problema con
-2 variabili e uno scatter — chi ci prova usa deep learning su
-telemetria (F1-score 0,81, CI 95% [0,79-0,83]) o reinforcement learning
-con memoria temporale, e nota esplicitamente che lo stato istantaneo
-(gap, gomme) da solo non basta. Conferma che il segnale debole trovato
-qui non è un errore del nostro spike ma la natura del problema — utile
-per rispondere a "perché non un confine netto?" in sede d'esame.
-
-**Cosa NON abbiamo più bisogno di decidere**: la scelta sopra chiude la
-questione aperta durante lo spike (P1.2 in `docs/ROADMAP-2.md`) — P2/P3
-possono partire con l'indice combinato, non con margine×età-gomme.
-
-## 6. Come arrivano i dati al sito
-
-STATO: implementato (task 2.1), eseguito su tutte le 46 gare 2023-2024.
-0 gare saltate, 42 neutralizzazioni catturate. Quello che segue è la
-pipeline reale (`data-layer/scripts/build_all.py`), non solo il progetto.
-
-Una sola pipeline, quella Python del data-layer (che parla sia con i CSV
-Ergast sia con OpenF1). Il preprocess TypeScript resta solo per le
-anagrafiche piloti/team delle pagine non ancora riconvertite.
-
-Il flusso: per ogni gara, la sessione di gara OpenF1 corrispondente si
-trova per data (con tolleranza di ±1 giorno: le gare in notturna, es. Las
-Vegas, hanno una data UTC diversa dalla data "nominale" di Ergast); i
-messaggi di race control danno le finestre SC/VSC già in numero di giro
-(OpenF1 lo fornisce direttamente, non va ricostruito); si calcolano tempi
-cumulati, gap, race trace, costi ed etichette dei pit, e gli esiti
-pilota-per-evento; si esporta tutto in public/data/ come JSON statici:
-
-- **index.json** — l'elenco delle gare (id/slug, anno, nome, circuito,
-  numero di neutralizzazioni, flag "interessante" preliminare) per il
-  selettore. Oggi 10 KB per 46 gare.
-- **races/&lt;anno&gt;-&lt;circuitRef&gt;.json** (es. `2023-marina_bay.json`)
-  — un file per gara, ~100-135 KB reali (sotto il budget dei 500 KB): info
-  gara (incluso `excludedAnomalousLaps`, il conteggio dei giri scartati
-  per bandiera rossa, vedi §5.1bis), finestre di neutralizzazione, e per
-  ogni pilota i giri (posizione, tempo cumulato, gap dal leader, race
-  trace), i pit (etichetta, costo effettivo, sconto, posizioni prima/dopo/
-  dopo 3/dopo 5 giri, double stack) e gli esiti per ogni evento della gara
-  (categoria ed eventuale delta di posizioni).
-- **aggregate.json** — tutti i pit delle due stagioni (1658 nel campione
-  attuale) con etichetta e sconto, più la matrice esiti pilota × evento ×
-  gara. 389 KB.
-- **params.json** — le soglie dichiarate della pipeline (età minima gomme,
-  auto minime per il traffico, finestre di baseline, ecc.), lette da qui
-  dalla pagina `/methodology` (task 4.2) invece di essere riscritte a mano.
-
-Niente backend: sito statico, si carica il JSON della gara quando serve.
-
-## 7. Le viste
-
-Struttura del sito: la home mostra la risposta aggregata al "quando
-conviene" (overview), le pagine gara ricostruiscono le decisioni nei
-3 casi scelti (detail).
-
-**Riorientamento delle viste (pivot v2).** Le descrizioni sotto restano
-la base implementata; questa tabella dice cosa cambia per ciascuna:
-
-| Vista (v1, implementata) | Nel pivot diventa |
-|---|---|
-| 1 — Race trace | Invariata: è il "replay" di contesto, con brush |
-| 2 — Barre degli sconti | Invariata ma riframata: quantifica il costo dell'opzione BOX (sotto SC vs in verde) |
-| 3 — Slope chart | **Il momento della scelta**: si aggiunge una colonna centrale — posizioni al deploy → *rientro previsto se boxi* (calcolo §5.6) → posizioni reali dopo. La distanza tra previsione e realtà È il racconto |
-| 4 — Matrice della lotteria | **Matrice scelta × esito**: stessi dati, etichette nuove (si è fermato/no × guadagnato/perso; LOCKED_OUT → "scelta forzata"). Tooltip arricchito con la scheda decisione |
-| 5 — Stesso box, fortuna diversa | Invariata, promossa a **esperimento naturale** (il gemello perfetto, §3) |
-| 6 — Distribuzione sconti (home) | **La mappa del "quando conviene"**: NON uno scatter — istogrammi/densità sovrapposti dell'indice combinato (§5.6) per guadagnato vs perso, così com'è deciso dopo lo spike P1.2 (nessun confine netto trovato con 2 assi puri, v. §5.6). Il beeswarm attuale scende a sezione di supporto ("quanto costa l'opzione BOX") |
-
-In più: la **scheda decisione** (§5.6) come pannello/tooltip ricco nella
-pagina gara, e le storie delle 3 gare-caso riscritte come storie di
-decisione.
-
-**Vista 1 — Race trace.** Il grafico principale della pagina gara.
-Asse X: i giri. Asse Y: il distacco da un riferimento. Una linea per pilota.
-Le finestre SC/VSC sono bande verticali gialle. I pit stop sono pallini sulla
-linea, colorati con l'etichetta di §5.4. Qui SI VEDE la Safety Car che
-compatta il gruppo e chi "salta" gli altri fermandosi gratis.
-Un brush (selezione trascinando sull'asse dei giri) filtra le altre viste.
-Parte dal componente esistente RaceAnatomyTimeline, oggi su dati finti.
-
-**Vista 2 — Gli sconti.** Barre orizzontali, una per pit stop, ordinate:
-a destra chi ha guadagnato secondi, a sinistra chi ha perso. Colore =
-etichetta del pit. Risponde a "quanto vale lo sconto e chi l'ha preso".
-Parte da PitCostDumbbell.
-
-**Vista 3 — La classifica deformata.** Due colonne di nomi: posizioni al
-momento della neutralizzazione e posizioni 3 giri dopo i pit. Linee che
-collegano gli stessi piloti: chi si incrocia è salito o sceso per effetto
-dell'evento. Si riadatta RaceSlopeChart (nato per le rivalità).
-
-**Vista 4 — La matrice della lotteria.** Righe = piloti, colonne =
-neutralizzazioni, ogni cella colorata con l'esito di §5.5. È la risposta
-diretta alla domanda di ricerca. Ripetuta per tutte le gare del campione
-diventa la vista d'insieme in home. Parte da OpportunityWindow.
-
-**Vista 5 — Stesso box, fortuna diversa.** Confronto tra i due piloti dello
-stesso team davanti alla stessa finestra (double stack incluso). Ricicla il
-lavoro fatto sulle rivalità. Parte da DuelTimeline e dalle pagine rivalry.
-
-**Vista 6 — La distribuzione degli sconti (home).** Tutti i pit stop
-2023-2024 su un asse: prezzo pieno di qua, scontati di là. Dà il peso
-statistico alla tesi. Da fare da zero.
-
-Interazione comune: passando il mouse su un pilota, si evidenzia in tutte le
-viste della pagina; click per bloccarlo; tooltip con i numeri.
-
-Regola vincolante sul colore: il colore codifica SEMPRE l'etichetta del pit
-(verde/VSC/SC/fregato), MAI il team. Unica eccezione: la vista 5, che ha un
-interruttore per passare ai colori team. Se il colore significa due cose
-insieme, il grafico diventa illeggibile.
-
-Regola sul D3 (requisito del corso): D3 deve possedere l'SVG — scale, assi,
-data join, transizioni e brush si fanno con D3 dentro un useEffect; React fa
-solo da contenitore, routing e gestione dello stato. Da rispettare in tutti i
-componenti e da dichiarare in relazione, perché all'esame chiederanno
-"dov'è D3?".
-
-## 8. Aggancio al corso (per la relazione e l'esame)
-
-Il corso segue l'impianto di Munzner. Le slide chiedono di progettare secondo
-il "nested model" (4 livelli) e di descrivere il progetto con la loro
-terminologia. Ecco la traduzione, livello per livello, da riusare pari pari
-in relazione:
-
-**Domain situation** (chi usa il sistema e per decidere cosa): l'analista
-di strategia — o il tifoso che vuole giudicare il muretto — e la decisione
-supportata è "il pilota X doveva fermarsi?". Le slide chiedono
-esplicitamente di restringersi a un tipo di utente e una decisione: il
-pivot rende questa risposta molto più netta della v1 ("verificare che la
-lotteria esiste"), e all'esame va rivendicato: il progetto individua un
-problema (la decisione box/no-box è illeggibile e costosa da sbagliare)
-e propone una soluzione (lo strumento che la ricostruisce e la mappa).
-
-**Data e task abstraction** (che dati e che operazioni): serie temporali per
-pilota + eventi (pit, neutralizzazioni) + variabili derivate (sconti,
-snapshot della decisione, verdetti). I task, nella tassonomia di Amar et
-al. vista a lezione: compute derived value (sconto, rientro previsto),
-characterize distribution (la mappa del quando conviene), find extremum (le
-barre ordinate, le scelte più costose), find anomalies (i fregati, gli
-esclusi, le scelte controcorrente), filter e sort (brush, filtri della
-mappa), correlate (condizioni della decisione contro esito — il task
-centrale del pivot), compare (compagni di squadra/gemelli, gara contro
-gara).
-
-**Visual encoding e interaction idioms** (come si disegna e come si
-interagisce): marks = linee, barre, celle, segmenti; channels = posizione per
-giri e distacchi, colore (hue) per l'etichetta categoriale, lunghezza per lo
-sconto. L'interazione copre le sei categorie di Yi et al. viste a lezione:
-select (click sul pilota), explore (selettore gara/evento), reconfigure
-(riordino delle barre), encode (interruttore colori nella vista 5), filter
-(brush), connect (brushing and linking tra le viste).
-
-**Algorithm**: pipeline Python + rendering D3; dimensioni piccole
-(20 piloti × 70 giri), nessun problema di prestazioni.
-
-L'architettura del sito È il mantra di Shneiderman citato a lezione:
-"overview first (home), zoom and filter (pagina gara, brush), then
-details-on-demand (tooltip)".
-
-Sul colore, con le parole della lezione 060: l'etichetta del pit è una
-variabile nominale, quindi colormap categoriale (5 classi, sotto il limite di
-distinguibilità, niente arcobaleno); lo sconto è una variabile quantitativa
-con uno zero significativo, quindi colormap divergente, in coppia
-colorblind-safe (blu/arancio, non rosso/verde).
-
-Sulle serie temporali (lezione 100): all'esame chiederanno perché un multiple
-line chart e non le alternative viste a lezione (small multiples, horizon
-graph). Risposta pronta: il nostro task è confrontare i piloti NELLO STESSO
-istante (il momento della neutralizzazione), e questo richiede le linee
-sovrapposte nello stesso grafico; le alternative separano le serie e
-distruggono proprio il confronto che ci serve.
-
-Ultima cosa: metà corso (lezioni 150-250) è graph drawing e non c'entra col
-progetto. Se lo chiedono: i nostri dati sono temporali e multivariati, non
-relazionali/a grafo, e la scelta discende dalla task abstraction.
-
-## 9. Le 3 gare-caso
-
-STATO: scelte (task 2.2), con `data-layer/scripts/select_case_races.py`
-che ordina le 46 gare 2023-2024 per interesse narrativo su 4 criteri
-(punteggio VSC a metà gara, punteggio SC-che-rimescola, presenza di double
-stack, varianza degli sconti). Prima di accettare la proposta meccanica
-dello script, ogni gara candidata è stata controllata a mano per escludere
-che i punteggi alti fossero gonfiati da ritiri/incidenti invece che da
-vera strategia di pit — in tutte e tre le gare scelte il campo è arrivato
-al completo classificato, il rimescolamento è genuina strategia.
-
-1. **VSC breve a metà gara — Bahrain 2023.** Un'unica VSC isolata (unica
-   neutralizzazione dell'intera gara), con 6 pit stop nella finestra: la
-   lotteria pura, un solo momento, senza altri eventi a complicare la
-   lettura. Preferita a un'alternativa con punteggio più alto (Cina 2024,
-   14 pit in finestra) perché quella gara ha 3 eventi consecutivi
-   (1 VSC + 2 SC): più ricca ma meno adatta a raccontare l'archetipo
-   "un solo momento, contava solo essere lì" in modo pulito. Cina 2024
-   resta un'ottima candidata come quinta gara "bonus" se in futuro serve
-   un caso più caotico.
-2. **Safety Car che compatta il gruppo e rimescola — Arabia Saudita 2024
-   (Jeddah).** SC ai giri 7-9: 14 piloti hanno sfruttato la finestra
-   (EXPLOITED), 6 ne sono rimasti esclusi (LOCKED_OUT) — uno split netto,
-   esattamente la tensione "chi può e chi non può" al centro della domanda
-   di ricerca.
-3. **Double stack riuscito o fallito — Australia 2023 (Albert Park).**
-   Gara con 3 eventi di neutralizzazione (2 SC + 1 VSC) ed esiti opposti
-   tra un evento e l'altro (14 LOCKED_OUT/5 EXPLOITED sul primo SC, poi
-   18 EXPLOITED/1 LOCKED_OUT sul secondo). 42 pit stop in double stack,
-   distribuiti su 8 team diversi (non un artefatto concentrato su una
-   sola squadra): la gara più ricca del campione per la vista 5.
-
-In appendice: **Monaco 2023** come gara di controllo — zero
-neutralizzazioni nell'intera gara, termine di paragone per il prezzo di
-listino "puro".
-
-## 10. Rischi noti e come li gestiamo
-
-1. ~~La metrica attuale è sbagliata (usa la durata in pit lane)~~ **RISOLTO**
-   (task 1.1): riscritta secondo §5.1. Durante la validazione (task 1.2) è
-   emerso un secondo problema, più sottile, ed è stato corretto anche
-   quello — vedi il dettaglio in §5.1 sul riferimento "di gruppo" nei giri
-   sotto neutralizzazione.
-2. ~~L'aggancio Ergast-OpenF1 per numero di giro va validato~~ **VALIDATO**
-   (task 1.2, gara campione: Singapore GP 2023, raceId 1113 / OpenF1
-   session_key 9165). Aggancio più semplice del previsto: i messaggi di
-   race control di OpenF1 includono già il numero di giro (`lap_number`),
-   non serve ricostruirlo dall'orario di gara. Trovati e corretti anche due
-   bug in `neutralization_events.py`: chiudeva le finestre SC/VSC troppo
-   presto reagendo a bandiere "CLEAR" di settore scollegate dalla Safety
-   Car, e scambiava l'inizio di una VSC per l'inizio di una SC (sottostringa
-   del messaggio). Limite residuo non risolto: la granularità per giro
-   intero rende gli sconti sotto VSC meno puliti di quelli sotto SC piena
-   (vedi §5.1) — da dichiarare in `/methodology`, non da inseguire ora.
-3. Il CSV Kaggle potrebbe non coprire tutto il 2024: le gare mancanti si
-   scaricano da Jolpica, che ha lo stesso formato di Ergast. **Verificato
-   (task 0.2 e 2.1)**: sia il 2023 (22 gare) sia il 2024 (24 gare) sono
-   completi nel Kaggle già presente; la pipeline (task 2.1) ha processato
-   tutte e 46 le gare senza scarti, nessuna integrazione Jolpica necessaria
-   per questo perimetro.
-4. Oggi ci sono due pipeline dati (TypeScript e Python): si converge su
-   quella Python (ora `build_all.py`, task 2.1 completato). **Nota**:
-   `data-layer/scripts/export_frontend.py` e
-   `data-layer/app/api/routes/sessions.py` chiamano ancora la vecchia
-   firma di `calculate_pit_cost` (quella basata su `pit_duration`) e sono
-   **ancora rotti** — `build_all.py` è il loro sostituto, ma questi due
-   file non sono stati toccati. Non sono più usati da nessuna pipeline
-   attiva; da rimuovere quando si collega il frontend ai dati veri
-   (task 3.x), per non lasciare codice morto che confonde.
-5. Col rischio React, D3 può ridursi a due scale: vale la regola
-   "D3 possiede l'SVG" di §7.
-6. Le soglie della categoria LOCKED_OUT (8 giri, 3 auto) sono arbitrarie:
-   si dichiarano in /methodology con la motivazione.
-7. **Nuovo (trovato al task 2.1), RISOLTO**: le bandiere rosse fanno
-   esplodere il costo del pit stop a migliaia di secondi se un pit cade sul
-   giro sospeso. Corretto escludendo i giri con tempo sopra i 240 secondi
-   dal calcolo del tempo (non dalla posizione). Dettaglio in §5.1bis.
-8. **Nuovo (trovato al task 2.1), NON risolto, limite dichiarato**: il 9,2%
-   dei pit stop mostra ancora sconti estremi, concentrati in poche gare con
-   pit di massa o partenze sotto neutralizzazione (il campione per il
-   riferimento "di gruppo" si assottiglia o diventa fuorviante). Da
-   dichiarare in `/methodology`, non da inseguire ora. Dettaglio in §5.1bis.
-
-## 11. Divisione del lavoro (proposta, 5 settimane)
-
-Persona A — dati. Settimane 1-2: riscrive le metriche e valida sulla gara
-campione, poi fa girare la pipeline su tutte le gare 2023-24. Settimane 3-4:
-export dei JSON, selezione delle 3 gare-caso, aggregate.json. Settimana 5:
-numeri per la relazione.
-
-Persona B — viste principali. Settimane 1-2: race trace con dati veri.
-Settimane 3-4: vista sconti e distribuzione in home. Settimana 5: rifiniture
-e transizioni.
-
-Persona C — viste e interazione. Settimane 1-2: matrice della lotteria.
-Settimane 3-4: slope chart, vista compagni, hover e brush coordinati.
-Settimana 5: racconto delle 3 gare-caso e layout.
-
-Milestone di fine settimana 1 (quella che de-rischia tutto): lo sconto
-calcolato sulla gara campione torna con gli ordini di grandezza attesi.
-Se non torna, ci si ferma e si sistema la pipeline prima di andare avanti.
+Il riferimento cambia secondo le condizioni: in condizioni normali è la
+**baseline personale** del pilota (mediana dei suoi giri puliti in una
+finestra di ±5 giri, esclusi i giri di entrata/uscita di qualsiasi suo pit,
+con allargamento allo stint se restano meno di 3 giri); sotto
+neutralizzazione è il **ritmo del gruppo** in quello stesso giro (mediana di
+chi ha percorso quel giro senza fermarsi, minimo 3 piloti).
+
+Questa distinzione non è un dettaglio: con la sola baseline personale, la
+validazione su Singapore 2023 dava sconti negativi di 60-100 secondi per i
+pit sotto Safety Car, perché sotto SC rallenta tutto il gruppo e il calcolo
+scambiava il rallentamento imposto a tutti per costo del pit.
+
+Due correzioni trovate facendo girare la pipeline su tutte le 46 gare:
+le **bandiere rosse** gonfiavano il costo a migliaia di secondi (152 giri su
+46 gare superano i 240 secondi, in 8 gare con bandiera rossa documentata) —
+risolto escludendo dal calcolo del tempo, ma non della posizione, i giri
+sopra `MAX_PLAUSIBLE_LAP_MS = 240000`; e i pit **senza riferimento di gruppo
+affidabile** (quando quasi tutti si fermano insieme restano meno di 3 piloti
+puliti) ora si **scartano** invece di ripiegare sulla baseline personale —
+110 pit su 1737 (6,3%), con flag `lowConfidence`. Dopo la correzione la
+mediana sotto SC scende a 15,5s contro i 22,5s del verde: lo sconto atteso.
+Limite dichiarato e non risolto: sotto VSC (finestre di 1-2 giri) i numeri
+restano meno puliti, perché l'allineamento per giro intero non cattura in
+che punto del giro è scattata la neutralizzazione.
+
+### 12.2 Prezzo di listino, sconto, etichette
+
+**Prezzo di listino** di una gara: mediana dei costi effettivi dei pit in
+bandiera verde di quella gara (se meno di 4, mediana della stessa pista
+sulle due stagioni). **Sconto** = prezzo di listino − costo effettivo.
+
+**Etichetta di ogni pit** (che è anche il suo colore): GREEN, UNDER_VSC,
+UNDER_SC, JUST_BEFORE (fino a 3 giri prima: i "fregati"), JUST_AFTER (entro
+2 giri dopo), più il flag `double_stack`.
+
+**Esito di ogni pilota per ogni neutralizzazione:** EXPLOITED, FULL_PRICE,
+LOCKED_OUT (gomme sotto gli 8 giri o rientro dietro ad almeno 3 auto),
+NOT_NEEDED, NEUTRAL. Le soglie (8 giri, 3 auto) sono parametri dichiarati in
+`/methodology`.
+
+### 12.3 Il modello della decisione e il suo esito negativo
+
+La v2 aveva costruito uno **snapshot della decisione** per pilota ×
+neutralizzazione (posizione, gap, età e mescola gomme, soste fatte, quota
+del gruppo che si ferma, sorpassabilità e caoticità del circuito) e le due
+opzioni quantificate (BOX: costo atteso e posizione di rientro prevista;
+STAY: posizione conservata e costo differito).
+
+**Risultato onesto dello spike, da conservare:** nessuna coppia di assi
+mostra una separazione visibile tra decisioni che hanno pagato e no. Le
+correlazioni misurate con l'esito a 5 giri: traffico 0,28, margine dietro
+0,18, età gomme ≈ 0, sorpassabilità −0,10. Un indice combinato con pesi
+dichiarati (0,6 × z(traffico) + 0,4 × z(margine dietro)) arriva a 0,34-0,36,
+stabile su due metà casuali del campione, con distribuzioni di medie diverse
+(0,95 vs 0,45) ma fortemente sovrapposte. La verifica in letteratura
+conferma che chi risolve davvero questo problema usa deep learning su
+telemetria o reinforcement learning: due variabili e un grafico 2D non
+bastano, ed è corretto dirlo invece di fingere un confine che non c'è.
+
+Nel frame della v3 questo risultato negativo **non è più un problema**: era
+fatale quando la tesi del progetto era "ti aiutiamo a decidere", non lo è
+per uno strumento descrittivo che lo riporta come limite misurato. È anzi
+un'ottima risposta all'esame sulla differenza tra descrivere e predire.
+
+### 12.4 Pipeline v2 (invariata)
+
+`data-layer/scripts/build_all.py` produce, per le 46 gare 2023-2024:
+`public/data/index.json`, `races/<anno>-<circuitRef>.json` (~100-135 KB),
+`aggregate.json` (389 KB, 1658 pit), `params.json`. L'aggancio
+Ergast↔OpenF1 avviene per data (tolleranza ±1 giorno) e per numero di giro
+(i messaggi di race control di OpenF1 includono già `lap_number`).
