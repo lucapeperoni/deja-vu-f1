@@ -38,14 +38,16 @@ che E3.1 ha fissato le convenzioni comuni.
 
 ## E0.1 — Tutti · Lettura e branch
 
-Nessun prompt per la lettura: si fa con gli occhi.
+Task ibrido, l'unico della roadmap: la parte git è già fatta, la lettura si
+fa con gli occhi e non ha prompt.
 
 - [ ] A, B, C hanno letto `docs/PROGETTAZIONE.md` v3 §1-3, §5, §7
 - [ ] A, B, C hanno letto `docs/CATALOGO-EVENTI.md` (almeno §0, §11, §12)
 - [ ] Confermati i ruoli A/B/C
-- [ ] Creato il branch di lavoro `v3-eventi` e pushato
+- [x] Creato il branch di lavoro `v3-eventi` e pushato (commit `4267f5a`)
 
-**Prompt da copiare (solo per il branch e il commit dei documenti):**
+**Prompt già eseguito, conservato per riferimento (branch e commit dei
+documenti):**
 
 ```
 Siamo su main. Crea il branch v3-eventi, committa i tre documenti già
