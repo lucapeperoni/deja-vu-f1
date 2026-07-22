@@ -3,9 +3,9 @@
 // Vista 2 (docs/PROGETTAZIONE.md, sezione 7): "il compositore di eventi".
 // Layout: selettore famiglia/evento in alto, la risposta grande con la
 // mini-scala di rarità (ParameterRarityTrack, stesso idioma della vista 1),
-// la tabella delle occorrenze, e tre riquadri segnaposto per le viste 3/4/5
-// — che le altre persone aggancieranno qui, riusando lo stato condiviso
-// esportato da questo file (vedi CompositoreSharedState).
+// il filtro anni condiviso, la tabella delle occorrenze, e le viste 3
+// (QuandoStrip), 4 (DoveMappa) e 5 (GrigliaArrivo) agganciate qui sotto,
+// tutte sullo stesso evento/parametro corrente.
 //
 // Navigazione fra eventi: cambiare evento fa un router.push (la pagina è
 // server-side, ricarica solo il file <eventId>.json scelto — niente
@@ -20,6 +20,7 @@ import Link from "next/link";
 import ParameterRarityTrack, { type ParameterVariantPoint } from "@/components/charts/ParameterRarityTrack";
 import QuandoStrip from "@/components/charts/QuandoStrip";
 import DoveMappa from "@/components/charts/DoveMappa";
+import GrigliaArrivo, { type GrigliaPoint } from "@/components/charts/GrigliaArrivo";
 import {
   formatDrought,
   formatRarityPercent,
@@ -30,7 +31,7 @@ import {
   type CircuitGeo,
   type CircuitStat,
 } from "@/lib/eventCatalog";
-import { FAMILY_LEGEND, familyColor, familyLabel, PIT_CONTEXT_LABELS } from "@/lib/colors";
+import { FAMILY_LEGEND, familyColor, PIT_CONTEXT_LABELS } from "@/lib/colors";
 
 export interface EnrichedOccurrence {
   raceId: number;
@@ -47,16 +48,7 @@ export interface ParameterVariant extends CatalogEventEntry {
   occorrenzeDettaglio: EnrichedOccurrence[];
   perStagione: Record<string, number>;
   perCircuito: CircuitStat[];
-}
-
-// Lo stato condiviso che le viste 3 (quando), 4 (dove) e 5 (griglia×arrivo)
-// ricevono da qui: l'evento corrente con i SUOI parametri correnti già
-// dentro (CatalogEventEntry porta .parametri), più un filtro anni opzionale
-// che vista 3 pilota con un brush e che filtra anche la tabella e la vista 4.
-export interface CompositoreSharedState {
-  currentEvent: CatalogEventEntry;
-  yearFilter: [number, number] | null;
-  onYearFilterChange: (range: [number, number] | null) => void;
+  highlightedPoints: GrigliaPoint[];
 }
 
 interface Props {
@@ -64,6 +56,7 @@ interface Props {
   eventId: string;
   variants: ParameterVariant[];
   circuitsGeo: CircuitGeo[];
+  cloud: { griglia: (number | null)[]; arrivo: (number | null)[] };
 }
 
 const PAGE_SIZE = 50;
@@ -85,7 +78,7 @@ function formatParamValue(paramKey: string, value: number | string): string {
   return String(value);
 }
 
-export default function CompositoreClient({ catalogEvents, eventId, variants, circuitsGeo }: Props) {
+export default function CompositoreClient({ catalogEvents, eventId, variants, circuitsGeo, cloud }: Props) {
   const router = useRouter();
   const base = variants[0];
 
@@ -205,12 +198,6 @@ export default function CompositoreClient({ catalogEvents, eventId, variants, ci
   const yearMin = base.annoDa;
   const yearMax = base.annoA;
   const effectiveYearFilter = yearFilter ?? [yearMin, yearMax];
-
-  const sharedState: CompositoreSharedState = {
-    currentEvent: currentVariant,
-    yearFilter,
-    onYearFilterChange: handleYearFilterChange,
-  };
 
   return (
     <main className="flex-1 bg-background text-foreground py-10 px-6 min-h-screen">
@@ -422,33 +409,12 @@ export default function CompositoreClient({ catalogEvents, eventId, variants, ci
           )}
         </section>
 
-        {/* Segnaposto per la vista 5 — layout e stato pronti, non implementata qui */}
-        <PlaceholderSection
-          title="Vista 5 — Griglia × arrivo"
-          note="Nuvola di tutti i risultati, l'evento selezionato evidenziato."
-          shared={sharedState}
-        />
+        {/* Vista 5 — Griglia × arrivo */}
+        <section className="mb-8">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white mb-4">Griglia × arrivo</h2>
+          <GrigliaArrivo entry={currentVariant} cloud={cloud} highlighted={currentVariant.highlightedPoints} />
+        </section>
       </div>
     </main>
-  );
-}
-
-function PlaceholderSection({ title, note, shared }: { title: string; note: string; shared: CompositoreSharedState }) {
-  return (
-    <div className="border border-dashed border-graphite p-6 text-neutral-gray">
-      <h3 className="font-condensed text-lg font-bold uppercase text-white mb-2">{title}</h3>
-      <p className="text-sm">{note}</p>
-      <p className="text-xs mt-4 opacity-60">
-        In arrivo — stato condiviso pronto: evento <span className="text-white">{shared.currentEvent.eventId}</span>,
-        famiglia <span className="text-white">{familyLabel(shared.currentEvent.famiglia)}</span>
-        {shared.yearFilter && (
-          <>
-            {" "}
-            , anni <span className="text-white">{shared.yearFilter[0]}–{shared.yearFilter[1]}</span>
-          </>
-        )}
-        .
-      </p>
-    </div>
   );
 }

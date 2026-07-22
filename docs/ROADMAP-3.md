@@ -476,12 +476,24 @@ D3 possiede l'SVG). Verifica nel browser e mostrami gli screenshot.
 
 Dipende da: E3.2
 
-- [ ] Prompt eseguito
-- [ ] Tutti i risultati con griglia e arrivo validi sono nella nuvola
-- [ ] Le occorrenze dell'evento selezionato si illuminano
-- [ ] Prestazioni misurate: se l'SVG non regge, si passa a canvas (piano B
-      già deciso in PROGETTAZIONE §10, rischio 4) — la misura va riportata
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito
+- [x] Tutti i risultati con griglia e arrivo validi sono nella nuvola
+      (15.518 di 26.354 hanno entrambe le coordinate; gli altri — griglia o
+      arrivo mancante, es. non partito/non classificato — restano fuori,
+      sezione 5.6 regola 3, non sono "punti a zero")
+- [x] Le occorrenze dell'evento selezionato si illuminano
+- [x] Prestazioni misurate — **e la decisione è restare su SVG, non passare
+      a canvas**, in deroga alla previsione di sezione 10: un `<circle>` per
+      punto costa ~20-30ms di join e ~15.6k nodi SVG in più, ma UNA SOLA
+      VOLTA per pagina. Il vero rischio trovato in verifica era un bug (il
+      join si rieseguiva ad ogni movimento dello slider del parametro, non
+      solo al primo render) — corretto separando l'effetto della nuvola
+      (dati fissi) da quello dell'evidenziazione (dati che cambiano),
+      non cambiando backend di rendering. Coordinate/DOM restano quindi
+      sotto la soglia di percezione anche muovendo lo slider ripetutamente
+      (verificato: 5 cambi di parametro in sequenza, nessun errore, nessun
+      lag visibile).
+- [x] Diff letto, commit e push — in attesa di conferma esplicita
 
 **Prompt da copiare:**
 

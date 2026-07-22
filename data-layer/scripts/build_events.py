@@ -31,7 +31,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_LAYER_DIR = SCRIPT_DIR.parent
@@ -41,6 +41,7 @@ EVENTS_DIR = PUBLIC_DATA_DIR / "events"
 FACTS_DIR = PUBLIC_DATA_DIR / "facts"
 PARAMS_PATH = PUBLIC_DATA_DIR / "params.json"
 RACES_INDEX_PATH = PUBLIC_DATA_DIR / "races-index.json"
+RESULTS_PLANE_PATH = PUBLIC_DATA_DIR / "results-plane.json"
 
 BUDGET_BYTES = 300 * 1024
 
@@ -266,6 +267,39 @@ def _costruisci_races_index(dataset: Dataset) -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# public/data/results-plane.json — vista 5, sezione 7 e 10 rischio 4:
+# "26.759 risultati come nuvola densa (griglia x arrivo)". Struttura a
+# colonne (array paralleli per indice), non un array di oggetti: un oggetto
+# per risultato con le chiavi ripetute 26mila volte pesa 1.27 MB, le stesse
+# colonne senza chiavi ripetute 355 KB — SOPRA il budget di 300 KB usato
+# altrove. Deroga deliberata (chiesta e confermata): driverId serve a
+# risolvere ESATTAMENTE quale risultato evidenziare per un evento
+# RISULTATO/TEAM_GARA (grid=0 può comparire più volte nella stessa gara —
+# partenza dalla corsia box, trappola 4 — quindi (raceId, grid) da solo non
+# è una chiave sicura), e questo file non viene MAI spedito intero al
+# client: solo il server lo legge (src/app/eventi/[eventId]/page.tsx),
+# risolve i punti da evidenziare per l'evento corrente, e manda al browser
+# solo {griglia, arrivo} (senza driverId, ~159 KB) più la manciata di punti
+# evidenziati. anno e circuito NON sono duplicati: si risalgono da
+# races-index.json via raceId. Indy 500 esclusa (trappola 1).
+# ---------------------------------------------------------------------------
+
+def _costruisci_results_plane(dataset: Dataset) -> Dict[str, List[Optional[int]]]:
+    races = dataset.race_window(1950, 2024, include_indy500=False)
+    griglia: List[Optional[int]] = []
+    arrivo: List[Optional[int]] = []
+    race_ids: List[int] = []
+    driver_ids: List[int] = []
+    for race in races:
+        for res in dataset.results_by_race.get(race.race_id, []):
+            griglia.append(res.grid)
+            arrivo.append(res.position)
+            race_ids.append(race.race_id)
+            driver_ids.append(res.driver_id)
+    return {"griglia": griglia, "arrivo": arrivo, "raceId": race_ids, "driverId": driver_ids}
+
+
+# ---------------------------------------------------------------------------
 # public/data/params.json — estensione additiva
 # ---------------------------------------------------------------------------
 
@@ -393,11 +427,20 @@ def main() -> None:
     with open(RACES_INDEX_PATH, "w", encoding="utf-8") as f:
         json.dump(_costruisci_races_index(dataset), f, ensure_ascii=False, indent=2)
 
+    # --- results-plane.json (vista 5) ---
+    results_plane = _costruisci_results_plane(dataset)
+    with open(RESULTS_PLANE_PATH, "w", encoding="utf-8") as f:
+        json.dump(results_plane, f, ensure_ascii=False, separators=(",", ":"))
+
     # --- params.json (estensione additiva) ---
     _estendi_params(dataset)
 
     # --- riepilogo ---
-    tutti_i_file = list(EVENTS_DIR.glob("*.json")) + list(FACTS_DIR.glob("*.json")) + [RACES_INDEX_PATH, PARAMS_PATH]
+    tutti_i_file = (
+        list(EVENTS_DIR.glob("*.json"))
+        + list(FACTS_DIR.glob("*.json"))
+        + [RACES_INDEX_PATH, RESULTS_PLANE_PATH, PARAMS_PATH]
+    )
     dimensioni = [(p, p.stat().st_size) for p in tutti_i_file]
     peso_totale = sum(size for _, size in dimensioni)
     top5 = sorted(dimensioni, key=lambda t: t[1], reverse=True)[:5]
@@ -408,6 +451,10 @@ def main() -> None:
     for path, size in top5:
         print(f"  {path.relative_to(REPO_ROOT)}: {size / 1024:.1f} KB")
     print(f"Gare con almeno un fatto notevole: {gare_con_fatti} su {len(races)}")
+    print(
+        f"Risultati esportati per la vista 5 (results-plane.json): "
+        f"{len(results_plane['griglia'])}, {RESULTS_PLANE_PATH.stat().st_size / 1024:.1f} KB"
+    )
     if file_troncati:
         print(f"Eventi troncati ai campi essenziali (sopra i 300 KB): {', '.join(file_troncati)}")
     else:

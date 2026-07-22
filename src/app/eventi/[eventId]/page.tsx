@@ -37,6 +37,13 @@ interface PerCircuitoEntry {
   tasso: number;
 }
 
+interface ResultsPlaneFile {
+  griglia: (number | null)[];
+  arrivo: (number | null)[];
+  raceId: number[];
+  driverId: number[];
+}
+
 interface EventDetailFile {
   eventId: string;
   nome: string;
@@ -73,6 +80,27 @@ function paramsKey(parametri: Record<string, number | string>): string {
   return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+// I pagliati coinvolti in un'occorrenza compaiono con chiavi diverse a
+// seconda della forma del payload (sezione 6, _descrivi_payload in
+// build_events.py): un Result singolo -> driverId, una coppia -> driverId1
+// /driverId2, una lista -> driverIds. La famiglia neutralizzazioni (eredità
+// v2, aggregate.json) porta driverId come STRINGA, non numero — da qui il
+// Number() tollerante: se non converte a un numero valido o non trova
+// corrispondenza nella pianta dei risultati, il punto è semplicemente
+// scartato (nessun highlight per quell'occorrenza), non un errore.
+function extractDriverIds(occ: Record<string, unknown>): number[] {
+  const ids: number[] = [];
+  const push = (v: unknown) => {
+    const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+    if (Number.isFinite(n)) ids.push(n);
+  };
+  push(occ.driverId);
+  push(occ.driverId1);
+  push(occ.driverId2);
+  if (Array.isArray(occ.driverIds)) for (const d of occ.driverIds) push(d);
+  return ids;
+}
+
 export default async function EventoPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await params;
 
@@ -101,6 +129,28 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
     lat: geo.lat,
     lng: geo.lng,
   }));
+
+  // Vista 5 (sezione 7, §10 rischio 4): la nuvola griglia×arrivo di tutti i
+  // 26.354 risultati (1950-2024, Indy 500 esclusa). Il file su disco porta
+  // anche driverId per risolvere ESATTAMENTE quale punto evidenziare (sotto)
+  // — 355 KB, sopra il budget di 300 KB usato altrove, deroga chiesta e
+  // confermata perché il file NON viene mai spedito intero al client: qui
+  // si costruisce "cloud" (solo griglia/arrivo, ~159 KB) per il rendering
+  // di sfondo, e una mappa raceId|driverId -> punto SOLO lato server, usata
+  // subito sotto e mai passata come prop.
+  const resultsPlanePath = path.join(process.cwd(), "public", "data", "results-plane.json");
+  const resultsPlane: ResultsPlaneFile = fs.existsSync(resultsPlanePath)
+    ? readJson<ResultsPlaneFile>("public", "data", "results-plane.json")
+    : { griglia: [], arrivo: [], raceId: [], driverId: [] };
+  const cloud = { griglia: resultsPlane.griglia, arrivo: resultsPlane.arrivo };
+
+  const pointByRaceDriver = new Map<string, { grid: number; arrivo: number }>();
+  for (let i = 0; i < resultsPlane.raceId.length; i++) {
+    const grid = resultsPlane.griglia[i];
+    const arrivo = resultsPlane.arrivo[i];
+    if (grid == null || arrivo == null) continue; // niente coordinata, niente punto (sezione 5.6, regola 3)
+    pointByRaceDriver.set(`${resultsPlane.raceId[i]}|${resultsPlane.driverId[i]}`, { grid, arrivo });
+  }
 
   const variants: ParameterVariant[] = detail.perParametro.map((p) => {
     const siccita = siccitaByKey.get(paramsKey(p.parametri));
@@ -146,7 +196,20 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
       return { ...c, lat: geo?.lat ?? null, lng: geo?.lng ?? null };
     });
 
-    return { ...entry, occorrenzeDettaglio, perStagione: p.perStagione ?? {}, perCircuito };
+    // Vista 5: risolve, per ogni occorrenza, il/i punto/i (grid, arrivo) da
+    // evidenziare sul piano. Un'occorrenza senza driverId/driverId1/2/
+    // driverIds riconoscibile (eventi di livello GARA puro, es. "nessun
+    // ritiro") non ha un pilota specifico da segnare — resta fuori, non è
+    // un errore: quell'evento non si presta a un highlight puntuale.
+    const highlightedPoints: { grid: number; arrivo: number }[] = [];
+    for (const occ of occorrenzeDettaglio) {
+      for (const driverId of extractDriverIds(occ)) {
+        const point = pointByRaceDriver.get(`${occ.raceId}|${driverId}`);
+        if (point) highlightedPoints.push(point);
+      }
+    }
+
+    return { ...entry, occorrenzeDettaglio, perStagione: p.perStagione ?? {}, perCircuito, highlightedPoints };
   });
 
   return (
@@ -156,6 +219,7 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
       eventId={eventId}
       variants={variants}
       circuitsGeo={circuitsGeo}
+      cloud={cloud}
     />
   );
 }
