@@ -1,0 +1,1 @@
+{"raceId": 954, "anno": 2016, "circuitRef": "villeneuve", "nomeCircuito": "Circuit Gilles Villeneuve", "nomeGara": "Canadian Grand Prix", "fatti": [{"eventId": "rimonta_almeno_n_posizioni", "nome": "Rimonta di almeno N posizioni", "famiglia": "comando_in_pista", "parametri": {"N": 10}, "rarita": 0.10748807836061348, "siccitaGare": 1, "pesoEditoriale": 0.5, "notevolezza": 0.48}]}

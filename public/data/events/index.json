@@ -1,0 +1,1716 @@
+[
+  {
+    "eventId": "vittoria_da_griglia",
+    "nome": "Vittoria partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore era partito N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 5
+    },
+    "parametriDisponibili": {
+      "N": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 166,
+    "denominatore": 1114,
+    "rarita": 0.1490125673249551,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "vittoria_da_griglia",
+    "nome": "Vittoria partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore era partito N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 10
+    },
+    "parametriDisponibili": {
+      "N": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 37,
+    "denominatore": 1114,
+    "rarita": 0.03321364452423698,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "vittoria_da_griglia",
+    "nome": "Vittoria partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore era partito N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 15
+    },
+    "parametriDisponibili": {
+      "N": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 8,
+    "denominatore": 1114,
+    "rarita": 0.00718132854578097,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "vittoria_da_griglia",
+    "nome": "Vittoria partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore era partito N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 20
+    },
+    "parametriDisponibili": {
+      "N": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 1,
+    "denominatore": 1114,
+    "rarita": 0.0008976660682226212,
+    "siccitaGareCorrente": 750,
+    "siccitaAnniCorrente": 41,
+    "ultimaOccorrenza": "1983 Long Beach",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "podio_da_griglia",
+    "nome": "Podio partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota e' salito sul podio partendo N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 10
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 282,
+    "denominatore": 3360,
+    "rarita": 0.08392857142857142,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "podio_da_griglia",
+    "nome": "Podio partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota e' salito sul podio partendo N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 15
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 69,
+    "denominatore": 3360,
+    "rarita": 0.020535714285714286,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "podio_da_griglia",
+    "nome": "Podio partendo N° o peggio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota e' salito sul podio partendo N-esimo o peggio in griglia.",
+    "parametri": {
+      "N": 20
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 20,
+    "denominatore": 3360,
+    "rarita": 0.005952380952380952,
+    "siccitaGareCorrente": 75,
+    "siccitaAnniCorrente": 3,
+    "ultimaOccorrenza": "2021 Sochi Autodrom",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "nessuno_dei_primi_3_in_griglia_sul_podio",
+    "nome": "Nessuno dei primi 3 in griglia sul podio",
+    "famiglia": "griglia_e_risultato",
+    "unita": "GARA",
+    "descrizione": "Nessuno dei tre piloti partiti nelle prime tre posizioni e' salito sul podio.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 79,
+    "denominatore": 1113,
+    "rarita": 0.07097933513027853,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "pole_finita_con_ritiro",
+    "nome": "Pole finita con un ritiro",
+    "famiglia": "griglia_e_risultato",
+    "unita": "RISULTATO",
+    "descrizione": "Chi era partito in pole si e' ritirato.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.grid",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 277,
+    "denominatore": 1114,
+    "rarita": 0.24865350089766608,
+    "siccitaGareCorrente": 12,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Silverstone Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "margine_vittoria",
+    "nome": "Margine di vittoria sotto N secondi",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato e' sotto N secondi.",
+    "parametri": {
+      "N": 0.1
+    },
+    "parametriDisponibili": {
+      "N": [
+        0.1,
+        0.5,
+        1,
+        2
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 5,
+    "denominatore": 1088,
+    "rarita": 0.004595588235294118,
+    "siccitaGareCorrente": 429,
+    "siccitaAnniCorrente": 22,
+    "ultimaOccorrenza": "2002 Indianapolis Motor Speedway",
+    "pesoEditoriale": 0.7
+  },
+  {
+    "eventId": "margine_vittoria",
+    "nome": "Margine di vittoria sotto N secondi",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato e' sotto N secondi.",
+    "parametri": {
+      "N": 0.5
+    },
+    "parametriDisponibili": {
+      "N": [
+        0.1,
+        0.5,
+        1,
+        2
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 41,
+    "denominatore": 1088,
+    "rarita": 0.03768382352941176,
+    "siccitaGareCorrente": 43,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.7
+  },
+  {
+    "eventId": "margine_vittoria",
+    "nome": "Margine di vittoria sotto N secondi",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato e' sotto N secondi.",
+    "parametri": {
+      "N": 1
+    },
+    "parametriDisponibili": {
+      "N": [
+        0.1,
+        0.5,
+        1,
+        2
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 95,
+    "denominatore": 1088,
+    "rarita": 0.08731617647058823,
+    "siccitaGareCorrente": 17,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autodromo Enzo e Dino Ferrari",
+    "pesoEditoriale": 0.7
+  },
+  {
+    "eventId": "margine_vittoria",
+    "nome": "Margine di vittoria sotto N secondi",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato e' sotto N secondi.",
+    "parametri": {
+      "N": 2
+    },
+    "parametriDisponibili": {
+      "N": [
+        0.1,
+        0.5,
+        1,
+        2
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 183,
+    "denominatore": 1088,
+    "rarita": 0.16819852941176472,
+    "siccitaGareCorrente": 10,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Circuit de Spa-Francorchamps",
+    "pesoEditoriale": 0.7
+  },
+  {
+    "eventId": "vittoria_oltre_n_minuti",
+    "nome": "Vittoria con margine oltre N minuti",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato supera N minuti.",
+    "parametri": {
+      "N": 1
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 53,
+    "denominatore": 1088,
+    "rarita": 0.04871323529411765,
+    "siccitaGareCorrente": 331,
+    "siccitaAnniCorrente": 16,
+    "ultimaOccorrenza": "2008 Silverstone Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "vittoria_oltre_n_minuti",
+    "nome": "Vittoria con margine oltre N minuti",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato supera N minuti.",
+    "parametri": {
+      "N": 2
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 9,
+    "denominatore": 1088,
+    "rarita": 0.008272058823529412,
+    "siccitaGareCorrente": 956,
+    "siccitaAnniCorrente": 56,
+    "ultimaOccorrenza": "1968 Nürburgring",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "vittoria_oltre_n_minuti",
+    "nome": "Vittoria con margine oltre N minuti",
+    "famiglia": "margine",
+    "unita": "RISULTATO",
+    "descrizione": "Il distacco tra 1° e 2° classificato supera N minuti.",
+    "parametri": {
+      "N": 5
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.milliseconds",
+      "results.laps"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 1,
+    "denominatore": 1088,
+    "rarita": 0.0009191176470588235,
+    "siccitaGareCorrente": 1050,
+    "siccitaAnniCorrente": 66,
+    "ultimaOccorrenza": "1958 Circuito da Boavista",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "meno_di_n_classificati",
+    "nome": "Meno di N piloti classificati",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto meno di N piloti classificati al traguardo.",
+    "parametri": {
+      "N": 6
+    },
+    "parametriDisponibili": {
+      "N": [
+        6,
+        8,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 17,
+    "denominatore": 1114,
+    "rarita": 0.01526032315978456,
+    "siccitaGareCorrente": 538,
+    "siccitaAnniCorrente": 28,
+    "ultimaOccorrenza": "1996 Circuit de Monaco",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "meno_di_n_classificati",
+    "nome": "Meno di N piloti classificati",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto meno di N piloti classificati al traguardo.",
+    "parametri": {
+      "N": 8
+    },
+    "parametriDisponibili": {
+      "N": [
+        6,
+        8,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 76,
+    "denominatore": 1114,
+    "rarita": 0.06822262118491922,
+    "siccitaGareCorrente": 339,
+    "siccitaAnniCorrente": 16,
+    "ultimaOccorrenza": "2008 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "meno_di_n_classificati",
+    "nome": "Meno di N piloti classificati",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto meno di N piloti classificati al traguardo.",
+    "parametri": {
+      "N": 10
+    },
+    "parametriDisponibili": {
+      "N": [
+        6,
+        8,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 192,
+    "denominatore": 1114,
+    "rarita": 0.17235188509874327,
+    "siccitaGareCorrente": 339,
+    "siccitaAnniCorrente": 16,
+    "ultimaOccorrenza": "2008 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "nessun_ritiro",
+    "nome": "Gara senza nessun ritiro",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "Tutti i piloti che hanno preso il via hanno tagliato il traguardo.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 16,
+    "denominatore": 1114,
+    "rarita": 0.01436265709156194,
+    "siccitaGareCorrente": 9,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Circuit Park Zandvoort",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "percentuale_ritiri_sopra_n",
+    "nome": "Percentuale di ritiri sopra N%",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "Più di N% di chi ha preso il via si e' ritirato.",
+    "parametri": {
+      "N": 50
+    },
+    "parametriDisponibili": {
+      "N": [
+        50,
+        70,
+        85
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 339,
+    "denominatore": 1114,
+    "rarita": 0.30430879712746856,
+    "siccitaGareCorrente": 339,
+    "siccitaAnniCorrente": 16,
+    "ultimaOccorrenza": "2008 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "percentuale_ritiri_sopra_n",
+    "nome": "Percentuale di ritiri sopra N%",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "Più di N% di chi ha preso il via si e' ritirato.",
+    "parametri": {
+      "N": 70
+    },
+    "parametriDisponibili": {
+      "N": [
+        50,
+        70,
+        85
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 30,
+    "denominatore": 1114,
+    "rarita": 0.026929982046678635,
+    "siccitaGareCorrente": 339,
+    "siccitaAnniCorrente": 16,
+    "ultimaOccorrenza": "2008 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "percentuale_ritiri_sopra_n",
+    "nome": "Percentuale di ritiri sopra N%",
+    "famiglia": "gare_anomale",
+    "unita": "GARA",
+    "descrizione": "Più di N% di chi ha preso il via si e' ritirato.",
+    "parametri": {
+      "N": 85
+    },
+    "parametriDisponibili": {
+      "N": [
+        50,
+        70,
+        85
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 1,
+    "denominatore": 1114,
+    "rarita": 0.0008976660682226212,
+    "siccitaGareCorrente": 538,
+    "siccitaAnniCorrente": 28,
+    "ultimaOccorrenza": "1996 Circuit de Monaco",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "doppietta",
+    "nome": "Doppietta 1-2 dello stesso team",
+    "famiglia": "team",
+    "unita": "GARA",
+    "descrizione": "Le prime due posizioni sono dello stesso costruttore.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.constructorId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 311,
+    "denominatore": 1113,
+    "rarita": 0.27942497753818507,
+    "siccitaGareCorrente": 2,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Las Vegas Strip Street Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "tripletta",
+    "nome": "Tripletta 1-2-3 dello stesso team",
+    "famiglia": "team",
+    "unita": "GARA",
+    "descrizione": "Le prime tre posizioni sono dello stesso costruttore.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.constructorId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 13,
+    "denominatore": 1113,
+    "rarita": 0.011680143755615454,
+    "siccitaGareCorrente": 1026,
+    "siccitaAnniCorrente": 63,
+    "ultimaOccorrenza": "1961 Aintree",
+    "pesoEditoriale": 0.9
+  },
+  {
+    "eventId": "doppio_ritiro",
+    "nome": "Doppio ritiro dello stesso team (qualunque causa)",
+    "famiglia": "team",
+    "unita": "TEAM_GARA",
+    "descrizione": "Entrambe le auto dello stesso team si sono ritirate, per qualunque causa.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.constructorId",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 2311,
+    "denominatore": 11422,
+    "rarita": 0.20232883908247243,
+    "siccitaGareCorrente": 15,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Circuit Gilles Villeneuve",
+    "pesoEditoriale": 0.35
+  },
+  {
+    "eventId": "doppio_ritiro_stessa_causa",
+    "nome": "Doppio ritiro dello stesso team per la stessa causa",
+    "famiglia": "team",
+    "unita": "TEAM_GARA",
+    "descrizione": "Entrambe le auto dello stesso team si sono ritirate per la stessa causa.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.constructorId",
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 665,
+    "denominatore": 11422,
+    "rarita": 0.05822097706181054,
+    "siccitaGareCorrente": 16,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Circuit de Monaco",
+    "pesoEditoriale": 0.4
+  },
+  {
+    "eventId": "prima_vittoria_costruttore",
+    "nome": "Prima vittoria assoluta di un costruttore",
+    "famiglia": "team",
+    "unita": "RISULTATO",
+    "descrizione": "Il costruttore vincitore vinceva per la prima volta nella sua storia.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.constructorId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 43,
+    "denominatore": 1114,
+    "rarita": 0.03859964093357271,
+    "siccitaGareCorrente": 79,
+    "siccitaAnniCorrente": 3,
+    "ultimaOccorrenza": "2021 Hungaroring",
+    "pesoEditoriale": 0.75
+  },
+  {
+    "eventId": "prima_vittoria_in_carriera",
+    "nome": "Prima vittoria in carriera",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore della gara vinceva per la prima volta in carriera.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 105,
+    "denominatore": 1114,
+    "rarita": 0.09425493716337523,
+    "siccitaGareCorrente": 11,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Hungaroring",
+    "pesoEditoriale": 0.8
+  },
+  {
+    "eventId": "primo_podio_in_carriera",
+    "nome": "Primo podio in carriera",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota saliva sul podio per la prima volta in carriera.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 191,
+    "denominatore": 3360,
+    "rarita": 0.056845238095238095,
+    "siccitaGareCorrente": 30,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Suzuka Circuit",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "prima_pole_in_carriera",
+    "nome": "Prima pole in carriera",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota otteneva la pole position per la prima volta in carriera.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.grid",
+      "results.driverId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 94,
+    "denominatore": 1114,
+    "rarita": 0.0843806104129264,
+    "siccitaGareCorrente": 55,
+    "siccitaAnniCorrente": 2,
+    "ultimaOccorrenza": "2022 Hungaroring",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "vittoria_al_debutto",
+    "nome": "Vittoria al debutto assoluto",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota ha vinto la sua primissima gara in F1.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "results.statusId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 2,
+    "denominatore": 688,
+    "rarita": 0.0029069767441860465,
+    "siccitaGareCorrente": 1027,
+    "siccitaAnniCorrente": 63,
+    "ultimaOccorrenza": "1961 Reims-Gueux",
+    "pesoEditoriale": 0.95
+  },
+  {
+    "eventId": "podio_al_debutto",
+    "nome": "Podio al debutto assoluto",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota e' salito sul podio alla sua primissima gara in F1.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "results.statusId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 17,
+    "denominatore": 688,
+    "rarita": 0.024709302325581394,
+    "siccitaGareCorrente": 227,
+    "siccitaAnniCorrente": 10,
+    "ultimaOccorrenza": "2014 Albert Park Grand Prix Circuit",
+    "pesoEditoriale": 0.85
+  },
+  {
+    "eventId": "prima_vittoria_pilota_su_circuito",
+    "nome": "Prima vittoria del pilota su quel circuito",
+    "famiglia": "carriera",
+    "unita": "RISULTATO",
+    "descrizione": "Il vincitore vinceva per la prima volta su questo circuito.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "races.circuitId",
+      "races.date"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 677,
+    "denominatore": 1114,
+    "rarita": 0.6077199281867145,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.4
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 5
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 2001,
+    "denominatore": 9777,
+    "rarita": 0.20466400736422216,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 3
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 1015,
+    "denominatore": 9777,
+    "rarita": 0.10381507619924313,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 4
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 854,
+    "denominatore": 9777,
+    "rarita": 0.0873478572159149,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 6
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 809,
+    "denominatore": 9777,
+    "rarita": 0.08274521836964303,
+    "siccitaGareCorrente": 12,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Silverstone Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 20
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 781,
+    "denominatore": 9777,
+    "rarita": 0.07988135419862943,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 22
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 427,
+    "denominatore": 9777,
+    "rarita": 0.04367392860795745,
+    "siccitaGareCorrente": 63,
+    "siccitaAnniCorrente": 2,
+    "ultimaOccorrenza": "2022 Miami International Autodrome",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 7
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 311,
+    "denominatore": 9777,
+    "rarita": 0.0318093484709011,
+    "siccitaGareCorrente": 90,
+    "siccitaAnniCorrente": 4,
+    "ultimaOccorrenza": "2020 Yas Marina Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "ritiro_per_causa_specifica",
+    "nome": "Ritiro per una causa specifica",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' ritirato per una causa specifica (guasto o incidente), sul totale dei ritiri.",
+    "parametri": {
+      "causa": 10
+    },
+    "parametriDisponibili": {
+      "causa": [
+        5,
+        3,
+        4,
+        6,
+        20,
+        22,
+        7,
+        10
+      ]
+    },
+    "campi": [
+      "results.statusId"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 316,
+    "denominatore": 9777,
+    "rarita": 0.032320752787153524,
+    "siccitaGareCorrente": 45,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Bahrain International Circuit",
+    "pesoEditoriale": 0.3
+  },
+  {
+    "eventId": "causa_non_vista_da_anni",
+    "nome": "Causa di ritiro non vista da più di N anni",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Nessuno si ritira più per questa causa da oltre N anni.",
+    "parametri": {
+      "N": 10
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        20,
+        30
+      ]
+    },
+    "campi": [
+      "results.statusId",
+      "races.date",
+      "races.year"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 45,
+    "denominatore": 101,
+    "rarita": 0.44554455445544555,
+    "siccitaGareCorrente": 231,
+    "siccitaAnniCorrente": 11,
+    "ultimaOccorrenza": "2013 Buddh International Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "causa_non_vista_da_anni",
+    "nome": "Causa di ritiro non vista da più di N anni",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Nessuno si ritira più per questa causa da oltre N anni.",
+    "parametri": {
+      "N": 20
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        20,
+        30
+      ]
+    },
+    "campi": [
+      "results.statusId",
+      "races.date",
+      "races.year"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 29,
+    "denominatore": 101,
+    "rarita": 0.2871287128712871,
+    "siccitaGareCorrente": 418,
+    "siccitaAnniCorrente": 21,
+    "ultimaOccorrenza": "2003 Circuit de Nevers Magny-Cours",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "causa_non_vista_da_anni",
+    "nome": "Causa di ritiro non vista da più di N anni",
+    "famiglia": "ritiri",
+    "unita": "RISULTATO",
+    "descrizione": "Nessuno si ritira più per questa causa da oltre N anni.",
+    "parametri": {
+      "N": 30
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        20,
+        30
+      ]
+    },
+    "campi": [
+      "results.statusId",
+      "races.date",
+      "races.year"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 12,
+    "denominatore": 101,
+    "rarita": 0.1188118811881188,
+    "siccitaGareCorrente": 620,
+    "siccitaAnniCorrente": 33,
+    "ultimaOccorrenza": "1991 Circuit Gilles Villeneuve",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "nessun_cambio_di_leader",
+    "nome": "Gara senza nessun cambio di leader",
+    "famiglia": "comando_in_pista",
+    "unita": "GARA",
+    "descrizione": "Chi era al comando al giro 1 lo e' rimasto fino alla bandiera a scacchi.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "lap_times.position",
+      "lap_times.lap",
+      "lap_times.driverId"
+    ],
+    "annoDa": 1996,
+    "annoA": 2024,
+    "occorrenze": 99,
+    "denominatore": 544,
+    "rarita": 0.18198529411764705,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "almeno_n_piloti_al_comando",
+    "nome": "Almeno N piloti diversi al comando",
+    "famiglia": "comando_in_pista",
+    "unita": "GARA",
+    "descrizione": "Almeno N piloti diversi hanno comandato la gara in pista.",
+    "parametri": {
+      "N": 3
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "lap_times.position",
+      "lap_times.lap",
+      "lap_times.driverId"
+    ],
+    "annoDa": 1996,
+    "annoA": 2024,
+    "occorrenze": 254,
+    "denominatore": 544,
+    "rarita": 0.46691176470588236,
+    "siccitaGareCorrente": 3,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "almeno_n_piloti_al_comando",
+    "nome": "Almeno N piloti diversi al comando",
+    "famiglia": "comando_in_pista",
+    "unita": "GARA",
+    "descrizione": "Almeno N piloti diversi hanno comandato la gara in pista.",
+    "parametri": {
+      "N": 4
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "lap_times.position",
+      "lap_times.lap",
+      "lap_times.driverId"
+    ],
+    "annoDa": 1996,
+    "annoA": 2024,
+    "occorrenze": 94,
+    "denominatore": 544,
+    "rarita": 0.17279411764705882,
+    "siccitaGareCorrente": 8,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autodromo Nazionale di Monza",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "almeno_n_piloti_al_comando",
+    "nome": "Almeno N piloti diversi al comando",
+    "famiglia": "comando_in_pista",
+    "unita": "GARA",
+    "descrizione": "Almeno N piloti diversi hanno comandato la gara in pista.",
+    "parametri": {
+      "N": 5
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "lap_times.position",
+      "lap_times.lap",
+      "lap_times.driverId"
+    ],
+    "annoDa": 1996,
+    "annoA": 2024,
+    "occorrenze": 33,
+    "denominatore": 544,
+    "rarita": 0.06066176470588235,
+    "siccitaGareCorrente": 8,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Autodromo Nazionale di Monza",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "vittoria_ultimo_giro",
+    "nome": "Vittoria conquistata all'ultimo giro",
+    "famiglia": "comando_in_pista",
+    "unita": "GARA",
+    "descrizione": "Il comando e' cambiato all'ultimo giro, decidendo la vittoria all'ultimo respiro.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "lap_times.position",
+      "lap_times.lap",
+      "lap_times.driverId"
+    ],
+    "annoDa": 1996,
+    "annoA": 2024,
+    "occorrenze": 12,
+    "denominatore": 544,
+    "rarita": 0.022058823529411766,
+    "siccitaGareCorrente": 68,
+    "siccitaAnniCorrente": 3,
+    "ultimaOccorrenza": "2021 Yas Marina Circuit",
+    "pesoEditoriale": 0.85
+  },
+  {
+    "eventId": "rimonta_almeno_n_posizioni",
+    "nome": "Rimonta di almeno N posizioni",
+    "famiglia": "comando_in_pista",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota ha guadagnato almeno N posizioni tra griglia e arrivo.",
+    "parametri": {
+      "N": 10
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.grid",
+      "results.position"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 1668,
+    "denominatore": 15518,
+    "rarita": 0.10748807836061348,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "rimonta_almeno_n_posizioni",
+    "nome": "Rimonta di almeno N posizioni",
+    "famiglia": "comando_in_pista",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota ha guadagnato almeno N posizioni tra griglia e arrivo.",
+    "parametri": {
+      "N": 15
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.grid",
+      "results.position"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 304,
+    "denominatore": 15518,
+    "rarita": 0.019590153370279674,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "rimonta_almeno_n_posizioni",
+    "nome": "Rimonta di almeno N posizioni",
+    "famiglia": "comando_in_pista",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota ha guadagnato almeno N posizioni tra griglia e arrivo.",
+    "parametri": {
+      "N": 20
+    },
+    "parametriDisponibili": {
+      "N": [
+        10,
+        15,
+        20
+      ]
+    },
+    "campi": [
+      "results.grid",
+      "results.position"
+    ],
+    "annoDa": 1950,
+    "annoA": 2024,
+    "occorrenze": 18,
+    "denominatore": 15518,
+    "rarita": 0.0011599432916612965,
+    "siccitaGareCorrente": 249,
+    "siccitaAnniCorrente": 12,
+    "ultimaOccorrenza": "2012 Yas Marina Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "vincitore_con_almeno_n_soste",
+    "nome": "Il vincitore ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Chi ha vinto la gara ha fatto almeno N soste ai box.",
+    "parametri": {
+      "N": 3
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 63,
+    "denominatore": 285,
+    "rarita": 0.22105263157894736,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "vincitore_con_almeno_n_soste",
+    "nome": "Il vincitore ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Chi ha vinto la gara ha fatto almeno N soste ai box.",
+    "parametri": {
+      "N": 4
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 18,
+    "denominatore": 285,
+    "rarita": 0.06315789473684211,
+    "siccitaGareCorrente": 26,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "vincitore_con_almeno_n_soste",
+    "nome": "Il vincitore ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Chi ha vinto la gara ha fatto almeno N soste ai box.",
+    "parametri": {
+      "N": 5
+    },
+    "parametriDisponibili": {
+      "N": [
+        3,
+        4,
+        5
+      ]
+    },
+    "campi": [
+      "results.position",
+      "results.driverId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 4,
+    "denominatore": 285,
+    "rarita": 0.014035087719298246,
+    "siccitaGareCorrente": 33,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Circuit Park Zandvoort",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "pilota_con_almeno_n_soste",
+    "nome": "Un pilota ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota ha fatto almeno N soste ai box in questa gara.",
+    "parametri": {
+      "N": 4
+    },
+    "parametriDisponibili": {
+      "N": [
+        4,
+        5,
+        7
+      ]
+    },
+    "campi": [
+      "results.driverId",
+      "results.statusId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 427,
+    "denominatore": 5940,
+    "rarita": 0.07188552188552189,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.35
+  },
+  {
+    "eventId": "pilota_con_almeno_n_soste",
+    "nome": "Un pilota ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota ha fatto almeno N soste ai box in questa gara.",
+    "parametri": {
+      "N": 5
+    },
+    "parametriDisponibili": {
+      "N": [
+        4,
+        5,
+        7
+      ]
+    },
+    "campi": [
+      "results.driverId",
+      "results.statusId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 120,
+    "denominatore": 5940,
+    "rarita": 0.020202020202020204,
+    "siccitaGareCorrente": 26,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Autódromo José Carlos Pace",
+    "pesoEditoriale": 0.35
+  },
+  {
+    "eventId": "pilota_con_almeno_n_soste",
+    "nome": "Un pilota ha fatto almeno N soste",
+    "famiglia": "strategia",
+    "unita": "RISULTATO",
+    "descrizione": "Un pilota ha fatto almeno N soste ai box in questa gara.",
+    "parametri": {
+      "N": 7
+    },
+    "parametriDisponibili": {
+      "N": [
+        4,
+        5,
+        7
+      ]
+    },
+    "campi": [
+      "results.driverId",
+      "results.statusId",
+      "pit_stops.stop"
+    ],
+    "annoDa": 2011,
+    "annoA": 2024,
+    "occorrenze": 3,
+    "denominatore": 5940,
+    "rarita": 0.000505050505050505,
+    "siccitaGareCorrente": 33,
+    "siccitaAnniCorrente": 1,
+    "ultimaOccorrenza": "2023 Circuit Park Zandvoort",
+    "pesoEditoriale": 0.35
+  }
+]

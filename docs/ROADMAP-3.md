@@ -251,11 +251,25 @@ attesi per almeno 12 eventi, con i numeri presi da docs/CATALOGO-EVENTI.md
 
 Dipende da: E2.1
 
-- [ ] Prompt eseguito
-- [ ] I file di `public/data/events/` esistono e rispettano il budget di
-      300 KB per evento
-- [ ] `public/data/facts/` copre tutte le 1125 gare
-- [ ] `params.json` esteso, senza rompere quello che `/methodology` già legge
+- [x] Prompt eseguito
+- [x] I file di `public/data/events/` esistono e rispettano il budget di
+      300 KB per evento — **28/28 file, tutti sotto i 300 KB**.
+      `ritiro_per_causa_specifica.json` (8 valori di parametro, 6.514
+      occorrenze sommate) sforava anche dopo il primo troncamento
+      (raceId/anno/circuitRef, 422,8 KB); risolto tenendo solo `raceId`
+      nelle occorrenze troncate (anno e circuito si risalgono da
+      `races-index.json`, gia' la fonte canonica raceId -> anno/circuito):
+      ora 166,6 KB
+- [x] `public/data/facts/` copre tutte le 1125 gare — **bug trovato e
+      corretto in corsa**: 4 coppie (anno, circuitRef) si scontravano
+      silenziosamente (calendario Covid 2020/2021 con due gare sullo
+      stesso circuito nella stessa stagione: Red Bull Ring, Silverstone,
+      Bahrain), il file della prima gara veniva sovrascritto dalla
+      seconda. Risolto aggiungendo `-r<round>` al nome file dalla seconda
+      collisione in poi; verificato che ora ci siano davvero 1125 file
+- [x] `params.json` esteso, senza rompere quello che `/methodology` già
+      legge — le 14 chiavi originali di `build_all.py` sono intatte,
+      aggiunta solo la chiave `eventi` (pesi di notevolezza + trappole)
 - [ ] Diff letto, commit e push
 
 **Prompt da copiare:**

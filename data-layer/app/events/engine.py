@@ -34,16 +34,32 @@ class EventResult:
     circuito_top_conteggio: int
 
 
+# Cache di event.osservazioni(dataset) per (id(dataset), event.id): costruire
+# l'universo delle osservazioni (scandire tutte le gare/risultati della
+# finestra) e' la parte costosa, e NON dipende dai parametri — un evento con
+# 4 valori di N rifarebbe altrimenti la stessa scansione 4 volte. Valida
+# finche' lo stesso oggetto Dataset viene riusato senza essere ricostruito
+# (vedi la stessa tecnica in notability.py per le statistiche del catalogo).
+_cache_osservazioni: Dict[Any, List[Observation]] = {}
+
+
+def _osservazioni_cached(dataset: Dataset, event: EventDefinition) -> List[Observation]:
+    chiave = (id(dataset), event.id)
+    if chiave not in _cache_osservazioni:
+        _cache_osservazioni[chiave] = event.osservazioni(dataset)
+    return _cache_osservazioni[chiave]
+
+
 def occurrences(dataset: Dataset, event: EventDefinition, **params: Any) -> List[Observation]:
     """Le sole osservazioni della finestra di `event` in cui il predicato è
     vero. Usata sia da `evaluate` sia da `metrics.py`/`notability.py`, così
     la nozione di "occorrenza" resta una sola in tutto il motore."""
-    osservazioni: List[Observation] = event.osservazioni(dataset)
+    osservazioni: List[Observation] = _osservazioni_cached(dataset, event)
     return [o for o in osservazioni if event.predicate(o.payload, **params)]
 
 
 def evaluate(dataset: Dataset, event: EventDefinition, **params: Any) -> EventResult:
-    denominatore = len(event.osservazioni(dataset))
+    denominatore = len(_osservazioni_cached(dataset, event))
     occorse = occurrences(dataset, event, **params)
     occorrenze = len(occorse)
     rarita = occorrenze / denominatore if denominatore else None

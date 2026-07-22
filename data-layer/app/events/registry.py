@@ -13,8 +13,9 @@ definizioni; `catalog.py` le usa per dichiarare gli eventi del catalogo.
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, Iterator, List, Sequence
 
 
 class Unit:
@@ -110,6 +111,21 @@ def evento(
 
 def all_events() -> List[EventDefinition]:
     return list(_REGISTRY.values())
+
+
+def parameter_combinations(event: EventDefinition) -> Iterator[Dict[str, Any]]:
+    """Il prodotto cartesiano delle griglie di parametri dell'evento (nel
+    catalogo attuale ce n'e' al piu' uno per evento, ma qui si generalizza
+    a N parametri senza dover cambiare `engine.py`/`notability.py`/
+    `build_events.py` quando servira'). Un evento senza parametri produce
+    una sola combinazione vuota."""
+    if not event.parametri:
+        yield {}
+        return
+    nomi = [p.name for p in event.parametri]
+    griglie = [p.values for p in event.parametri]
+    for combo in itertools.product(*griglie):
+        yield dict(zip(nomi, combo))
 
 
 def get_event(event_id: str) -> EventDefinition:

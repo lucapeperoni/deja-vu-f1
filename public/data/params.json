@@ -15,5 +15,36 @@
     "trafficFraction": 0.6,
     "gapBehind": 0.4
   },
-  "minSamplesForTyreRegression": 20
+  "minSamplesForTyreRegression": 20,
+  "eventi": {
+    "pesiNotevolezza": {
+      "rarita": 0.4,
+      "siccita": 0.3,
+      "pesoEditoriale": 0.3
+    },
+    "trappole": {
+      "indy500": {
+        "descrizione": "Le gare a Indianapolis 1950-1960 erano la 500 Miglia, valida per il mondiale ma non una gara di Formula 1: escluse dalla finestra di ogni evento salvo dove esplicitamente richiesto (es. races-index.json, che è un indice di navigazione, non un denominatore).",
+        "circuitRef": "indianapolis",
+        "annoDa": 1950,
+        "annoA": 1960
+      },
+      "tassonomiaRitiri": {
+        "descrizione": "Ogni statusId è mappato esplicitamente (non con euristiche sulle stringhe) in una delle 5 categorie: CLASSIFICATO, NON_QUALIFICATO, NON_PARTITO, RITIRO_TECNICO, RITIRO_INCIDENTE.",
+        "categorie": [
+          "CLASSIFICATO",
+          "NON_QUALIFICATO",
+          "NON_PARTITO",
+          "RITIRO_TECNICO",
+          "RITIRO_INCIDENTE"
+        ]
+      },
+      "gridZero": {
+        "descrizione": "grid == 0 non è la posizione zero: se il pilota ha preso il via è una partenza dalla pit lane (categoria a sé), altrimenti il pilota non è mai partito."
+      },
+      "campiVuoti": {
+        "descrizione": "\\N nei CSV Ergast diventa None, mai 0: le unità con un campo mancante escono dal denominatore dell'evento invece di essere contate come 'non è successo'."
+      }
+    }
+  }
 }
