@@ -82,6 +82,25 @@ function paramsKey(parametri: Record<string, number | string>): string {
   return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+// Stesso algoritmo di slug di build_events.py (_costruisci_file_fatti) e di
+// src/app/gara/[raceSlug]/page.tsx: "<anno>-<circuitRef>", con "-r<round>"
+// per le 4 coppie di gare 2020/2021 che condividono anno+circuito
+// (calendario Covid) — senza questo, il link a un'occorrenza di una di
+// quelle 4 gare punta a uno slug che non esiste più (rinominato per evitare
+// la collisione) e la scheda gara risponde 404.
+function buildSlugByRaceId(races: RaceIndexEntry[]): Map<number, string> {
+  const sorted = [...races].sort((a, b) => a.data.localeCompare(b.data));
+  const used = new Set<string>();
+  const slugByRaceId = new Map<number, string>();
+  for (const r of sorted) {
+    const base = `${r.anno}-${r.circuitRef}`;
+    const slug = used.has(base) ? `${base}-r${r.round}` : base;
+    used.add(base);
+    slugByRaceId.set(r.raceId, slug);
+  }
+  return slugByRaceId;
+}
+
 // I pagliati coinvolti in un'occorrenza compaiono con chiavi diverse a
 // seconda della forma del payload (sezione 6, _descrivi_payload in
 // build_events.py): un Result singolo -> driverId, una coppia -> driverId1
@@ -125,6 +144,7 @@ export default async function EventoPage({
   const detail = readJson<EventDetailFile>("public", "data", "events", `${eventId}.json`);
   const racesIndex = readJson<RaceIndexEntry[]>("public", "data", "races-index.json");
   const raceById = new Map(racesIndex.map((r) => [r.raceId, r]));
+  const slugByRaceId = buildSlugByRaceId(racesIndex);
 
   // Coordinate dei circuiti (vista 4, sezione 5.3): esportate a parte da
   // data-layer/scripts/build_circuits_geo.py, che legge data/raw/circuits.csv
@@ -173,7 +193,7 @@ export default async function EventoPage({
         raceId,
         anno,
         circuitRef,
-        raceSlug: race ? `${race.anno}-${race.circuitRef}` : null,
+        raceSlug: race ? slugByRaceId.get(raceId) ?? null : null,
         nomeGara: race?.nomeGara ?? null,
         nomeCircuito: race?.nomeCircuito ?? null,
         round: race?.round ?? null,

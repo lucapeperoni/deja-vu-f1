@@ -420,7 +420,7 @@ export default function CompositoreClient({
                       <td className="px-3 py-2 text-white">{occ.anno}</td>
                       <td className="px-3 py-2">
                         {occ.raceSlug ? (
-                          <Link href={`/race/${occ.raceSlug}`} className="text-racing-red hover:underline">
+                          <Link href={`/gara/${occ.raceSlug}`} className="text-racing-red hover:underline">
                             {occ.nomeGara ?? occ.raceSlug}
                           </Link>
                         ) : (
