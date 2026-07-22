@@ -2,11 +2,13 @@
 Definizione dichiarativa di un evento (docs/PROGETTAZIONE.md sezione 5.1).
 
 Un evento e': un identificatore, un nome in italiano, una famiglia, l'unita'
-di osservazione, una funzione che seleziona le osservazioni valide nella sua
-finestra di copertura (`osservazioni`), un predicato booleano valutato su
-ognuna (`predicate`), i parametri con la loro griglia di valori, la finestra
-di copertura e un peso editoriale 0-1. Il decoratore `@evento` registra le
-definizioni; `catalog.py` le usa per dichiarare i 6 eventi dello spike.
+di osservazione, i campi CSV da cui dipende (`campi` — trappola 3 di
+PROGETTAZIONE §5.6: "ogni evento deve dichiarare da quali campi dipende"),
+una funzione che seleziona le osservazioni valide nella sua finestra di
+copertura (`osservazioni`), un predicato booleano valutato su ognuna
+(`predicate`), i parametri con la loro griglia di valori, la finestra di
+copertura e un peso editoriale 0-1. Il decoratore `@evento` registra le
+definizioni; `catalog.py` le usa per dichiarare gli eventi del catalogo.
 """
 
 from __future__ import annotations
@@ -46,6 +48,7 @@ class EventDefinition:
     nome: str
     famiglia: str
     unita: str
+    campi: List[str]
     osservazioni: Callable[[Any], List[Any]]
     predicate: Callable[..., bool]
     parametri: List[ParameterSpec] = field(default_factory=list)
@@ -64,6 +67,7 @@ def evento(
     nome: str,
     famiglia: str,
     unita: str,
+    campi: List[str],
     osservazioni: Callable[[Any], List[Any]],
     parametri: List[ParameterSpec] = None,
     anno_da: int = 1950,
@@ -71,16 +75,26 @@ def evento(
     peso_editoriale: float = 0.5,
     descrizione: str = "",
 ):
-    """Decoratore: registra `fn` (il predicato) come evento `id` del catalogo."""
+    """Decoratore: registra `fn` (il predicato) come evento `id` del catalogo.
+
+    `campi` e' obbligatorio (nessun default): elenca le colonne CSV
+    ("tabella.colonna") da cui l'evento dipende, cosi' e' visibile a colpo
+    d'occhio quali eventi si appoggiano a un campo con molti valori
+    mancanti (es. `results.milliseconds`, vuoto nel 71% dei risultati) —
+    trappola 3 di PROGETTAZIONE.md sezione 5.6.
+    """
 
     def decorator(fn: Callable[..., bool]) -> Callable[..., bool]:
         if id in _REGISTRY:
             raise ValueError(f"evento duplicato: {id}")
+        if not campi:
+            raise ValueError(f"evento '{id}': 'campi' non puo' essere vuoto")
         _REGISTRY[id] = EventDefinition(
             id=id,
             nome=nome,
             famiglia=famiglia,
             unita=unita,
+            campi=list(campi),
             osservazioni=osservazioni,
             predicate=fn,
             parametri=parametri or [],

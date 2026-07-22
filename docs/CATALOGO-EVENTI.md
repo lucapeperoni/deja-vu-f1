@@ -297,6 +297,69 @@ Terza ondata (la parte che impressiona):
     ordinati per rarità. Il giornalista apre il GP e trova già scritto
     "3ª volta dal 1950".
 
+## 13. E2.1 — Il catalogo esteso a 28 eventi: confronto con le trappole
+
+`data-layer/app/events/catalog.py` implementa 28 eventi in 8 famiglie
+(soglia minima 20/5 superata). Per ogni evento nuovo, il numero grezzo di
+questo documento coincide **esattamente** una volta ricalcolato includendo
+l'Indy 500 (per isolare l'effetto della sola trappola 1), poi la trappola
+si riapplica e il numero cambia in modo spiegabile. Verificato in
+`data-layer/tests/test_catalog.py` (26 test, 20 eventi distinti, tutti
+passano).
+
+**Coincidenze esatte** (grezzo del documento = motore con Indy 500 inclusa):
+
+| Evento | Grezzo (documento) | Con trappole |
+|---|---:|---:|
+| Podio partendo 15° o peggio | 75 | **69** |
+| Primo podio in carriera | 216 | **191** |
+| Prima vittoria assoluta di un costruttore | 47 | **43** |
+| Prima vittoria del pilota su quel circuito | 687 | **677** |
+| Vittoria al debutto assoluto | 3 | **2** |
+| Rimonta ≥10 posizioni | 1750 | **1668** |
+| Rimonta ≥15 posizioni | 352 | **304** |
+| Rimonta ≥20 posizioni | 33 | **18** |
+| Ritiro per causa "Motore" | 2026 | **2001** |
+| Ritiro per causa "Incidente" | 1062 | **1015** |
+| Ritiro per causa "Collisione" | 854 | **854** (zero collisioni multi-vettura all'Indy 500: gara ovale, non un circuito stradale) |
+| Ritiro per causa "Cambio" | 810 | **809** |
+| Ritiro per causa "Testacoda" | 795 | **781** |
+| Ritiro per causa "Sospensione" | 431 | **427** |
+| Ritiro per causa "Trasmissione" | 321 | **311** |
+| Ritiro per causa "Elettrico" | 316 | **316** (stesso motivo: nessun guasto elettrico registrato all'Indy 500) |
+| Gare con ≥5 piloti diversi al comando | 33 | **33** (nessuna gara Indy 500 nella finestra 1996+) |
+| Vincitore con ≥3/4/5 soste | 63 / 18 / 4 | **63 / 18 / 4** (2011-2024 non si sovrappone all'Indy 500) |
+| Pilota con ≥4/5/7 soste | 427 / 120 / 3 | **427 / 120 / 3** (idem) |
+| Causa di ritiro non vista da anni (4 esempi qualitativi) | Frizione 2014 Bahrain, Accensione 2002 Francia, Semiasse 2001 Germania, Finito il carburante 2019 Bahrain | **tutti e 4 confermati** |
+
+Il "doppio ritiro dello stesso team (qualunque causa)" (2964 grezzo) torna
+**2311** con le trappole, stesso conto già spiegato in sezione 4.
+
+**Piccoli residui non spiegati** (poche gare di differenza, anche
+includendo l'Indy 500 — quindi non è la trappola 1 a causarli):
+
+| Evento | Grezzo (documento) | Motore, Indy 500 inclusa | Scarto |
+|---|---:|---:|---:|
+| Nessuno dei primi 3 in griglia sul podio | 78 | 82 | +4 |
+| Podio al debutto assoluto | 21 | 23 | +2 |
+| Doppietta 1-2 dello stesso team | 316 | 318 | +2 |
+| Pole finita con un ritiro | 284 | 282-283 (a seconda se "ritiro" è la tassonomia stretta o ampia) | −1/−2 |
+| Prima pole in carriera | 110 | 105 | −5 (possibile causa: qui "pole" è approssimata con `grid == 1`, che dal 1994 può divergere dalla vera posizione di qualifica quando ci sono penalità in griglia — non verificato) |
+
+**Un punto aperto, non piccolo — segnalato invece di nascosto:**
+"Vittoria conquistata all'ultimo giro": il documento dichiara **6** (ultima
+Abu Dhabi 2021), il motore ne trova **12** nella stessa finestra
+(1996-2024), e **non è un effetto dell'Indy 500** (fuori da quella
+finestra). Controllando a mano le 12 gare trovate, almeno 5 corrispondono
+a sorpassi per la vittoria all'ultimo giro storicamente documentati e noti
+(Abu Dhabi 2021, Canada 2011 - rimonta di Button, Austria 2016 - Rosberg
+largo all'ultima curva, USA 2002 - scambio Ferrari all'ultima curva,
+Nürburgring 2005 - Räikkönen out con la sospensione mentre comandava),
+il che suggerisce che il numero **6** del documento sia un sottoinsieme
+curato o incompleto piuttosto che il motore sia sbagliato — ma non è una
+prova, e non è stato risolto. Da verificare gara per gara prima di usare
+questo evento in `/methodology`.
+
 ## Script usati
 
 Gli script esplorativi che hanno prodotto questi numeri sono materiale di

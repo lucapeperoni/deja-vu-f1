@@ -353,3 +353,22 @@ def load_lap_leaders(raw_dir: Path = RAW_DIR) -> Dict[int, List[Tuple[int, int]]
     for race_id, entries in leaders_by_race.items():
         entries.sort(key=lambda e: e[0])
     return leaders_by_race
+
+
+def load_pit_stop_counts(raw_dir: Path = RAW_DIR) -> Dict[Tuple[int, int], int]:
+    """Numero di soste per (raceId, driverId), da pit_stops.csv (2011-2024).
+
+    Caricato a parte da `load_dataset` per lo stesso motivo di
+    `load_lap_leaders`: serve solo alla famiglia STRATEGIA (finestra
+    2011+). Una chiave assente significa "questa gara non e' coperta da
+    pit_stops.csv", non "zero soste" — è compito di chi consuma questo
+    dizionario controllare la copertura della gara (vedi
+    `_gare_con_pit_stops` in catalog.py) prima di leggere 0 per un pilota
+    che semplicemente non e' in questo dizionario.
+    """
+    conteggio: Dict[Tuple[int, int], int] = {}
+    with open(raw_dir / "pit_stops.csv", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            chiave = (int(row["raceId"]), int(row["driverId"]))
+            conteggio[chiave] = conteggio.get(chiave, 0) + 1
+    return conteggio

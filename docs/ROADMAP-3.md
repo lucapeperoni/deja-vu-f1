@@ -199,11 +199,19 @@ il problema è il numero di eventi o la formula del punteggio.
 
 Dipende da: E1.2
 
-- [ ] Prompt eseguito
-- [ ] Almeno **20 eventi** in almeno **5 famiglie** (soglia di
-      PROGETTAZIONE §10, rischio 2)
-- [ ] Ogni evento dichiara la sua finestra e i campi da cui dipende
-- [ ] Esiste un test che confronta i conteggi con `CATALOGO-EVENTI.md`
+- [x] Prompt eseguito
+- [x] Almeno **20 eventi** in almeno **5 famiglie** (soglia di
+      PROGETTAZIONE §10, rischio 2) — **28 eventi in 8 famiglie**
+- [x] Ogni evento dichiara la sua finestra e i campi da cui dipende —
+      `EventDefinition.campi` (registry.py) è ora obbligatorio (il
+      decoratore `@evento` alza `ValueError` se `campi` è vuoto); tutti i
+      28 eventi di `catalog.py` dichiarano le colonne CSV esatte da cui
+      dipendono (es. `results.milliseconds`, vuoto nel 71% dei risultati,
+      compare solo negli eventi di margine)
+- [x] Esiste un test che confronta i conteggi con `CATALOGO-EVENTI.md` —
+      `tests/test_catalog.py`, 26 test su 20 eventi distinti (sopra la
+      soglia minima di 12), tutti passano (verificato con un venv nuovo in
+      `data-layer/.venv`: pytest non era installato in questa sessione)
 - [ ] Diff letto, commit e push
 
 **Prompt da copiare:**
