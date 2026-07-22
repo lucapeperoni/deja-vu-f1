@@ -146,13 +146,26 @@ i numeri.
 
 Dipende da: E1.1
 
-- [ ] Prompt eseguito
-- [ ] Per almeno 3 gare di anni diversi il sistema stampa i fatti notevoli
-      ordinati
-- [ ] I fatti prodotti sono **veri e non ovvi**: controllati a mano uno per
-      uno su almeno una gara
-- [ ] Se il generatore produce solo banalità con 6 eventi, è atteso — la
-      decisione se serve più segnale è presa qui, non a E3
+- [x] Prompt eseguito
+- [x] Per almeno 3 gare di anni diversi il sistema stampa i fatti notevoli
+      ordinati — 4 gare in `scripts/spike_facts.py` (1957, 1996, 2024 ×2,
+      compresa la più recente del dataset)
+- [x] I fatti prodotti sono **veri e non ovvi**: controllati a mano uno per
+      uno su Monaco 1996 (4 fatti) contro i dati grezzi — 3 classificati su
+      22 confermato, vincitore Olivier Panis partito 14° confermato, prima
+      (e unica) vittoria in carriera di Panis confermata, doppio ritiro per
+      la stessa causa confermato su 3 team di quella gara. Tutti veri, e il
+      primo (meno di 6 classificati) non è affatto ovvio senza lo strumento
+- [x] Se il generatore produce solo banalità con 6 eventi, è atteso — la
+      decisione se serve più segnale è presa qui, non a E3 — **decisione
+      presa**: il segnale povero (es. Abu Dhabi 2024 con 1 solo fatto) è
+      un problema di copertura del catalogo (si risolve in E2, 20+ eventi),
+      non della formula di notevolezza, che ordina bene quando ha
+      materiale (Monaco 1996). Trovato e corretto in questa fase un difetto
+      indipendente dal numero di eventi: le famiglie di soglie monotone
+      (es. "vittoria da griglia" N∈{5,10,15,20}) generavano fatti duplicati
+      per la stessa occorrenza; ora `notability.py` tiene solo la soglia
+      più stringente per evento
 - [ ] Diff letto, commit e push
 
 **Prompt da copiare:**

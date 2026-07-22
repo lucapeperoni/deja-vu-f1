@@ -34,11 +34,17 @@ class EventResult:
     circuito_top_conteggio: int
 
 
-def evaluate(dataset: Dataset, event: EventDefinition, **params: Any) -> EventResult:
+def occurrences(dataset: Dataset, event: EventDefinition, **params: Any) -> List[Observation]:
+    """Le sole osservazioni della finestra di `event` in cui il predicato è
+    vero. Usata sia da `evaluate` sia da `metrics.py`/`notability.py`, così
+    la nozione di "occorrenza" resta una sola in tutto il motore."""
     osservazioni: List[Observation] = event.osservazioni(dataset)
-    denominatore = len(osservazioni)
+    return [o for o in osservazioni if event.predicate(o.payload, **params)]
 
-    occorse = [o for o in osservazioni if event.predicate(o.payload, **params)]
+
+def evaluate(dataset: Dataset, event: EventDefinition, **params: Any) -> EventResult:
+    denominatore = len(event.osservazioni(dataset))
+    occorse = occurrences(dataset, event, **params)
     occorrenze = len(occorse)
     rarita = occorrenze / denominatore if denominatore else None
 
