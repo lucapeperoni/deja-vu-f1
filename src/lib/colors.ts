@@ -234,3 +234,68 @@ export function teamLabel(team: string | null | undefined): string {
   if (!team) return "—";
   return TEAM_LABELS[team] ?? team;
 }
+
+// Palette per FAMIGLIA del catalogo eventi (v3, docs/PROGETTAZIONE.md,
+// sezione 7, "regola vincolante sul colore": il colore codifica SEMPRE la
+// famiglia — variabile nominale — mai la rarità, che è quantitativa e va
+// sulla posizione. Convenzione fissata qui perché la home (vista 1) è la
+// prima vista v3 e tutte le viste successive (compositore, striscia
+// storica, mappa) devono riusare questa stessa palette per famiglia.
+//
+// Base: la palette qualitativa di Paul Tol "muted" (9 tinte, pensata per
+// restare distinguibile fino a ~9-12 classi categoriali sotto protanopia/
+// deuteranopia/tritanopia — a differenza di Okabe-Ito, che ne offre solo
+// 8 in tutto). Una tinta (il "sand" #DDCC77) è stata scartata perché troppo
+// vicina al giallo già assegnato a "neutralizzazioni" qui sotto.
+//
+// "neutralizzazioni" non prende una tinta Tol: riusa
+// NEUTRALIZATION_ACCENT_COLOR, lo stesso giallo-bandiera già usato in tutto
+// il sito (v2) per quella famiglia — stesso significato, stesso colore,
+// invece di una nona tinta arbitraria che avrebbe introdotto un'ambiguità
+// con un accento già noto.
+export type EventFamily =
+  | "griglia_e_risultato"
+  | "margine"
+  | "gare_anomale"
+  | "team"
+  | "carriera"
+  | "ritiri"
+  | "comando_in_pista"
+  | "strategia"
+  | "neutralizzazioni";
+
+export const FAMILY_COLORS: Record<EventFamily, string> = {
+  griglia_e_risultato: "#332288", // indigo
+  margine: "#117733", // verde
+  gare_anomale: "#88CCEE", // ciano
+  team: "#882255", // vinaccia
+  carriera: "#44AA99", // verde acqua
+  ritiri: "#999933", // oliva
+  comando_in_pista: "#AA4499", // porpora
+  strategia: "#CC6677", // rosa antico
+  neutralizzazioni: NEUTRALIZATION_ACCENT_COLOR, // giallo, riuso dell'accento v2
+};
+
+export const FAMILY_LABELS: Record<EventFamily, string> = {
+  griglia_e_risultato: "Griglia e risultato",
+  margine: "Margine",
+  gare_anomale: "Gare anomale",
+  team: "Team",
+  carriera: "Carriera",
+  ritiri: "Ritiri",
+  comando_in_pista: "Comando in pista",
+  strategia: "Strategia",
+  neutralizzazioni: "Neutralizzazioni",
+};
+
+export function familyColor(famiglia: string): string {
+  return FAMILY_COLORS[famiglia as EventFamily] ?? DEFAULT_LINE_COLOR;
+}
+
+export function familyLabel(famiglia: string): string {
+  return FAMILY_LABELS[famiglia as EventFamily] ?? famiglia;
+}
+
+export const FAMILY_LEGEND: { key: EventFamily; label: string; color: string }[] = (
+  Object.keys(FAMILY_COLORS) as EventFamily[]
+).map((key) => ({ key, label: FAMILY_LABELS[key], color: FAMILY_COLORS[key] }));
