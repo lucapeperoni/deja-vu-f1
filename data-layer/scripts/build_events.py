@@ -310,6 +310,20 @@ def _estendi_params(dataset: Dataset) -> None:
     else:
         params = {}
 
+    tutti_i_risultati = [r for lista in dataset.results_by_race.values() for r in lista]
+    numero_risultati = len(tutti_i_risultati)
+    numero_indy500 = sum(1 for r in dataset.races.values() if r.is_indy500)
+    numero_position_vuota = sum(1 for r in tutti_i_risultati if r.position is None)
+    # "Did not qualify" (statusId 81) e' un solo statusId dentro la categoria
+    # piu' ampia NON_QUALIFICATO (che include anche 107% Rule e Did not
+    # prequalify): il numero citato in CATALOGO-EVENTI.md sezione 11 e'
+    # specificamente questo statusId, non l'intera categoria.
+    numero_did_not_qualify = sum(
+        1
+        for r in tutti_i_risultati
+        if dataset.status_by_id[r.status_id].name == "Did not qualify"
+    )
+
     params["eventi"] = {
         "pesiNotevolezza": {
             "rarita": PESO_RARITA,
@@ -328,6 +342,7 @@ def _estendi_params(dataset: Dataset) -> None:
                 "circuitRef": "indianapolis",
                 "annoDa": 1950,
                 "annoA": 1960,
+                "numeroGare": numero_indy500,
             },
             "tassonomiaRitiri": {
                 "descrizione": (
@@ -343,6 +358,7 @@ def _estendi_params(dataset: Dataset) -> None:
                     "RITIRO_TECNICO",
                     "RITIRO_INCIDENTE",
                 ],
+                "numeroDidNotQualify": numero_did_not_qualify,
             },
             "gridZero": {
                 "descrizione": (
@@ -356,6 +372,17 @@ def _estendi_params(dataset: Dataset) -> None:
                     "\\N nei CSV Ergast diventa None, mai 0: le unità con "
                     "un campo mancante escono dal denominatore dell'evento "
                     "invece di essere contate come 'non è successo'."
+                ),
+                "numeroRisultati": numero_risultati,
+                "numeroPositionVuota": numero_position_vuota,
+                "percentualePositionVuota": round(100 * numero_position_vuota / numero_risultati, 1),
+            },
+            "puntiNonComparabili": {
+                "descrizione": (
+                    "Il sistema di punteggio è cambiato più volte dal 1950: "
+                    "i confronti in punti sono validi solo dentro la stessa "
+                    "era, o vanno normalizzati, mai confrontati grezzi tra "
+                    "epoche diverse."
                 ),
             },
         },
