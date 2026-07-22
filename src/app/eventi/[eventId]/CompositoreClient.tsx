@@ -18,6 +18,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ParameterRarityTrack, { type ParameterVariantPoint } from "@/components/charts/ParameterRarityTrack";
+import QuandoStrip from "@/components/charts/QuandoStrip";
+import DoveMappa from "@/components/charts/DoveMappa";
 import {
   formatDrought,
   formatRarityPercent,
@@ -25,6 +27,8 @@ import {
   parameterSuffix,
   unitLabel,
   type CatalogEventEntry,
+  type CircuitGeo,
+  type CircuitStat,
 } from "@/lib/eventCatalog";
 import { FAMILY_LEGEND, familyColor, familyLabel, PIT_CONTEXT_LABELS } from "@/lib/colors";
 
@@ -41,14 +45,14 @@ export interface EnrichedOccurrence {
 
 export interface ParameterVariant extends CatalogEventEntry {
   occorrenzeDettaglio: EnrichedOccurrence[];
-  perStagione?: Record<string, number>;
-  perCircuito?: Record<string, number>;
+  perStagione: Record<string, number>;
+  perCircuito: CircuitStat[];
 }
 
 // Lo stato condiviso che le viste 3 (quando), 4 (dove) e 5 (griglia×arrivo)
-// riceveranno da qui una volta agganciate: l'evento corrente con i SUOI
-// parametri correnti già dentro (CatalogEventEntry porta .parametri), più
-// un filtro anni opzionale che vista 3 potrà pilotare con un brush.
+// ricevono da qui: l'evento corrente con i SUOI parametri correnti già
+// dentro (CatalogEventEntry porta .parametri), più un filtro anni opzionale
+// che vista 3 pilota con un brush e che filtra anche la tabella e la vista 4.
 export interface CompositoreSharedState {
   currentEvent: CatalogEventEntry;
   yearFilter: [number, number] | null;
@@ -59,6 +63,7 @@ interface Props {
   catalogEvents: CatalogEventEntry[];
   eventId: string;
   variants: ParameterVariant[];
+  circuitsGeo: CircuitGeo[];
 }
 
 const PAGE_SIZE = 50;
@@ -80,7 +85,7 @@ function formatParamValue(paramKey: string, value: number | string): string {
   return String(value);
 }
 
-export default function CompositoreClient({ catalogEvents, eventId, variants }: Props) {
+export default function CompositoreClient({ catalogEvents, eventId, variants, circuitsGeo }: Props) {
   const router = useRouter();
   const base = variants[0];
 
@@ -135,6 +140,11 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
     setVisibleRows(PAGE_SIZE);
   }
 
+  function handleYearFilterChange(range: [number, number] | null) {
+    setYearFilter(range);
+    setVisibleRows(PAGE_SIZE);
+  }
+
   const eventsInFamily = catalogEvents.filter((e) => e.famiglia === selectedFamily);
 
   const trackPoints: ParameterVariantPoint[] = orderedVariants.map((v) => ({
@@ -145,8 +155,30 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
   }));
   const currentKey = paramsKey(currentVariant.parametri);
 
+  // Filtro anni condiviso (brush di vista 3): filtra la tabella e ricalcola
+  // il conteggio per circuito di vista 4. Il tasso di vista 4 resta invece
+  // sul denominatore dell'intera finestra dell'evento — non sappiamo quante
+  // gare ogni circuito ha ospitato nel solo sotto-intervallo selezionato,
+  // il dato non c'è — DoveMappa lo segnala esplicitamente quando filtrato.
+  const filteredOccurrences = useMemo(() => {
+    if (!yearFilter) return currentVariant.occorrenzeDettaglio;
+    return currentVariant.occorrenzeDettaglio.filter((o) => o.anno >= yearFilter[0] && o.anno <= yearFilter[1]);
+  }, [currentVariant.occorrenzeDettaglio, yearFilter]);
+
+  const circuitStatsForMap = useMemo(() => {
+    if (!yearFilter) return currentVariant.perCircuito;
+    const counts = new Map<string, number>();
+    for (const occ of filteredOccurrences) counts.set(occ.circuitRef, (counts.get(occ.circuitRef) ?? 0) + 1);
+    return currentVariant.perCircuito
+      .map((c) => {
+        const occorrenze = counts.get(c.circuitRef) ?? 0;
+        return { ...c, occorrenze, tasso: c.gareOspitate > 0 ? occorrenze / c.gareOspitate : 0 };
+      })
+      .filter((c) => c.occorrenze > 0);
+  }, [currentVariant.perCircuito, filteredOccurrences, yearFilter]);
+
   const sortedOccurrences = useMemo(() => {
-    const rows = [...currentVariant.occorrenzeDettaglio];
+    const rows = [...filteredOccurrences];
     rows.sort((a, b) => {
       const aVal = sort.column === "anno" ? a.anno : `${a.nomeGara ?? ""}${a.anno}`;
       const bVal = sort.column === "anno" ? b.anno : `${b.nomeGara ?? ""}${b.anno}`;
@@ -154,7 +186,7 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
       return sort.direction === "asc" ? cmp : -cmp;
     });
     return rows;
-  }, [currentVariant.occorrenzeDettaglio, sort]);
+  }, [filteredOccurrences, sort]);
 
   function toggleSort(column: "anno" | "gara") {
     setSort((prev) =>
@@ -177,7 +209,7 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
   const sharedState: CompositoreSharedState = {
     currentEvent: currentVariant,
     yearFilter,
-    onYearFilterChange: setYearFilter,
+    onYearFilterChange: handleYearFilterChange,
   };
 
   return (
@@ -279,7 +311,8 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
           </div>
         </section>
 
-        {/* Filtro anni condiviso (stato per le viste 3/4/5, non ancora agganciate) */}
+        {/* Filtro anni condiviso: filtra la tabella e la vista 4, pilotabile
+            anche dal brush di vista 3 qui sotto (sincronizzazione a due vie) */}
         <section className="flex flex-wrap items-end gap-4 mb-8 text-sm">
           <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-neutral-gray">
             Da
@@ -288,7 +321,7 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
               min={yearMin}
               max={effectiveYearFilter[1]}
               value={effectiveYearFilter[0]}
-              onChange={(e) => setYearFilter([Number(e.target.value), effectiveYearFilter[1]])}
+              onChange={(e) => handleYearFilterChange([Number(e.target.value), effectiveYearFilter[1]])}
               className="bg-panel border border-graphite text-white px-3 py-1.5 w-24"
             />
           </label>
@@ -299,24 +332,47 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
               min={effectiveYearFilter[0]}
               max={yearMax}
               value={effectiveYearFilter[1]}
-              onChange={(e) => setYearFilter([effectiveYearFilter[0], Number(e.target.value)])}
+              onChange={(e) => handleYearFilterChange([effectiveYearFilter[0], Number(e.target.value)])}
               className="bg-panel border border-graphite text-white px-3 py-1.5 w-24"
             />
           </label>
           {yearFilter && (
-            <button onClick={() => setYearFilter(null)} className="text-racing-red text-xs uppercase tracking-widest hover:underline">
+            <button
+              onClick={() => handleYearFilterChange(null)}
+              className="text-racing-red text-xs uppercase tracking-widest hover:underline"
+            >
               Reset ({yearMin}-{yearMax})
             </button>
           )}
-          <span className="text-neutral-gray text-xs">
-            Filtro condiviso per le viste 3/4/5 — non ancora agganciate qui sotto, il valore non filtra ancora nulla.
-          </span>
+        </section>
+
+        {/* Vista 3 — Quando */}
+        <section className="mb-8">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white mb-4">Quando</h2>
+          <QuandoStrip
+            entry={currentVariant}
+            perStagione={currentVariant.perStagione}
+            yearFilter={yearFilter}
+            onYearFilterChange={handleYearFilterChange}
+          />
+        </section>
+
+        {/* Vista 4 — Dove */}
+        <section className="mb-8">
+          <h2 className="font-condensed text-2xl font-bold uppercase text-white mb-4">Dove</h2>
+          <DoveMappa
+            entry={currentVariant}
+            perCircuito={circuitStatsForMap}
+            allCircuits={circuitsGeo}
+            isYearFiltered={yearFilter !== null}
+          />
         </section>
 
         {/* Tabella delle occorrenze */}
         <section className="mb-8">
           <h2 className="font-condensed text-2xl font-bold uppercase text-white mb-4">
-            Le occorrenze ({currentVariant.occorrenze})
+            Le occorrenze ({sortedOccurrences.length}
+            {yearFilter ? ` su ${currentVariant.occorrenze}, ${yearFilter[0]}–${yearFilter[1]}` : ""})
           </h2>
           <div className="overflow-x-auto border border-graphite">
             <table className="w-full text-sm text-left">
@@ -366,16 +422,12 @@ export default function CompositoreClient({ catalogEvents, eventId, variants }: 
           )}
         </section>
 
-        {/* Segnaposto per le viste 3/4/5 — layout e stato pronti, non implementate qui */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <PlaceholderSection title="Vista 3 — Quando" note="Striscia storica per stagione, siccità come spazio vuoto." shared={sharedState} />
-          <PlaceholderSection title="Vista 4 — Dove" note="Mappa dei circuiti, conteggio vs tasso per gara ospitata." shared={sharedState} />
-          <PlaceholderSection
-            title="Vista 5 — Griglia × arrivo"
-            note="Nuvola di tutti i risultati, l'evento selezionato evidenziato."
-            shared={sharedState}
-          />
-        </div>
+        {/* Segnaposto per la vista 5 — layout e stato pronti, non implementata qui */}
+        <PlaceholderSection
+          title="Vista 5 — Griglia × arrivo"
+          note="Nuvola di tutti i risultati, l'evento selezionato evidenziato."
+          shared={sharedState}
+        />
       </div>
     </main>
   );

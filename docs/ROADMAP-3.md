@@ -422,13 +422,33 @@ Verifica nel browser e mostrami uno screenshot.
 
 Dipende da: E3.2
 
-- [ ] Prompt eseguito
-- [ ] La siccità si legge come spazio vuoto sulla striscia degli anni
-- [ ] L'interruttore conteggio/tasso nella mappa ribalta la classifica e la
-      cosa è evidente
-- [ ] Il brush sugli anni filtra la mappa e la tabella
-- [ ] Verificata nel browser
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito
+- [x] La siccità si legge come spazio vuoto sulla striscia degli anni
+      (QuandoStrip.tsx) — verificato su "tripletta 1-2-3": il vuoto
+      1961→oggi (63 anni) si vede a colpo d'occhio
+- [x] L'interruttore conteggio/tasso nella mappa ribalta la classifica e la
+      cosa è evidente (DoveMappa.tsx: caption dinamica + colore sequenziale
+      sul metrica scelta, raggio sempre sul conteggio grezzo)
+- [x] Il brush sugli anni filtra la mappa e la tabella (sincronizzazione a
+      due vie con i campi Da/A e il Reset)
+- [x] Verificata nel browser: nessun errore in console, brush/toggle/sort
+      testati su più eventi (comuni, rari, con parametro categoriale)
+- [ ] Diff letto, commit e push — in attesa di conferma esplicita
+
+**Nota (non prevista dal prompt):** `docs/PROGETTAZIONE.md` §5.3 dà per
+scontato che lat/lng dei circuiti siano "già nei JSON esportati" — non lo
+erano: `app/events/loader.py` non porta questi due campi e nessuno script
+li scriveva in `public/data/`. Aggiunto uno script a parte,
+`data-layer/scripts/build_circuits_geo.py` (legge `data/raw/circuits.csv`
+direttamente, non tocca il loader condiviso), che scrive
+`public/data/circuits-geo.json`. Da rieseguire se `circuits.csv` cambia.
+
+**Bug trovato e corretto in verifica:** il tasso (occorrenze/gareOspitate)
+per eventi di unità RISULTATO o TEAM_GARA può superare il 100% (più
+piloti/team nella stessa gara), es. "20,00× per gara" su un evento di pit
+sotto Safety Car — mostrato inizialmente come "2000%", che sembrava un
+errore. Ora il formato dipende dall'unità dell'evento: percentuale solo per
+GARA, rapporto "×per gara" altrimenti (vedi `formatMetric` in DoveMappa.tsx).
 
 **Prompt da copiare:**
 

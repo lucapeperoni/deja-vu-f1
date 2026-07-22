@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { notFound } from "next/navigation";
 import CompositoreClient, { type EnrichedOccurrence, type ParameterVariant } from "./CompositoreClient";
-import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
+import { dedupeToDefaultParams, type CatalogEventEntry, type CircuitGeo, type CircuitStat } from "@/lib/eventCatalog";
 
 // Vista 2 della specifica (docs/PROGETTAZIONE.md, sezione 7): "il
 // compositore di eventi". Nessun backend (sezione 6): tutto già
@@ -20,6 +20,21 @@ interface RaceIndexEntry {
   circuitRef: string;
   nomeCircuito: string;
   isIndy500: boolean;
+}
+
+interface CircuitGeoFile {
+  lat: number;
+  lng: number;
+  nome: string;
+  paese: string;
+}
+
+interface PerCircuitoEntry {
+  circuitRef: string;
+  nome: string;
+  occorrenze: number;
+  gareOspitate: number;
+  tasso: number;
 }
 
 interface EventDetailFile {
@@ -41,7 +56,7 @@ interface EventDetailFile {
     ultimaOccorrenza: string;
     occorrenzeDettaglio: Record<string, unknown>[];
     perStagione?: Record<string, number>;
-    perCircuito?: Record<string, number>;
+    perCircuito?: PerCircuitoEntry[];
   }[];
 }
 
@@ -73,6 +88,19 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
   const detail = readJson<EventDetailFile>("public", "data", "events", `${eventId}.json`);
   const racesIndex = readJson<RaceIndexEntry[]>("public", "data", "races-index.json");
   const raceById = new Map(racesIndex.map((r) => [r.raceId, r]));
+
+  // Coordinate dei circuiti (vista 4, sezione 5.3): esportate a parte da
+  // data-layer/scripts/build_circuits_geo.py, che legge data/raw/circuits.csv
+  // direttamente — non è ancora un campo del motore eventi.
+  const circuitsGeoPath = path.join(process.cwd(), "public", "data", "circuits-geo.json");
+  const circuitsGeoFile: Record<string, CircuitGeoFile> = fs.existsSync(circuitsGeoPath)
+    ? readJson<Record<string, CircuitGeoFile>>("public", "data", "circuits-geo.json")
+    : {};
+  const circuitsGeo: CircuitGeo[] = Object.entries(circuitsGeoFile).map(([circuitRef, geo]) => ({
+    circuitRef,
+    lat: geo.lat,
+    lng: geo.lng,
+  }));
 
   const variants: ParameterVariant[] = detail.perParametro.map((p) => {
     const siccita = siccitaByKey.get(paramsKey(p.parametri));
@@ -113,8 +141,21 @@ export default async function EventoPage({ params }: { params: Promise<{ eventId
       pesoEditoriale: detail.pesoEditoriale,
     };
 
-    return { ...entry, occorrenzeDettaglio, perStagione: p.perStagione, perCircuito: p.perCircuito };
+    const perCircuito: CircuitStat[] = (p.perCircuito ?? []).map((c) => {
+      const geo = circuitsGeoFile[c.circuitRef];
+      return { ...c, lat: geo?.lat ?? null, lng: geo?.lng ?? null };
+    });
+
+    return { ...entry, occorrenzeDettaglio, perStagione: p.perStagione ?? {}, perCircuito };
   });
 
-  return <CompositoreClient key={eventId} catalogEvents={catalogEvents} eventId={eventId} variants={variants} />;
+  return (
+    <CompositoreClient
+      key={eventId}
+      catalogEvents={catalogEvents}
+      eventId={eventId}
+      variants={variants}
+      circuitsGeo={circuitsGeo}
+    />
+  );
 }

@@ -27,6 +27,30 @@ export interface CatalogEventEntry {
   pesoEditoriale: number;
 }
 
+// Occorrenze per circuito di un evento (vista 4, sezione 5.3: "occorrenze
+// per circuito e tasso per gara ospitata"). lat/lng sono null quando il
+// circuito non è in public/data/circuits-geo.json (non dovrebbe succedere
+// per i circuiti reali, ma il dato viene da un export a parte — vedi
+// data-layer/scripts/build_circuits_geo.py — quindi il caso va gestito).
+export interface CircuitStat {
+  circuitRef: string;
+  nome: string;
+  occorrenze: number;
+  gareOspitate: number;
+  tasso: number;
+  lat: number | null;
+  lng: number | null;
+}
+
+// Coordinate di un circuito, indipendenti da un evento specifico: usate
+// come livello di contesto ("tutti i 77 circuiti") sotto ai CircuitStat di
+// un singolo evento nella vista 4.
+export interface CircuitGeo {
+  circuitRef: string;
+  lat: number;
+  lng: number;
+}
+
 // Etichette dell'unità di osservazione (sezione 5.1: gara / risultato
 // pilota×gara / coppia team×gara), usate ovunque si mostri il denominatore
 // della rarità — mai "volte" e basta, sempre "volte su cosa".
