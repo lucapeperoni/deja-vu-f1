@@ -157,6 +157,11 @@ export default function CompositoreClient({
   }));
   const currentKey = paramsKey(currentVariant.parametri);
 
+  // Vista 7: un esempio concreto a cui puntare il link del capitolo
+  // neutralizzazioni — la prima occorrenza con una gara risolvibile
+  // (dovrebbero esserlo tutte, la famiglia copre solo 2023-2024).
+  const firstNeutralizationOccurrence = currentVariant.occorrenzeDettaglio.find((o) => o.raceSlug);
+
   // Filtro anni condiviso (brush di vista 3): filtra la tabella e ricalcola
   // il conteggio per circuito di vista 4. Il tasso di vista 4 resta invece
   // sul denominatore dell'intera finestra dell'evento — non sappiamo quante
@@ -306,6 +311,30 @@ export default function CompositoreClient({
             {formatDrought(currentVariant) && <div className="text-racing-red">{formatDrought(currentVariant)}</div>}
           </div>
         </section>
+
+        {/* Vista 7 (sezione 7 e 5.5): la famiglia neutralizzazioni ha una
+            finestra diversa (2023-2024, fonte OpenF1) da tutto il resto del
+            catalogo (Ergast, 1950-2024) — dichiarato qui, non solo nella
+            finestra numerica sopra, e collegato al capitolo di
+            approfondimento (le viste v2 sotto /race/<slug>). */}
+        {currentVariant.famiglia === "neutralizzazioni" && (
+          <section className="mb-8 bg-racing-red/10 border border-racing-red/30 p-4 text-sm">
+            <p className="text-text-secondary">
+              Questa famiglia viene da OpenF1 (dati giro per giro di Safety Car e Virtual Safety Car), non dai CSV
+              storici Ergast: per questo la sua finestra è solo 2023–2024 (46 gare), molto più corta del resto del
+              catalogo, e non va confrontata in rarità con eventi di altre famiglie.
+            </p>
+            {firstNeutralizationOccurrence && (
+              <Link
+                href={`/race/${firstNeutralizationOccurrence.raceSlug}`}
+                className="inline-block mt-2 text-racing-red hover:underline"
+              >
+                Apri il capitolo neutralizzazioni: {firstNeutralizationOccurrence.nomeGara}{" "}
+                {firstNeutralizationOccurrence.anno} →
+              </Link>
+            )}
+          </section>
+        )}
 
         {/* Filtro anni condiviso: filtra la tabella e la vista 4, pilotabile
             anche dal brush di vista 3 qui sotto (sincronizzazione a due vie) */}

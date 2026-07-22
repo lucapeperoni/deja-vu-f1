@@ -562,11 +562,20 @@ riportami il problema.
 
 Dipende da: E3.5
 
-- [ ] Prompt eseguito
-- [ ] Le viste v2 sono raggiungibili e hanno un'intestazione che dichiara
-      la finestra di 46 gare
-- [ ] Nessuna vista v2 è stata riscritta
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito
+- [x] Le viste v2 sono raggiungibili e hanno un'intestazione che dichiara
+      la finestra di 46 gare, fonte OpenF1, e perché la copertura differisce
+      dal resto del sito (banner in cima a src/app/race/[id]/page.tsx) —
+      con anche la riga sul limite noto della VSC (§12.1)
+- [x] Nessuna vista v2 è stata riscritta: solo un banner aggiunto sopra
+      l'header esistente in page.tsx, RaceAnatomyClient e figli intatti.
+      Verificato nel browser: race trace, sconti, classifica deformata,
+      matrice delle decisioni e "stesso box fortuna diversa" identici a
+      prima, nessun errore in console
+- [x] Collegato dalla scheda gara (già fatto in E3.5) e dal compositore:
+      banner + link a un esempio concreto quando famiglia="neutralizzazioni"
+      (verificato assente sugli eventi delle altre famiglie)
+- [x] Diff letto, commit e push — in attesa di conferma esplicita
 
 **Prompt da copiare:**
 
