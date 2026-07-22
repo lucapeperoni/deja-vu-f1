@@ -340,12 +340,15 @@ neutralizzazioni) e che build_events.py li esporti come tutti gli altri.
 
 Dipende da: E2.2
 
-- [ ] Prompt eseguito
-- [ ] La home mostra tutti gli eventi del catalogo, ordinati per rarità
-- [ ] La finestra di copertura è **visibile**, non solo scritta
-- [ ] Verificata nel browser: nessun errore in console, click su un evento
-      porta al compositore
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito
+- [x] La home mostra tutti gli eventi del catalogo, ordinati per rarità
+- [x] La finestra di copertura è **visibile**, non solo scritta
+- [x] Verificata nel browser: nessun errore in console — ma il click porta
+      a `/eventi/<eventId>` (come dice il prompt copiato sotto), non al
+      compositore: questa riga di checklist e il prompt sono in
+      disaccordo. La scheda evento non esiste ancora, è un 404 atteso
+      finché non viene costruita (E3.2 o un prompt dedicato).
+- [x] Diff letto, commit e push (commit `789216c`)
 
 **Prompt da copiare:**
 
