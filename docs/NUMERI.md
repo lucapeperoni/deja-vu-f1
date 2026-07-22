@@ -137,3 +137,69 @@ Attenzione al segno: qui `posDelta5` positivo significa **guadagno** di posizion
 - **La scelta più perfetta nonostante i numeri contrari**: Oscar Piastri (PIA), Japanese Grand Prix 2023 (`2023-suzuka`), evento 9173-vsc-2 — indice combinato -0.6 (sotto la soglia di margine: condizioni statisticamente sfavorevoli a BOX), eppure +3 posizioni a 5 giri (verdetto GAINED).
   Fonte: `decisions[]` con `choice == "BOX"` e `combinedIndex` sotto la soglia di margine, massimo di `outcome.posDelta5`.
 
+## 9. v3 — il motore di eventi
+
+Numeri del catalogo dichiarativo (`data-layer/app/events/`, `docs/PROGETTAZIONE.md` sezione 5 e 6), generati dalla pipeline `build_events.py` e letti qui direttamente dai JSON esportati in `public/data/events/`, `public/data/facts/` e `public/data/races-index.json` — nessuno di questi numeri e' lo stesso della sezione 1-8 qui sopra (quelle sono il layer v2 delle neutralizzazioni, 46 gare 2023-2024).
+
+### 9.1 Il catalogo, per famiglia (33 eventi distinti, 67 combinazioni evento+parametri)
+
+| Famiglia | Eventi distinti |
+|---|---:|
+| Prime volte e carriere | 6 |
+| Team | 5 |
+| Neutralizzazioni (SC/VSC) | 5 |
+| Griglia e risultato | 4 |
+| Comando in pista | 4 |
+| Gare anomale | 3 |
+| Margine di vittoria | 2 |
+| Cause di ritiro | 2 |
+| Strategia (soste) | 2 |
+
+Fonte: `public/data/events/index.json`, conteggio di `eventId` distinti per `famiglia`.
+
+### 9.2 Copertura del dataset
+
+- **1125 gare**, **26759 risultati**, **75 stagioni** (1950-2024).
+  Fonte: `public/data/races-index.json` (numero di elementi, anni distinti) e `public/data/params.json` (`eventi.trappole.campiVuoti.numeroRisultati`, calcolato in `build_events.py` sul dataset completo).
+
+### 9.3 I 10 eventi più rari
+
+| Evento | Parametri | Occorrenze | Rarità | Finestra |
+|---|---|---:|---:|---|
+| Un pilota ha fatto almeno N soste | N=7 | 3/5940 | 0.051% | 2011-2024 |
+| Vittoria partendo N° o peggio | N=20 | 1/1114 | 0.090% | 1950-2024 |
+| Percentuale di ritiri sopra N% | N=85 | 1/1114 | 0.090% | 1950-2024 |
+| Vittoria con margine oltre N minuti | N=5 | 1/1088 | 0.092% | 1950-2024 |
+| Rimonta di almeno N posizioni | N=20 | 18/15518 | 0.116% | 1950-2024 |
+| Vittoria al debutto assoluto | — | 2/688 | 0.291% | 1950-2024 |
+| Margine di vittoria sotto N secondi | N=0.1 | 5/1088 | 0.460% | 1950-2024 |
+| Podio partendo N° o peggio | N=20 | 20/3360 | 0.595% | 1950-2024 |
+| Vittoria partendo N° o peggio | N=15 | 8/1114 | 0.718% | 1950-2024 |
+| Vittoria con margine oltre N minuti | N=2 | 9/1088 | 0.827% | 1950-2024 |
+
+Fonte: `public/data/events/index.json`, le 10 voci con `rarita` più bassa (occorrenze/denominatore).
+
+### 9.4 Le 5 siccità più lunghe
+
+| Evento | Parametri | Ultima occorrenza | Siccità |
+|---|---|---|---|
+| Vittoria con margine oltre N minuti | N=5 | 1958 Circuito da Boavista | 66 anni (1050 gare) |
+| Tripletta 1-2-3 dello stesso team | — | 1961 Aintree | 63 anni (1026 gare) |
+| Vittoria al debutto assoluto | — | 1961 Reims-Gueux | 63 anni (1027 gare) |
+| Vittoria con margine oltre N minuti | N=2 | 1968 Nürburgring | 56 anni (956 gare) |
+| Vittoria partendo N° o peggio | N=20 | 1983 Long Beach | 41 anni (750 gare) |
+
+Fonte: `public/data/events/index.json`, le 5 voci con `siccitaAnniCorrente` più alta.
+
+### 9.5 Il generatore di fatti notevoli
+
+- **1113 gare su 1125** hanno almeno un fatto notevole (le altre 12 non hanno nessun evento del catalogo occorso, limite di copertura del catalogo — `docs/PROGETTAZIONE.md` sezione 10, rischio 2).
+  Fonte: `public/data/facts/*.json`, conteggio dei file con `fatti` non vuoto.
+- **Mediana di 6 fatti per gara** (sulle 1113 gare con almeno un fatto).
+  Fonte: `public/data/facts/*.json`, mediana della lunghezza dell'array `fatti` sui file non vuoti.
+
+### 9.6 Peso dei JSON esportati
+
+- **3337.4 KB totali** (1161 file: `public/data/events/*.json`, `public/data/facts/*.json`, `public/data/races-index.json`, `public/data/params.json`).
+  Fonte: somma di `Path.stat().st_size` sui file elencati, stesso conteggio stampato a fine esecuzione da `build_events.py`.
+

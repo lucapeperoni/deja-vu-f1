@@ -31,6 +31,21 @@ PUBLIC_DATA_DIR = REPO_ROOT / "public" / "data"
 RAW_DIR = REPO_ROOT / "data" / "raw"
 OUTPUT_PATH = REPO_ROOT / "docs" / "NUMERI.md"
 
+# Famiglie del motore di eventi (docs/PROGETTAZIONE.md sezione 5.1) in
+# ordine di prima comparsa nel catalogo, per una tabella leggibile invece
+# che nell'ordine (arbitrario) in cui compaiono nel JSON.
+FAMIGLIA_LABELS = {
+    "griglia_e_risultato": "Griglia e risultato",
+    "margine": "Margine di vittoria",
+    "gare_anomale": "Gare anomale",
+    "team": "Team",
+    "carriera": "Prime volte e carriere",
+    "ritiri": "Cause di ritiro",
+    "comando_in_pista": "Comando in pista",
+    "strategia": "Strategia (soste)",
+    "neutralizzazioni": "Neutralizzazioni (SC/VSC)",
+}
+
 # Le 3 gare-caso scelte in docs/PROGETTAZIONE.md sezione 9 (select_case_races.py,
 # task 2.2) e raccontate in public/data/stories.json (task 5.1).
 CASE_RACES = ["2023-bahrain", "2024-jeddah", "2023-albert_park"]
@@ -487,6 +502,118 @@ def main():
         )
         w(f"  Fonte: `decisions[]` con `choice == \"BOX\"` e `combinedIndex` sotto la soglia di margine, massimo di `outcome.posDelta5`.")
         w()
+
+    # ------------------------------------------------------------------
+    # 9. v3 — il motore di eventi (docs/PROGETTAZIONE.md sezione 5, 6)
+    # ------------------------------------------------------------------
+    events_index = load_json(PUBLIC_DATA_DIR / "events" / "index.json")
+    races_index = load_json(PUBLIC_DATA_DIR / "races-index.json")
+
+    eventi_per_famiglia: Dict[str, set] = defaultdict(set)
+    for e in events_index:
+        eventi_per_famiglia[e["famiglia"]].add(e["eventId"])
+    n_eventi_distinti = len(set(e["eventId"] for e in events_index))
+
+    n_gare_totali = len(races_index)
+    anni_gare = sorted({r["anno"] for r in races_index})
+    n_risultati_totali = load_json(PUBLIC_DATA_DIR / "params.json")["eventi"]["trappole"]["campiVuoti"][
+        "numeroRisultati"
+    ]
+
+    facts_files = sorted((PUBLIC_DATA_DIR / "facts").glob("*.json"))
+    fatti_per_gara = []
+    for p in facts_files:
+        fatti_per_gara.append(len(load_json(p)["fatti"]))
+    n_gare_con_fatti = sum(1 for n in fatti_per_gara if n > 0)
+    mediana_fatti = median_or_none([n for n in fatti_per_gara if n > 0])
+
+    peso_file = (
+        list((PUBLIC_DATA_DIR / "events").glob("*.json"))
+        + list((PUBLIC_DATA_DIR / "facts").glob("*.json"))
+        + [PUBLIC_DATA_DIR / "races-index.json", PUBLIC_DATA_DIR / "params.json"]
+    )
+    peso_totale_kb = sum(p.stat().st_size for p in peso_file) / 1024
+
+    w("## 9. v3 — il motore di eventi")
+    w()
+    w(
+        "Numeri del catalogo dichiarativo (`data-layer/app/events/`, "
+        "`docs/PROGETTAZIONE.md` sezione 5 e 6), generati dalla pipeline "
+        "`build_events.py` e letti qui direttamente dai JSON esportati in "
+        "`public/data/events/`, `public/data/facts/` e `public/data/races-index.json` "
+        "— nessuno di questi numeri e' lo stesso della sezione 1-8 qui sopra "
+        "(quelle sono il layer v2 delle neutralizzazioni, 46 gare 2023-2024)."
+    )
+    w()
+    w(f"### 9.1 Il catalogo, per famiglia ({n_eventi_distinti} eventi distinti, {len(events_index)} combinazioni evento+parametri)")
+    w()
+    w("| Famiglia | Eventi distinti |")
+    w("|---|---:|")
+    for famiglia, ids in sorted(eventi_per_famiglia.items(), key=lambda kv: -len(kv[1])):
+        label = FAMIGLIA_LABELS.get(famiglia, famiglia)
+        w(f"| {label} | {len(ids)} |")
+    w()
+    w(f"Fonte: `public/data/events/index.json`, conteggio di `eventId` distinti per `famiglia`.")
+    w()
+
+    w("### 9.2 Copertura del dataset")
+    w()
+    w(f"- **{n_gare_totali} gare**, **{n_risultati_totali} risultati**, **{len(anni_gare)} stagioni** ({anni_gare[0]}-{anni_gare[-1]}).")
+    w(f"  Fonte: `public/data/races-index.json` (numero di elementi, anni distinti) e `public/data/params.json` (`eventi.trappole.campiVuoti.numeroRisultati`, calcolato in `build_events.py` sul dataset completo).")
+    w()
+
+    w("### 9.3 I 10 eventi più rari")
+    w()
+    w("| Evento | Parametri | Occorrenze | Rarità | Finestra |")
+    w("|---|---|---:|---:|---|")
+    for e in sorted(events_index, key=lambda e: e["rarita"])[:10]:
+        parametri = ", ".join(f"{k}={v}" for k, v in e["parametri"].items()) or "—"
+        w(
+            f"| {e['nome']} | {parametri} | {e['occorrenze']}/{e['denominatore']} | "
+            f"{e['rarita'] * 100:.3f}% | {e['annoDa']}-{e['annoA']} |"
+        )
+    w()
+    w(f"Fonte: `public/data/events/index.json`, le 10 voci con `rarita` più bassa (occorrenze/denominatore).")
+    w()
+
+    w("### 9.4 Le 5 siccità più lunghe")
+    w()
+    w("| Evento | Parametri | Ultima occorrenza | Siccità |")
+    w("|---|---|---|---|")
+    con_siccita = [e for e in events_index if e.get("siccitaAnniCorrente") is not None]
+    for e in sorted(con_siccita, key=lambda e: -e["siccitaAnniCorrente"])[:5]:
+        parametri = ", ".join(f"{k}={v}" for k, v in e["parametri"].items()) or "—"
+        w(
+            f"| {e['nome']} | {parametri} | {e['ultimaOccorrenza']} | "
+            f"{e['siccitaAnniCorrente']} anni ({e['siccitaGareCorrente']} gare) |"
+        )
+    w()
+    w(f"Fonte: `public/data/events/index.json`, le 5 voci con `siccitaAnniCorrente` più alta.")
+    w()
+
+    w("### 9.5 Il generatore di fatti notevoli")
+    w()
+    w(
+        f"- **{n_gare_con_fatti} gare su {len(facts_files)}** hanno almeno un fatto notevole "
+        f"(le altre {len(facts_files) - n_gare_con_fatti} non hanno nessun evento del catalogo occorso, "
+        f"limite di copertura del catalogo — `docs/PROGETTAZIONE.md` sezione 10, rischio 2)."
+    )
+    w(f"  Fonte: `public/data/facts/*.json`, conteggio dei file con `fatti` non vuoto.")
+    w(
+        f"- **Mediana di {mediana_fatti:.0f} fatti per gara** (sulle {n_gare_con_fatti} gare con almeno un fatto)."
+    )
+    w(f"  Fonte: `public/data/facts/*.json`, mediana della lunghezza dell'array `fatti` sui file non vuoti.")
+    w()
+
+    w("### 9.6 Peso dei JSON esportati")
+    w()
+    w(
+        f"- **{peso_totale_kb:.1f} KB totali** ({len(peso_file)} file: "
+        f"`public/data/events/*.json`, `public/data/facts/*.json`, "
+        f"`public/data/races-index.json`, `public/data/params.json`)."
+    )
+    w(f"  Fonte: somma di `Path.stat().st_size` sui file elencati, stesso conteggio stampato a fine esecuzione da `build_events.py`.")
+    w()
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
