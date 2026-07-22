@@ -1712,5 +1712,211 @@
     "siccitaAnniCorrente": 1,
     "ultimaOccorrenza": "2023 Circuit Park Zandvoort",
     "pesoEditoriale": 0.35
+  },
+  {
+    "eventId": "gara_con_almeno_n_neutralizzazioni",
+    "nome": "Gara con almeno N neutralizzazioni",
+    "famiglia": "neutralizzazioni",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto almeno N neutralizzazioni (Safety Car o Virtual Safety Car).",
+    "parametri": {
+      "N": 1
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        3
+      ]
+    },
+    "campi": [
+      "public/data/index.json:totalNeutralizations"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 25,
+    "denominatore": 46,
+    "rarita": 0.5434782608695652,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "gara_con_almeno_n_neutralizzazioni",
+    "nome": "Gara con almeno N neutralizzazioni",
+    "famiglia": "neutralizzazioni",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto almeno N neutralizzazioni (Safety Car o Virtual Safety Car).",
+    "parametri": {
+      "N": 2
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        3
+      ]
+    },
+    "campi": [
+      "public/data/index.json:totalNeutralizations"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 12,
+    "denominatore": 46,
+    "rarita": 0.2608695652173913,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "gara_con_almeno_n_neutralizzazioni",
+    "nome": "Gara con almeno N neutralizzazioni",
+    "famiglia": "neutralizzazioni",
+    "unita": "GARA",
+    "descrizione": "La gara ha avuto almeno N neutralizzazioni (Safety Car o Virtual Safety Car).",
+    "parametri": {
+      "N": 3
+    },
+    "parametriDisponibili": {
+      "N": [
+        1,
+        2,
+        3
+      ]
+    },
+    "campi": [
+      "public/data/index.json:totalNeutralizations"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 4,
+    "denominatore": 46,
+    "rarita": 0.08695652173913043,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.5
+  },
+  {
+    "eventId": "pit_sotto_neutralizzazione",
+    "nome": "Pit stop sotto Safety Car / sotto VSC",
+    "famiglia": "neutralizzazioni",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' fermato ai box mentre la gara era neutralizzata.",
+    "parametri": {
+      "contesto": "UNDER_SC"
+    },
+    "parametriDisponibili": {
+      "contesto": [
+        "UNDER_SC",
+        "UNDER_VSC"
+      ]
+    },
+    "campi": [
+      "public/data/aggregate.json:pitStops[].context"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 251,
+    "denominatore": 1737,
+    "rarita": 0.1445020149683362,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "pit_sotto_neutralizzazione",
+    "nome": "Pit stop sotto Safety Car / sotto VSC",
+    "famiglia": "neutralizzazioni",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' fermato ai box mentre la gara era neutralizzata.",
+    "parametri": {
+      "contesto": "UNDER_VSC"
+    },
+    "parametriDisponibili": {
+      "contesto": [
+        "UNDER_SC",
+        "UNDER_VSC"
+      ]
+    },
+    "campi": [
+      "public/data/aggregate.json:pitStops[].context"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 82,
+    "denominatore": 1737,
+    "rarita": 0.04720782959124928,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.6
+  },
+  {
+    "eventId": "pilota_locked_out",
+    "nome": "Pilota escluso dalla finestra (LOCKED_OUT)",
+    "famiglia": "neutralizzazioni",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota non ha potuto sfruttare la neutralizzazione: gomme troppo fresche o troppe auto davanti al rientro.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "public/data/aggregate.json:outcomes[].category"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 296,
+    "denominatore": 812,
+    "rarita": 0.3645320197044335,
+    "siccitaGareCorrente": 0,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Yas Marina Circuit",
+    "pesoEditoriale": 0.55
+  },
+  {
+    "eventId": "pit_double_stack",
+    "nome": "Pit in double stack",
+    "famiglia": "neutralizzazioni",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si e' fermato subito dopo il compagno di squadra, nella stessa finestra.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "public/data/aggregate.json:pitStops[].doubleStack"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 356,
+    "denominatore": 1737,
+    "rarita": 0.204951065054692,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.4
+  },
+  {
+    "eventId": "pilota_fregato",
+    "nome": "Pilota \"fregato\" (JUST_BEFORE)",
+    "famiglia": "neutralizzazioni",
+    "unita": "RISULTATO",
+    "descrizione": "Il pilota si era fermato pochi giri prima dell'inizio di una neutralizzazione, senza sfruttarne lo sconto.",
+    "parametri": {},
+    "parametriDisponibili": {},
+    "campi": [
+      "public/data/aggregate.json:pitStops[].context"
+    ],
+    "annoDa": 2023,
+    "annoA": 2024,
+    "occorrenze": 39,
+    "denominatore": 1737,
+    "rarita": 0.022452504317789293,
+    "siccitaGareCorrente": 1,
+    "siccitaAnniCorrente": 0,
+    "ultimaOccorrenza": "2024 Losail International Circuit",
+    "pesoEditoriale": 0.5
   }
 ]

@@ -1,6 +1,6 @@
 """
 Il catalogo (docs/CATALOGO-EVENTI.md, docs/PROGETTAZIONE.md sezione 5.1):
-28 eventi in 8 famiglie, ben oltre la soglia minima di 20 eventi in 5
+33 eventi in 9 famiglie, ben oltre la soglia minima di 20 eventi in 5
 famiglie di PROGETTAZIONE.md sezione 10 (rischio 2).
 
 Ogni evento e' una coppia (osservazioni, predicate): `osservazioni(dataset)`
@@ -31,6 +31,10 @@ Famiglie:
   perché grid/position sono disponibili su tutto il dataset)
 - strategia (2011+, richiede pit_stops.csv): vincitore_con_almeno_n_soste,
   pilota_con_almeno_n_soste
+- neutralizzazioni (2023-2024, eredità v2 — legge public/data/index.json e
+  aggregate.json, non i CSV Ergast: vedi neutralizations.py):
+  gara_con_almeno_n_neutralizzazioni, pit_sotto_neutralizzazione,
+  pilota_locked_out, pit_double_stack, pilota_fregato
 """
 
 from __future__ import annotations
@@ -972,3 +976,10 @@ def _osservazioni_pilota_soste(dataset: Dataset) -> List[Observation]:
 )
 def pilota_con_almeno_n_soste(n_soste: int, *, N: int) -> bool:
     return n_soste >= N
+
+
+# ---------------------------------------------------------------------------
+# Famiglia: neutralizzazioni (2023-2024, eredità v2 — vedi neutralizations.py)
+# ---------------------------------------------------------------------------
+
+from . import neutralizations  # noqa: E402,F401 (registra la famiglia neutralizzazioni)

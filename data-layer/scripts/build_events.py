@@ -96,6 +96,17 @@ def _descrivi_payload(payload: Any) -> Dict[str, Any]:
     if isinstance(payload, (int, float)):
         return {"valore": payload}
 
+    if isinstance(payload, dict):
+        # I pit stop e gli esiti della famiglia neutralizzazioni
+        # (neutralizations.py): dict grezzi letti da public/data/
+        # aggregate.json, non Result di loader.py. driverId lì è già una
+        # stringa (Ergast driverId), non serve castarla.
+        descrizione: Dict[str, Any] = {"driverId": payload.get("driverId")}
+        for chiave in ("context", "category", "lap", "doubleStack", "effectiveLoss", "discount"):
+            if chiave in payload:
+                descrizione[chiave] = payload[chiave]
+        return descrizione
+
     # Liste di (lap, driverId): gli eventi di comando in pista. Il dettaglio
     # per giro non serve al fatto (occupa spazio senza aggiungere
     # informazione utile a "dove e quando"), quindi non si include.

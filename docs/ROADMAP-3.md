@@ -301,10 +301,16 @@ notevole.
 
 Dipende da: E2.2
 
-- [ ] Prompt eseguito
-- [ ] Gli eventi SC/VSC compaiono nel catalogo con finestra 2023-2024
-- [ ] La rarità di questi eventi NON è confrontabile con quella degli altri
-      e l'output lo rende evidente
+- [x] Prompt eseguito
+- [x] Gli eventi SC/VSC compaiono nel catalogo con finestra 2023-2024 — 5
+      eventi (`neutralizations.py`), tutti con `anno_da=2023, anno_a=2024`
+- [x] La rarità di questi eventi NON è confrontabile con quella degli altri
+      e l'output lo rende evidente — ogni voce di `events/index.json` porta
+      `annoDa`/`annoA` e `denominatore`: es.
+      `gara_con_almeno_n_neutralizzazioni` (finestra 2023-2024, denom 46)
+      contro `meno_di_n_classificati` (finestra 1950-2024, denom 1114) —
+      la differenza di scala è nel dato stesso, non serve calcolarla a
+      parte
 - [ ] Diff letto, commit e push
 
 **Prompt da copiare:**
