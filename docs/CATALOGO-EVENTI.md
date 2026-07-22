@@ -47,6 +47,21 @@ generatore di curiosità.
 Questa famiglia da sola regge una vista: **un piano griglia × arrivo** con
 1125 gare come nuvola, e l'evento selezionato che si illumina.
 
+**Con le trappole di §5.6 applicate** (verificato in `data-layer/app/events`,
+milestone di fine E1, `scripts/spike_events.py`): i numeri sopra sono
+**grezzi**, calcolati senza filtri. Con la sola trappola 1 (Indy 500 esclusa)
+diventano:
+
+| Evento | Grezzo | Con trappole | Perché cambia |
+|---|---:|---:|---|
+| Vittoria partendo 5° o peggio | 174 | **166** (−8) | −7 vittorie all'Indy 500 1950-1960 con griglia ≥5 (1950, 1952, 1954, 1955, 1957, 1958, 1959); −1 perché il GP di Francia 1951 fu vinto a guida condivisa (prassi pre-1958) da due piloti entrambi partiti 7°: contarli come due righe di risultato invece che come una vittoria per gara porta il grezzo a 174 invece di 173 — non è una trappola di §5.6, è una particolarità del dataset che va dichiarata comunque. |
+| Vittoria partendo 10° o peggio | 40 | **37** (−3) | −3 vittorie all'Indy 500 con griglia ≥10 (1954, 1955, 1957). |
+| Vittoria partendo 15° o peggio | 9 | **8** (−1) | −1 vittoria all'Indy 500 con griglia ≥15 (1954, griglia 19ª). |
+| Vittoria partendo 20° o peggio | 1 | **1** (invariato) | Nessuna vittoria Indy 500 partiva da griglia ≥20 (la più indietro è 19ª, 1954): la trappola non tocca questo numero. |
+
+Circuito che ospita di più e ultima volta restano gli stessi in entrambe le
+versioni (Spa per N=5/10, Singapore per N=15, Long Beach 1983 per N=20).
+
 ## 2. Margine di vittoria (1099 gare calcolabili)
 
 Il margine si ricava da `milliseconds` del 1° e del 2° (solo quando sono
@@ -64,6 +79,19 @@ Le 5 volate più strette di sempre: Monza 1971 (**0.010s**), Indianapolis
 1969 (0.080s). Questo è esattamente il tipo di fatto che un commentatore
 cerca in diretta.
 
+**Con le trappole di §5.6 applicate:** le 4 occorrenze sopra sono
+**invariate** (183/95/41/5 → 183/95/41/5: nessuna delle 11 gare Indy 500 ha
+un margine sotto le 2 secondi, quindi la trappola 1 non tocca il numeratore).
+Cambia solo il denominatore delle "gare calcolabili": **1099 grezzo → 1088
+con trappole (−11)**, esattamente le 11 gare Indy 500 (tutte calcolabili, ma
+con margini troppo larghi per rientrare in una soglia). Nota: ricalcolando
+il grezzo in modo indipendente (`data-layer/app/events`, senza escludere
+l'Indy 500) risulta 1098, non 1099 — uno scarto di 1 gara non spiegato dalle
+trappole di §5.6 e non ancora risolto; probabile la conta originale contasse
+una gara in più come "calcolabile" per una ragione che non sono riuscito a
+ricostruire. Da verificare in E1.2 prima di fidarsi ciecamente del
+denominatore in `/methodology`.
+
 ## 3. Gare anomale
 
 | Evento | Volte | Ultima volta |
@@ -77,6 +105,31 @@ cerca in diretta.
 Dal 2010 la gara più decimata è Monaco 2010 (50%): il **contrasto per era**
 è di per sé una storia visualizzabile.
 
+**RISOLTO (non con le trappole — con un bug trovato nel documento stesso):**
+i numeri grezzi qui sopra (138/47/8) sono **sbagliati**, non solo diversi
+per via delle trappole. Prova decisiva, interna a questa stessa sezione:
+la riga "% ritiri record" qui sopra dichiara **Monaco 1996 con 19 ritiri su
+22**, cioè **3 classificati** — ma la riga "Meno di 6 classificati" dichiara
+solo 8 occorrenze in assoluto con ultima nel **1984**, il che è
+impossibile se Monaco 1996 (3 classificati, quindi sotto qualunque soglia
+6/8/10) è nello stesso documento due righe sopra. Le due righe si
+contraddicono da sole: la tabella "classificati" ha un bug, non è un
+effetto delle trappole di §5.6.
+
+Ho comunque provato a spiegare il divario con le trappole prima di
+concludere questo (filtro Indy 500, tassonomia dei ritiri, e in più
+un'ipotesi a soglia percentuale sui giri rispetto al vincitore, testata a
+più valori tra 80% e 100%): nessuna spiega un divario di 50-150 gare, e il
+filtro Indy 500 da solo sposta il totale di **1 gara al massimo**. I numeri
+adottati sono quindi quelli del motore, verificati anche a mano su
+Monaco 1996 e Australia 2008 (entrambi fatti storici pubblici):
+
+| Evento | Grezzo (sezione originale, **da considerare errato**) | Adottato (`data-layer/app/events`, verificato) |
+|---|---:|---:|
+| Meno di 6 classificati | ~~8, ultima 1984 Detroit~~ | **17**, ultima **1996 Monaco** (3 classificati) |
+| Meno di 8 classificati | ~~47, ultima 2005 Indianapolis~~ | **76**, ultima **2008 Australia** (6 classificati) |
+| Meno di 10 classificati | ~~138, ultima 2008 Australia~~ | **192**, ultima 2008 Australia |
+
 ## 4. Team
 
 | Evento | Volte | Ultima volta |
@@ -86,6 +139,13 @@ Dal 2010 la gara più decimata è Monaco 2010 (50%): il **contrasto per era**
 | Doppio ritiro dello stesso team | 2964 | 2024 San Paolo |
 | Doppio ritiro per la **stessa causa** | 772 | 2024 Monaco |
 | Prima vittoria assoluta di un costruttore | 47 | 2021 Ungheria (Alpine) |
+
+**Con le trappole di §5.6 applicate:**
+
+| Evento | Grezzo | Con trappole | Perché cambia |
+|---|---:|---:|---|
+| Doppio ritiro dello stesso team | 2964 | **2311** (−653, ultima invariata 2024 San Paolo) | −626 dalla trappola 2 (tassonomia status): il grezzo conta come "ritiro" anche i *Did not qualify*/*Did not prequalify*/*Withdrew*, che non sono ritiri (§5.6 punto 2); tenendo solo RITIRO_TECNICO e RITIRO_INCIDENTE il numero scende a 2338. Altri −27 dalla trappola 1 (Indy 500 esclusa). Somma −653, torna esatto. |
+| Doppio ritiro per la stessa causa | 772 | **665** (ultima invariata 2024 Monaco) | **Deciso, non ricostruito**: ho provato 5 combinazioni di categorie incluse/escluse (ritiro stretto, +NON_PARTITO, +NON_QUALIFICATO, con/senza Indy 500) e nessuna riproduce 772 (ottengo 957, 938, 921, 720, 684 o 665). L'ultima occorrenza (2024 Monaco) coincide in ogni variante, quindi lo script originale guardava la stessa cosa, ma con una regola di conteggio che non sono riuscito a isolare — e lo script che l'ha prodotta non è più nel repo, quindi non è verificabile a ritroso. **665 è il numero adottato**, perché è l'unico coerente con la tassonomia di §5.6 applicata senza eccezioni (solo RITIRO_TECNICO e RITIRO_INCIDENTE contano come "ritiro", Indy 500 esclusa) — le stesse regole che spiegano per intero la riga sopra. 772 resta come riferimento storico del documento, non come numero da usare in `/methodology`. |
 
 ## 5. Prime volte e carriere
 
@@ -101,6 +161,14 @@ Dal 2010 la gara più decimata è Monaco 2010 (50%): il **contrasto per era**
 Record d'età calcolabili da `drivers.dob`: vincitore più giovane
 Verstappen a 18,6 anni (Spagna 2016), più vecchio Fagioli a 53,1 (Francia
 1951).
+
+**Con le trappole di §5.6 applicate:** Prima vittoria in carriera: **115
+grezzo → 105 con trappole** (−10, ultima invariata 2024 Ungheria). I 10
+piloti in meno sono quelli la cui unica "prima vittoria" registrata cadeva
+in una delle 11 gare Indy 500 1950-1960: escludendo quelle gare dalla
+cronologia (non erano gare di F1), la loro vittoria sparisce dal conteggio
+invece di spostarsi su una gara successiva. Spiegato per intero dalla
+trappola 1.
 
 ## 6. Cause di ritiro — 105 cause distinte davvero usate
 
@@ -128,6 +196,13 @@ Frizione ferma al 2014 Bahrain, Accensione al 2002 Francia, Semiasse al
 
 Le rimonte (`grid − posizione finale`): ≥10 posizioni 1750 volte, ≥15 352
 volte, ≥20 solo 33 volte.
+
+**Con le trappole di §5.6 applicate:** Gare senza nessun cambio di leader:
+**99 grezzo → 99 con trappole** (invariato, ultima 2024 Abu Dhabi, circuito
+che lo ospita di più Monaco con 13). Nessuna gara Indy 500 (1950-1960) cade
+nella finestra 1996-2024 di questo evento (serve `lap_times`), quindi la
+trappola 1 non ha nulla da togliere qui: finestra e trappola non si
+sovrappongono nel tempo.
 
 ## 8. Strategia (2011-2024, 285 gare)
 

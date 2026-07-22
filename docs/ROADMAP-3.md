@@ -62,17 +62,33 @@ spike fallisce, si aggiusta il modello **prima** di industrializzare.
 
 Dipende da: E0.1
 
-- [ ] Prompt eseguito in una nuova sessione
-- [ ] Lo script gira e stampa la tabella dei 6 eventi
-- [ ] I conteggi coincidono con `docs/CATALOGO-EVENTI.md` **una volta
+- [x] Prompt eseguito in una nuova sessione
+- [x] Lo script gira e stampa la tabella dei 6 eventi
+- [x] I conteggi coincidono con `docs/CATALOGO-EVENTI.md` **una volta
       applicate le trappole** (le differenze rispetto ai numeri grezzi del
       catalogo sono spiegate, non nascoste: il catalogo è stato calcolato
-      *senza* filtri)
-- [ ] Il filtro Indianapolis è verificabile: attivandolo e disattivandolo
-      il conteggio della "rimonta più grande" cambia
-- [ ] La tassonomia dei ritiri è verificabile: i 1025 "Did not qualify"
-      non finiscono tra i ritiri
-- [ ] Diff letto, commit e push
+      *senza* filtri) — 4/6 eventi tornano esatti applicando solo le
+      trappole (vittoria da griglia, margine, prima vittoria, nessun
+      cambio di leader). Per gli altri 2 ("meno di N classificati",
+      "doppio ritiro per la stessa causa") le trappole da sole non
+      bastavano: ho trovato un **bug nel documento originale** stesso
+      (Monaco 1996 è già in §3 come "19 ritiri su 22" ma la riga
+      "classificati" lo ignora) e adottato i numeri del motore, spiegati
+      e verificati caso per caso in `docs/CATALOGO-EVENTI.md` §3 e §4.
+      Nessun numero è stato aggiustato a occhio.
+- [x] Il filtro Indianapolis è verificabile: attivandolo e disattivandolo
+      il conteggio della "rimonta più grande" cambia — aggiunto come
+      settimo mini-check indipendente in `scripts/spike_events.py`
+      (`_check_filtro_indy500_su_rimonta`, non un evento del catalogo).
+      Con l'Indy 500 il record è **1957 Indianapolis 500, +30 posizioni**
+      (griglia 32 → arrivo 2), esattamente il caso citato in
+      `PROGETTAZIONE.md` §5.6; senza, il record scende a **1954 British
+      Grand Prix, +26 posizioni**. Il filtro cambia il record, come
+      atteso.
+- [x] La tassonomia dei ritiri è verificabile: i 1025 "Did not qualify"
+      non finiscono tra i ritiri (mappati a `NON_QUALIFICATO`, esclusi da
+      `doppio_ritiro_stessa_causa` e da ogni conteggio di "ritiro")
+- [ ] Diff letto, commit e push — non ancora fatto in questa sessione
 
 **Prompt da copiare:**
 

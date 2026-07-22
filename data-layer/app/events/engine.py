@@ -1,0 +1,71 @@
+"""
+Motore di eventi (docs/PROGETTAZIONE.md sezione 5.1/5.2): valuta un evento
+su tutte le unita' osservabili della sua finestra di copertura e restituisce
+occorrenze, denominatore e rarita'.
+
+    rarita' = occorrenze / unita' osservabili nella finestra di copertura
+
+Il "denominatore" non e' un conteggio arbitrario: e' esattamente il numero
+di osservazioni che `event.osservazioni(dataset)` ha ritenuto valide (gia'
+filtrate per finestra, Indy 500 e campi mancanti da `catalog.py`) — cosi'
+la trappola 3 di PROGETTAZIONE.md ("le unita' con campo mancante escono dal
+denominatore, non contate come 'non e' successo'") e' rispettata per
+costruzione, non con un controllo a posteriori.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+from .loader import Dataset
+from .registry import EventDefinition, Observation
+
+
+@dataclass(frozen=True)
+class EventResult:
+    event_id: str
+    parametri: Dict[str, Any]
+    occorrenze: int
+    denominatore: int
+    rarita: Optional[float]
+    ultima_occorrenza: Optional[str]
+    circuito_top: Optional[str]
+    circuito_top_conteggio: int
+
+
+def evaluate(dataset: Dataset, event: EventDefinition, **params: Any) -> EventResult:
+    osservazioni: List[Observation] = event.osservazioni(dataset)
+    denominatore = len(osservazioni)
+
+    occorse = [o for o in osservazioni if event.predicate(o.payload, **params)]
+    occorrenze = len(occorse)
+    rarita = occorrenze / denominatore if denominatore else None
+
+    ultima_occorrenza = None
+    circuito_top = None
+    circuito_top_conteggio = 0
+
+    if occorse:
+        ultima_race = max(occorse, key=lambda o: o.race.date).race
+        ultima_occorrenza = f"{ultima_race.year} {dataset.circuits[ultima_race.circuit_id].name}"
+
+        conteggio_per_circuito: Dict[int, int] = {}
+        for o in occorse:
+            conteggio_per_circuito[o.race.circuit_id] = (
+                conteggio_per_circuito.get(o.race.circuit_id, 0) + 1
+            )
+        top_circuit_id = max(conteggio_per_circuito, key=lambda cid: conteggio_per_circuito[cid])
+        circuito_top = dataset.circuits[top_circuit_id].name
+        circuito_top_conteggio = conteggio_per_circuito[top_circuit_id]
+
+    return EventResult(
+        event_id=event.id,
+        parametri=dict(params),
+        occorrenze=occorrenze,
+        denominatore=denominatore,
+        rarita=rarita,
+        ultima_occorrenza=ultima_occorrenza,
+        circuito_top=circuito_top,
+        circuito_top_conteggio=circuito_top_conteggio,
+    )
