@@ -36,26 +36,19 @@ che E3.1 ha fissato le convenzioni comuni.
 
 # Fase E0 — Allineamento e pulizia
 
-## E0.1 — Tutti · Lettura e branch
+## E0.1 — Tutti · Lettura
 
-Task ibrido, l'unico della roadmap: la parte git è già fatta, la lettura si
-fa con gli occhi e non ha prompt.
+Task senza prompt: la lettura si fa con gli occhi. I documenti del pivot
+sono già committati su `main` (commit `4267f5a`).
 
 - [ ] A, B, C hanno letto `docs/PROGETTAZIONE.md` v3 §1-3, §5, §7
 - [ ] A, B, C hanno letto `docs/CATALOGO-EVENTI.md` (almeno §0, §11, §12)
 - [ ] Confermati i ruoli A/B/C
-- [x] Creato il branch di lavoro `v3-eventi` e pushato (commit `4267f5a`)
 
-**Prompt già eseguito, conservato per riferimento (branch e commit dei
-documenti):**
-
-```
-Siamo su main. Crea il branch v3-eventi, committa i tre documenti già
-scritti (docs/PROGETTAZIONE.md riscritto come v3, docs/CATALOGO-EVENTI.md
-e docs/ROADMAP-3.md nuovi) con un messaggio che spiega il pivot dopo il
-ricevimento, e pusha il branch. Mostrami il diff prima di committare.
-Non toccare altro.
-```
+**Nota sul flusso di lavoro: si lavora direttamente su `main`, niente
+branch.** Ogni task committa e pusha su `main` a lavoro finito e
+verificato. La regola "il diff si legge prima di ogni commit" vale a
+maggior ragione: senza branch non c'è una rete di sicurezza a valle.
 
 ---
 
@@ -560,7 +553,7 @@ Dipende da: E4.2
 - [ ] `docs/DOMANDE-ESAME.md` aggiornato al frame v3
 - [ ] Le tre demo da 30 secondi (PROGETTAZIONE §9) provate a voce da tutti e
       tre
-- [ ] Diff letto, commit, push e merge di `v3-eventi` su `main`
+- [ ] Diff letto, commit e push su `main`
 
 **Prompt da copiare:**
 
