@@ -75,6 +75,28 @@ export function formatRarityPercent(rarita: number): string {
   return pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(2)}%`;
 }
 
+// "La risposta grande" del compositore (sezione 7, vista 2: "40 volte su
+// 1125 gare (3,6%)"), fissata qui perché è la stessa frase che il tooltip
+// (sotto) e la scheda gara futura (vista 6) dovranno riusare parola per
+// parola — un solo posto dove cambiare il formato, non uno per vista.
+export function formatBigAnswer(entry: Pick<CatalogEventEntry, "occorrenze" | "denominatore" | "unita" | "rarita">): string {
+  return `${entry.occorrenze} volte su ${entry.denominatore} ${unitLabel(entry.unita)} (${formatRarityPercent(
+    entry.rarita
+  )})`;
+}
+
+// La siccità (sezione 5.3: "non succedeva dal ..."), o null se l'evento è
+// così frequente da non avere una siccità corrente degna di nota (successo
+// nell'ultima unità osservata).
+export function formatDrought(
+  entry: Pick<CatalogEventEntry, "siccitaGareCorrente" | "siccitaAnniCorrente">
+): string | null {
+  if (entry.siccitaGareCorrente <= 0) return null;
+  return entry.siccitaAnniCorrente > 0
+    ? `Non succede da ${entry.siccitaGareCorrente} gare (${entry.siccitaAnniCorrente} anni)`
+    : `Non succede da ${entry.siccitaGareCorrente} gare`;
+}
+
 // Formato del tooltip fissato qui per tutte le viste successive (sezione 7,
 // nota dell'incarico): mostra SEMPRE la finestra di copertura insieme al
 // numero, mai il numero da solo — è la regola vincolante di sezione 5.2
@@ -82,18 +104,11 @@ export function formatRarityPercent(rarita: number): string {
 export function eventTooltipLines(entry: CatalogEventEntry): string[] {
   const lines = [
     `${entry.nome}${parameterSuffix(entry)}`,
-    `${entry.occorrenze} volte su ${entry.denominatore} ${unitLabel(entry.unita)} (${formatRarityPercent(
-      entry.rarita
-    )})`,
+    formatBigAnswer(entry),
     `Finestra: ${formatWindow(entry)}`,
   ];
-  if (entry.siccitaGareCorrente > 0) {
-    lines.push(
-      entry.siccitaAnniCorrente > 0
-        ? `Non succede da ${entry.siccitaGareCorrente} gare (${entry.siccitaAnniCorrente} anni)`
-        : `Non succede da ${entry.siccitaGareCorrente} gare`
-    );
-  }
+  const drought = formatDrought(entry);
+  if (drought) lines.push(drought);
   if (entry.ultimaOccorrenza) lines.push(`Ultima volta: ${entry.ultimaOccorrenza}`);
   return lines;
 }

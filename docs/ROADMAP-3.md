@@ -381,12 +381,18 @@ funziona, e mostrami uno screenshot.
 
 Dipende da: E3.1
 
-- [ ] Prompt eseguito
-- [ ] Muovendo il parametro la risposta si aggiorna in transizione
-- [ ] La risposta grande ("40 volte su 1125 gare, 3,6%") è leggibile a
+- [x] Prompt eseguito
+- [x] Muovendo il parametro la risposta si aggiorna in transizione (numero
+      tweenato + marker che si sposta sulla mini-scala di rarità,
+      ParameterRarityTrack.tsx)
+- [x] La risposta grande ("40 volte su 1125 gare, 3,6%") è leggibile a
       distanza — è la vista che si mostra al ricevimento
-- [ ] Verificata nel browser
-- [ ] Diff letto, commit e push
+- [x] Verificata nel browser: nessun errore in console, slider e click sui
+      tick della mini-scala aggiornano risposta/tabella, selettore
+      famiglia→evento naviga, link tabella → gara risolve per le gare
+      2023-2024 (le altre 404 finché non esiste una scheda gara per tutte
+      le 1125, vista 6)
+- [x] Diff letto, commit e push
 
 **Prompt da copiare:**
 
