@@ -521,13 +521,23 @@ Verifica nel browser e mostrami uno screenshot.
 
 Dipende da: E2.2
 
-- [ ] Prompt eseguito
-- [ ] Si sceglie una gara qualsiasi tra le 1125 e compaiono i fatti notevoli
-- [ ] Ogni fatto porta rarità, finestra e link all'evento
-- [ ] Provata su 5 gare a caso: nessun fatto falso, nessuna banalità in
-      cima
-- [ ] Verificata nel browser
-- [ ] Diff letto, commit e push
+- [x] Prompt eseguito
+- [x] Si sceglie una gara qualsiasi tra le 1125 e compaiono i fatti notevoli
+- [x] Ogni fatto porta rarità, finestra e link all'evento (con il
+      parametro specifico in query string, non il default)
+- [x] Provata su 5 gare a caso (poi 12, per verificare l'effetto della
+      correzione): **nessun fatto falso** trovato, verificati contro i CSV
+      grezzi. **Banalità in cima trovata e in parte corretta**: 4 eventi
+      valutati per pilota/team dentro una gara (doppio_ritiro e variante,
+      rimonta, ritiro_per_causa_specifica) comparivano nella top-5 di
+      quasi ogni gara campionata — peso_editoriale abbassato per tutti e
+      quattro (vedi commenti in `catalog.py`). Residuo non ulteriormente
+      corretto a colpi di peso: per molte gare vecchie il catalogo produce
+      solo 4-6 fatti in totale, quindi "top 5" spesso è "tutti i fatti
+      trovati" — è il limite di copertura del catalogo (rischio #2 di
+      sezione 10), non un problema di pesi. Riportato, non inseguito oltre.
+- [x] Verificata nel browser: nessun errore in console
+- [x] Diff letto, commit e push (commit `3d2032d`)
 
 **Prompt da copiare:**
 
