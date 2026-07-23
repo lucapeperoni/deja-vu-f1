@@ -65,9 +65,18 @@ export default function EventCard({ variants }: Props) {
 
         {drought && <div className="text-xs text-racing-red">{drought}</div>}
 
-        {paramKey && paramValues.length > 1 && (
-          <div className="flex flex-wrap gap-1 mt-1" role="group" aria-label={`Valori di ${paramKey}`}>
-            {paramValues.map((value, idx) => (
+        {/* Riquadro sempre presente, anche senza bottoni: uno spazio invisibile
+            alto quanto la riga di bottoni evita che la griglia "salti" tra un
+            evento con parametro e uno senza (roadmap R1.2, min-height invece
+            di condizionare il rendering dell'intero blocco). */}
+        <div
+          className="flex flex-wrap gap-1 mt-1 min-h-[26px]"
+          role={paramKey && paramValues.length > 1 ? "group" : undefined}
+          aria-label={paramKey && paramValues.length > 1 ? `Valori di ${paramKey}` : undefined}
+        >
+          {paramKey &&
+            paramValues.length > 1 &&
+            paramValues.map((value, idx) => (
               <button
                 key={String(value)}
                 type="button"
@@ -82,8 +91,7 @@ export default function EventCard({ variants }: Props) {
                 {formatParameterValue(paramKey, value)}
               </button>
             ))}
-          </div>
-        )}
+        </div>
       </div>
 
       <div className="border-t border-graphite px-4 py-2">
