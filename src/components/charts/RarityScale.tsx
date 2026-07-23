@@ -54,7 +54,18 @@ const LABEL_WIDTH = 340;
 const LABEL_MAX_CHARS = 50;
 const WINDOW_WIDTH = 110;
 const GUTTER = 24;
-const WIDTH = 1180;
+// Larghezza del grafico misurata dal contenitore reale (ResizeObserver più
+// sotto), non più una costante fissa: un numero fisso o va troppo stretto
+// su un monitor largo (spazio nero sprecato ai lati) o troppo largo su un
+// laptop comune (scrollbar orizzontale del pannello che prima non serviva).
+// DEFAULT_WIDTH è solo il valore prima della prima misura (SSR/primo
+// paint). MIN_WIDTH è il minimo sotto cui l'asse smette di avere senso
+// (sotto, l'etichetta+finestra+margini da sole superano lo spazio
+// disponibile): sotto quella soglia il pannello resta scrollabile in
+// orizzontale invece di comprimere il grafico fino a romperlo — stesso
+// comportamento che aveva già su mobile con la larghezza fissa originale.
+const DEFAULT_WIDTH = 1180;
+const MIN_WIDTH = 900;
 const TIMELINE_FROM = 1950;
 const TIMELINE_TO = 2024;
 // Altezza oltre la quale il pannello smette di allungare la pagina e apre
@@ -74,9 +85,27 @@ function truncateLabel(label: string): string {
 
 export default function RarityScale({ events }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [hoveredFamily, setHoveredFamily] = useState<string | null>(null);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+
+  // Misura la larghezza disponibile del contenitore (il div "overflow-auto"
+  // sotto, che non ha una width propria e prende quella che il pannello gli
+  // dà) e la segue a ogni ridimensionamento: così il grafico riempie
+  // esattamente lo spazio disponibile, sia in una sezione stretta sia in
+  // una larga, senza un numero indovinato a mano.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const measured = entries[0]?.contentRect.width;
+      if (measured) setWidth(Math.max(MIN_WIDTH, Math.round(measured)));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Ordine verticale = ordine di rarità (dal più comune, in alto, al più
   // raro, in basso): la scala è leggibile SIA sull'asse X (log) SIA
@@ -86,7 +115,7 @@ export default function RarityScale({ events }: Props) {
 
   const height = MARGIN.top + sorted.length * ROW_HEIGHT + MARGIN.bottom;
   const chartLeft = MARGIN.left + LABEL_WIDTH + WINDOW_WIDTH + GUTTER;
-  const chartRight = WIDTH - MARGIN.right;
+  const chartRight = width - MARGIN.right;
   const windowLeft = MARGIN.left + LABEL_WIDTH;
 
   const rarityExtent = d3.extent(sorted, (d) => d.rarita) as [number, number];
@@ -255,13 +284,14 @@ export default function RarityScale({ events }: Props) {
           consultabile, non un ostacolo da scorrere per arrivare al resto
           della pagina. La legenda sotto resta invece sempre visibile. */}
       <div
+        ref={containerRef}
         className="overflow-auto hide-scrollbar rounded-lg"
         style={{ maxHeight: Math.min(height, MAX_PANEL_HEIGHT) }}
       >
-        <div style={{ position: "relative", width: WIDTH }}>
+        <div style={{ position: "relative", width }}>
           <svg
             ref={svgRef}
-            viewBox={`0 0 ${WIDTH} ${height}`}
+            viewBox={`0 0 ${width} ${height}`}
             width="100%"
             height={height}
             role="img"

@@ -51,8 +51,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* La scala della rarità (vista 1) */}
-      <section className="px-6 py-10 max-w-7xl mx-auto w-full">
+      {/* La scala della rarità (vista 1). max-w-[1600px] invece di max-w-7xl
+          (1280px): su un monitor largo il pannello della scala e la griglia
+          a riquadri restavano centrati con enormi margini neri ai lati —
+          qui e in RarityScale.tsx (WIDTH) e EventCardsGrid.tsx (colonna
+          2xl in più) la larghezza usabile è aumentata in proporzione. */}
+      <section className="px-6 py-10 max-w-[1600px] mx-auto w-full">
         <div className="mb-6">
           <h3 className="font-condensed text-3xl font-bold uppercase text-white mb-2">
             La scala della <span className="text-racing-red">rarità</span>

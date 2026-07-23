@@ -99,7 +99,11 @@ export default function EventCardsGrid({ catalog }: Props) {
                 <h3 className="font-condensed text-2xl font-bold uppercase text-white">{family.label}</h3>
                 <span className="text-xs text-neutral-gray">({familyEvents.length})</span>
               </header>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {/* 2xl:grid-cols-5 in più (sezione ora larga fino a
+                  max-w-[1600px] in page.tsx): senza questa colonna in più
+                  restava ferma a 4 su schermi larghi, con dello spazio
+                  vuoto a destra invece di un'altra card. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {familyEvents.map((event) => (
                   <EventCard key={event.eventId} variants={catalog.filter((v) => v.eventId === event.eventId)} />
                 ))}
