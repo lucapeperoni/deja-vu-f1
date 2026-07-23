@@ -48,7 +48,16 @@ export default function EventCard({ variants }: Props) {
 
   return (
     <div className="bg-panel border border-graphite rounded-sm overflow-hidden flex flex-col h-full">
-      <div className="h-1" style={{ backgroundColor: color }} />
+      {/* Linea chiara sul bordo inferiore della striscia (roadmap R4.1,
+          passata di contrasto): stessa ragione del pallino in
+          EventCardsGrid — indigo (griglia_e_risultato) e vinaccia (team)
+          hanno un contrasto sotto 2:1 contro bg-panel, sotto il 3:1
+          richiesto per un elemento grafico. L'inset box-shadow disegna un
+          bordo senza consumare l'altezza dei 4px della striscia. */}
+      <div
+        className="h-1"
+        style={{ backgroundColor: color, boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.4)" }}
+      />
       <div className="p-4 flex-1 flex flex-col gap-2">
         <h3 className="font-condensed text-base font-bold text-white uppercase leading-tight">
           {current.nome}

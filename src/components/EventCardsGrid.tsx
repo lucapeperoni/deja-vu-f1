@@ -33,7 +33,18 @@ export default function EventCardsGrid({ catalog }: Props) {
         return (
           <section key={family.key}>
             <header className="flex items-center gap-3 mb-4 pb-2 border-b border-graphite">
-              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: family.color }} />
+              {/* Anello chiaro sempre presente (roadmap R4.1, passata di
+                  contrasto): due colori di famiglia su nove (indigo di
+                  griglia_e_risultato, vinaccia di team) scendono sotto 2:1
+                  di contrasto contro lo sfondo quasi nero — ben sotto il
+                  3:1 richiesto per un elemento grafico (WCAG 1.4.11). Un
+                  bordo chiaro attorno al pallino lo rende sempre
+                  distinguibile, senza cambiare la tinta di famiglia
+                  condivisa con RarityScale. */}
+              <span
+                className="w-3 h-3 rounded-full shrink-0 ring-1 ring-white/40"
+                style={{ backgroundColor: family.color }}
+              />
               <h3 className="font-condensed text-2xl font-bold uppercase text-white">{family.label}</h3>
               <span className="text-xs text-neutral-gray">({familyEvents.length})</span>
             </header>
