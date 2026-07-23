@@ -42,11 +42,11 @@ le due.
 
 ## Avanzamento generale
 
-- [ ] Fase R0 — Allineamento e convenzioni
-- [ ] Fase R1 — Il componente EventCard
-- [ ] Fase R2 — La griglia raggruppata per famiglia
-- [ ] Fase R3 — L'interruttore in home
-- [ ] Fase R4 — Rifinitura, accessibilità, verifica finale
+- [x] Fase R0 — Allineamento e convenzioni
+- [x] Fase R1 — Il componente EventCard
+- [x] Fase R2 — La griglia raggruppata per famiglia
+- [x] Fase R3 — L'interruttore in home
+- [x] Fase R4 — Rifinitura, accessibilità, verifica finale
 
 Ordine dei prompt: R0.1 → R1.1 → R1.2 → R2.1 → R3.1 → R4.1 → R4.2.
 
@@ -60,11 +60,11 @@ Nessuna riga di codice in questo prompt: serve a far leggere a Claude
 Code i file giusti e a fargli confermare, prima di scrivere, da dove
 vengono i dati di ogni riquadro (niente nuove richieste di rete).
 
-- [ ] Prompt eseguito
-- [ ] Confermato che ogni riquadro usa solo dati già in
+- [x] Prompt eseguito
+- [x] Confermato che ogni riquadro usa solo dati già in
       `public/data/events/index.json` (una voce per ogni combinazione
       evento+parametro, già tutte precalcolate)
-- [ ] Confermata la lista di helper esistenti da riusare (non
+- [x] Confermata la lista di helper esistenti da riusare (non
       reimplementare): `formatBigAnswer`, `formatWindow`,
       `formatDrought`, `parameterSuffix`, `formatParameterValue`,
       `unitLabel`, `dedupeToDefaultParams`, `familyColor`, `familyLabel`,
@@ -104,21 +104,21 @@ Non toccare nessun file in questo prompt: è solo un allineamento.
 
 Dipende da: R0.1
 
-- [ ] Prompt eseguito
-- [ ] `EventCard` mostra: nome evento (+ suffisso parametro corrente),
+- [x] Prompt eseguito
+- [x] `EventCard` mostra: nome evento (+ suffisso parametro corrente),
       famiglia (colore), risposta grande (`formatBigAnswer`), finestra
       (`formatWindow`), siccità se presente (`formatDrought`)
-- [ ] Se l'evento ha un parametro, appaiono bottoni compatti per i valori
+- [x] Se l'evento ha un parametro, appaiono bottoni compatti per i valori
       disponibili (`parametriDisponibili`); cliccarne uno cambia SOLO il
       testo dentro la card (stato locale React, nessun D3, nessuna
       richiesta di rete) — verificato passando da N=5 a N=20 e
       controllando che risposta/finestra si aggiornino
-- [ ] Un link/pulsante "Apri nel compositore →" porta a
+- [x] Un link/pulsante "Apri nel compositore →" porta a
       `/eventi/<eventId>` con il parametro corrente in query string
       (stessa convenzione già usata altrove nel sito per il deep link)
-- [ ] Card verificata isolata (anche solo in `/dev/chart-demo` o una
+- [x] Card verificata isolata (anche solo in `/dev/chart-demo` o una
       pagina di prova) prima di passare a R2
-- [ ] Diff letto
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -160,16 +160,16 @@ che funziona.
 
 Dipende da: R1.1
 
-- [ ] Prompt eseguito
-- [ ] Eventi SENZA parametro (parametriDisponibili vuoto) non mostrano
+- [x] Prompt eseguito
+- [x] Eventi SENZA parametro (parametriDisponibili vuoto) non mostrano
       bottoni fantasma e la card resta comunque ben proporzionata
       rispetto a quelle con bottoni (griglia non deve "saltare")
-- [ ] La famiglia "neutralizzazioni" mostra comunque la sua finestra
+- [x] La famiglia "neutralizzazioni" mostra comunque la sua finestra
       2023-2024 diversa dalle altre, ben visibile (stessa regola
       vincolante di sezione 5.2: le finestre diverse non si confondono)
-- [ ] Stato hover/focus sui bottoni e sulla card verificato (tastiera
+- [x] Stato hover/focus sui bottoni e sulla card verificato (tastiera
       inclusa: tab per navigare i bottoni, invio per attivarli)
-- [ ] Diff letto
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -201,17 +201,17 @@ Mostrami screenshot dei tre casi.
 
 Dipende da: R1.2
 
-- [ ] Prompt eseguito
-- [ ] Una sezione per famiglia, nello stesso ordine di `FAMILY_LEGEND`,
+- [x] Prompt eseguito
+- [x] Una sezione per famiglia, nello stesso ordine di `FAMILY_LEGEND`,
       con intestazione che usa `familyLabel`/`familyColor`
-- [ ] Dentro ogni sezione, le card ordinate per rarità (dal più comune
+- [x] Dentro ogni sezione, le card ordinate per rarità (dal più comune
       al più raro), stesso criterio di `RarityScale`
-- [ ] Layout responsive: griglia a più colonne su schermi larghi, una
+- [x] Layout responsive: griglia a più colonne su schermi larghi, una
       colonna su mobile — verificato ridimensionando la finestra del
       browser (o `resize_window`), non solo a una risoluzione
-- [ ] Nessuna richiesta di rete aggiuntiva oltre a quella che oggi
+- [x] Nessuna richiesta di rete aggiuntiva oltre a quella che oggi
       carica `index.json` in `src/app/page.tsx`
-- [ ] Diff letto
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -243,21 +243,21 @@ mobile) e mostrami entrambi gli screenshot.
 
 Dipende da: R2.1
 
-- [ ] Prompt eseguito
-- [ ] Un interruttore ben visibile in home fa scegliere tra "La scala
+- [x] Prompt eseguito
+- [x] Un interruttore ben visibile in home fa scegliere tra "La scala
       della rarità" (RarityScale, esistente) e "I riquadri"
       (EventCardsGrid, nuovo)
-- [ ] La scelta è solo stato client (nessuna nuova route necessaria),
+- [x] La scelta è solo stato client (nessuna nuova route necessaria),
       di default resta la vista esistente (RarityScale) finché l'utente
       non sceglie l'altra — non cambiare il comportamento di default di
       chi apre il sito per la prima volta
-- [ ] Testo introduttivo della sezione aggiornato per spiegare che sono
+- [x] Testo introduttivo della sezione aggiornato per spiegare che sono
       due modi di vedere lo stesso catalogo, non due cataloghi diversi
-- [ ] Verificato nel browser: passaggio avanti e indietro tra le due
+- [x] Verificato nel browser: passaggio avanti e indietro tra le due
       viste senza errori console, hover/tooltip di RarityScale ancora
       funzionanti dopo il passaggio
-- [ ] `npm run build` e `npm run lint` puliti
-- [ ] Diff letto
+- [x] `npm run build` e `npm run lint` puliti
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -291,15 +291,15 @@ screenshot di entrambe le viste.
 
 Dipende da: R3.1
 
-- [ ] Prompt eseguito
-- [ ] Contrasto testo/sfondo verificato per tutti i colori di famiglia
+- [x] Prompt eseguito
+- [x] Contrasto testo/sfondo verificato per tutti i colori di famiglia
       usati nelle intestazioni (non solo a occhio: controllo dei valori)
-- [ ] Nessun evento del catalogo manca dalla griglia a riquadri (stesso
+- [x] Nessun evento del catalogo manca dalla griglia a riquadri (stesso
       numero di eventId distinti di RarityScale)
-- [ ] Le 4-5 domande da esame più prevedibili su questa vista hanno una
+- [x] Le 4-5 domande da esame più prevedibili su questa vista hanno una
       risposta pronta (perché due viste per lo stesso catalogo, perché
       niente D3 nelle card, dove sta l'analisi profonda)
-- [ ] Diff letto, commit e push
+- [x] Diff letto, commit e push
 
 **Prompt da copiare:**
 
@@ -327,11 +327,11 @@ prima di ogni commit:
 
 Dipende da: R4.1, solo se vuoi anche potere nascondere/isolare famiglie
 
-- [ ] Prompt eseguito, solo se richiesto esplicitamente
-- [ ] Pulsanti per famiglia sopra la griglia (stesso stile del
+- [x] Prompt eseguito, solo se richiesto esplicitamente
+- [x] Pulsanti per famiglia sopra la griglia (stesso stile del
       hover-per-evidenziare già usato nella legenda di RarityScale, ma
       qui filtra invece di solo evidenziare)
-- [ ] Nessuna famiglia nascosta di default all'apertura della pagina
+- [x] Nessuna famiglia nascosta di default all'apertura della pagina
 
 **Prompt da copiare:**
 
