@@ -106,6 +106,13 @@ def _descrivi_payload(payload: Any) -> Dict[str, Any]:
         for chiave in ("context", "category", "lap", "doubleStack", "effectiveLoss", "discount"):
             if chiave in payload:
                 descrizione[chiave] = payload[chiave]
+        # Gli esiti (outcomes[]) sono per pilota x NEUTRALIZZAZIONE, non per
+        # pilota x gara: una gara con piu' SC/VSC produce piu' righe per lo
+        # stesso pilota nella stessa gara (es. LOCKED_OUT in due finestre
+        # diverse della stessa corsa). Senza questo campo le due righe
+        # sembrano un duplicato invece di due eventi distinti.
+        if "eventId" in payload:
+            descrizione["neutralizzazione"] = payload["eventId"]
         return descrizione
 
     # Liste di (lap, driverId): gli eventi di comando in pista. Il dettaglio
