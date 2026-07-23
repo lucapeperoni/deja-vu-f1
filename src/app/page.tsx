@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import RarityScale from "@/components/charts/RarityScale";
+import HomeCatalogView from "@/components/HomeCatalogView";
 import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
 
 // Home v3 = vista 1 della specifica (docs/PROGETTAZIONE.md, sezione 7):
@@ -58,15 +58,15 @@ export default async function Home() {
             La scala della <span className="text-racing-red">rarità</span>
           </h3>
           <p className="text-text-secondary max-w-3xl text-sm">
-            Asse logaritmico: dal più comune (in alto, a sinistra) al più raro (in basso, a destra). Il colore
-            codifica la famiglia dell&apos;evento, mai la rarità. Accanto a ogni nome, la barra colorata è la
-            finestra di copertura reale dei dati che rendono quell&apos;evento osservabile — più corta, meno gare
-            contano nel denominatore. Passa il mouse per i numeri esatti (e il nome per esteso se troncato), clicca
-            per aprire la scheda dell&apos;evento. Il riquadro scorre in verticale: sotto restano sempre visibili
-            legenda e famiglie.
+            Due modi di leggere lo stesso catalogo di eventi, non due cataloghi diversi. &quot;La scala della
+            rarità&quot;: asse logaritmico, dal più comune (in alto, a sinistra) al più raro (in basso, a destra),
+            colore per famiglia, finestra di copertura come barra accanto al nome. &quot;I riquadri&quot;: gli
+            stessi eventi raggruppati per famiglia, ognuno con la sua risposta pronta e un controllo per cambiare
+            parametro sul posto. In entrambe le viste il colore codifica la famiglia, mai la rarità, e la finestra
+            di copertura resta sempre visibile accanto al numero.
           </p>
         </div>
-        <RarityScale events={events} />
+        <HomeCatalogView events={events} catalog={catalog} />
       </section>
     </main>
   );
