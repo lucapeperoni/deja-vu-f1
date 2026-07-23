@@ -39,7 +39,7 @@ Famiglie:
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .loader import Dataset, Result, StatusCategory, load_lap_leaders, load_pit_stop_counts
 from .registry import Observation, ParameterSpec, Unit, evento
@@ -475,7 +475,11 @@ def _osservazioni_prima_vittoria_costruttore(dataset: Dataset) -> List[Observati
         e_la_prima = winner.constructor_id not in prima_vittoria_di
         if e_la_prima:
             prima_vittoria_di[winner.constructor_id] = race.race_id
-        obs.append(Observation(race=race, payload=e_la_prima))
+        # Payload = il vincitore quando è davvero la prima volta, altrimenti
+        # None: il predicato sotto distingue i due casi, e per le occorrenze
+        # vere _descrivi_payload (build_events.py) risolve driverId/
+        # constructorId in nomi veri invece di scartarli (erano un bool puro).
+        obs.append(Observation(race=race, payload=winner if e_la_prima else None))
     return obs
 
 
@@ -492,8 +496,8 @@ def _osservazioni_prima_vittoria_costruttore(dataset: Dataset) -> List[Observati
     peso_editoriale=0.75,
     descrizione="Il costruttore vincitore vinceva per la prima volta nella sua storia.",
 )
-def prima_vittoria_costruttore(e_la_prima: bool, **_: object) -> bool:
-    return e_la_prima
+def prima_vittoria_costruttore(payload: Optional[Result], **_: object) -> bool:
+    return payload is not None
 
 
 # ---------------------------------------------------------------------------
@@ -512,7 +516,10 @@ def _osservazioni_prima_vittoria_in_carriera(dataset: Dataset) -> List[Observati
         e_la_prima = winner.driver_id not in prima_vittoria_di
         if e_la_prima:
             prima_vittoria_di[winner.driver_id] = race.race_id
-        obs.append(Observation(race=race, payload=e_la_prima))
+        # Payload = il vincitore solo quando è davvero la prima volta (vedi
+        # prima_vittoria_costruttore sopra per il perché: None invece di un
+        # bool puro fa risolvere driverId/constructorId in nomi veri).
+        obs.append(Observation(race=race, payload=winner if e_la_prima else None))
     return obs
 
 
@@ -529,8 +536,8 @@ def _osservazioni_prima_vittoria_in_carriera(dataset: Dataset) -> List[Observati
     peso_editoriale=0.8,
     descrizione="Il vincitore della gara vinceva per la prima volta in carriera.",
 )
-def prima_vittoria_in_carriera(e_la_prima: bool, **_: object) -> bool:
-    return e_la_prima
+def prima_vittoria_in_carriera(payload: Optional[Result], **_: object) -> bool:
+    return payload is not None
 
 
 def _osservazioni_primo_podio_in_carriera(dataset: Dataset) -> List[Observation]:
@@ -545,7 +552,9 @@ def _osservazioni_primo_podio_in_carriera(dataset: Dataset) -> List[Observation]
             e_il_primo = r.driver_id not in gia_a_podio
             if e_il_primo:
                 gia_a_podio[r.driver_id] = race.race_id
-            obs.append(Observation(race=race, payload=e_il_primo))
+            # Payload = il risultato solo quando è davvero il primo podio
+            # (vedi prima_vittoria_costruttore sopra per il perché).
+            obs.append(Observation(race=race, payload=r if e_il_primo else None))
     return obs
 
 
@@ -562,8 +571,8 @@ def _osservazioni_primo_podio_in_carriera(dataset: Dataset) -> List[Observation]
     peso_editoriale=0.6,
     descrizione="Il pilota saliva sul podio per la prima volta in carriera.",
 )
-def primo_podio_in_carriera(e_il_primo: bool, **_: object) -> bool:
-    return e_il_primo
+def primo_podio_in_carriera(payload: Optional[Result], **_: object) -> bool:
+    return payload is not None
 
 
 def _osservazioni_prima_pole_in_carriera(dataset: Dataset) -> List[Observation]:
@@ -578,7 +587,9 @@ def _osservazioni_prima_pole_in_carriera(dataset: Dataset) -> List[Observation]:
         e_la_prima = poleman.driver_id not in gia_in_pole
         if e_la_prima:
             gia_in_pole[poleman.driver_id] = race.race_id
-        obs.append(Observation(race=race, payload=e_la_prima))
+        # Payload = il poleman solo quando è davvero la prima volta (vedi
+        # prima_vittoria_costruttore sopra per il perché).
+        obs.append(Observation(race=race, payload=poleman if e_la_prima else None))
     return obs
 
 
@@ -595,8 +606,8 @@ def _osservazioni_prima_pole_in_carriera(dataset: Dataset) -> List[Observation]:
     peso_editoriale=0.6,
     descrizione="Il pilota otteneva la pole position per la prima volta in carriera.",
 )
-def prima_pole_in_carriera(e_la_prima: bool, **_: object) -> bool:
-    return e_la_prima
+def prima_pole_in_carriera(payload: Optional[Result], **_: object) -> bool:
+    return payload is not None
 
 
 def _debutto_per_pilota(dataset: Dataset) -> Dict[int, int]:
@@ -676,7 +687,9 @@ def _osservazioni_prima_vittoria_su_circuito(dataset: Dataset) -> List[Observati
         e_la_prima = chiave not in gia_vinto_su_circuito
         if e_la_prima:
             gia_vinto_su_circuito.add(chiave)
-        obs.append(Observation(race=race, payload=e_la_prima))
+        # Payload = il vincitore solo quando è davvero la prima volta su
+        # questo circuito (vedi prima_vittoria_costruttore sopra).
+        obs.append(Observation(race=race, payload=winner if e_la_prima else None))
     return obs
 
 
@@ -693,8 +706,8 @@ def _osservazioni_prima_vittoria_su_circuito(dataset: Dataset) -> List[Observati
     peso_editoriale=0.4,
     descrizione="Il vincitore vinceva per la prima volta su questo circuito.",
 )
-def prima_vittoria_pilota_su_circuito(e_la_prima: bool, **_: object) -> bool:
-    return e_la_prima
+def prima_vittoria_pilota_su_circuito(payload: Optional[Result], **_: object) -> bool:
+    return payload is not None
 
 
 # ---------------------------------------------------------------------------

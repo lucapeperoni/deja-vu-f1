@@ -67,7 +67,27 @@ interface Props {
 }
 
 const PAGE_SIZE = 50;
-const NON_DETAIL_KEYS = new Set(["raceId", "raceSlug", "nomeGara", "nomeCircuito", "round", "anno", "circuitRef"]);
+// Gli id grezzi restano nell'oggetto (extractDriverIds in page.tsx e il
+// piano griglia×arrivo li usano ancora) ma non si mostrano più in tabella:
+// al loro posto i campi pilota/pilota1/pilota2/piloti/team/team1/team2/teams
+// risolti da resolveNames (page.tsx) con i nomi veri.
+const NON_DETAIL_KEYS = new Set([
+  "raceId",
+  "raceSlug",
+  "nomeGara",
+  "nomeCircuito",
+  "round",
+  "anno",
+  "circuitRef",
+  "driverId",
+  "driverId1",
+  "driverId2",
+  "driverIds",
+  "constructorId",
+  "constructorId1",
+  "constructorId2",
+  "constructorIds",
+]);
 
 function paramsKey(parametri: Record<string, number | string>): string {
   return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));

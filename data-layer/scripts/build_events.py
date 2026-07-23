@@ -134,10 +134,19 @@ def _occorrenza_completa(dataset: Dataset, observation) -> Dict[str, Any]:
 
 def _occorrenza_essenziale(dataset: Dataset, observation) -> Dict[str, Any]:
     """Usata solo quando il file dell'evento sfora i 300 KB anche con i
-    campi completi: tiene solo raceId. Anno e circuito si risalgono da
-    races-index.json (raceId -> anno/circuitRef), non servono duplicati su
-    migliaia di righe."""
-    return {"raceId": observation.race.race_id}
+    campi completi: tiene raceId e, se il payload è un Result, anche
+    driverId (pochi byte, il frontend lo risolve in un nome vero da
+    drivers-index.json senza doverlo duplicare come stringa qui).
+    constructorId resta fuori: su migliaia di righe (l'unico evento che
+    arriva a questo troncamento, "ritiro per causa specifica", ne ha oltre
+    6500) anche pochi byte a riga fanno tornare il file sopra i 300 KB.
+    Anno e circuito si risalgono comunque da races-index.json (raceId ->
+    anno/circuitRef), non servono duplicati su migliaia di righe."""
+    record: Dict[str, Any] = {"raceId": observation.race.race_id}
+    payload = observation.payload
+    if isinstance(payload, Result):
+        record["driverId"] = payload.driver_id
+    return record
 
 
 # ---------------------------------------------------------------------------

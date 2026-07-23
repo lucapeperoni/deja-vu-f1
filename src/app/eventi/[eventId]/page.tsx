@@ -122,6 +122,33 @@ function extractDriverIds(occ: Record<string, unknown>): number[] {
   return ids;
 }
 
+// La tabella delle occorrenze (vista 2) mostrava id numerici grezzi
+// ("driver id 1: 830") che da soli non dicono nulla a chi legge: qui si
+// aggiungono i nomi veri accanto agli id (mai al posto: extractDriverIds
+// sopra e il piano griglia×arrivo continuano a leggere i campi originali
+// driverId/driverId1/driverId2/driverIds). I nomi vengono da
+// public/data/drivers-index.json e constructors-index.json
+// (data-layer/scripts/build_names_index.py), non scritti a mano qui.
+function resolveNames(
+  occ: Record<string, unknown>,
+  driverNameById: Map<string, string>,
+  teamNameById: Map<string, string>
+): Record<string, unknown> {
+  const driver = (id: unknown) => (id == null ? null : driverNameById.get(String(id)) ?? `#${id}`);
+  const team = (id: unknown) => (id == null ? null : teamNameById.get(String(id)) ?? `#${id}`);
+
+  const named: Record<string, unknown> = {};
+  if (occ.driverId != null) named.pilota = driver(occ.driverId);
+  if (occ.driverId1 != null) named.pilota1 = driver(occ.driverId1);
+  if (occ.driverId2 != null) named.pilota2 = driver(occ.driverId2);
+  if (Array.isArray(occ.driverIds)) named.piloti = occ.driverIds.map(driver).join(", ");
+  if (occ.constructorId != null) named.team = team(occ.constructorId);
+  if (occ.constructorId1 != null) named.team1 = team(occ.constructorId1);
+  if (occ.constructorId2 != null) named.team2 = team(occ.constructorId2);
+  if (Array.isArray(occ.constructorIds)) named.teams = occ.constructorIds.map(team).join(", ");
+  return named;
+}
+
 export default async function EventoPage({
   params,
   searchParams,
@@ -145,6 +172,23 @@ export default async function EventoPage({
   const racesIndex = readJson<RaceIndexEntry[]>("public", "data", "races-index.json");
   const raceById = new Map(racesIndex.map((r) => [r.raceId, r]));
   const slugByRaceId = buildSlugByRaceId(racesIndex);
+
+  // Nomi di piloti e costruttori (data-layer/scripts/build_names_index.py):
+  // risolvono gli id numerici delle occorrenze in nomi veri (sotto).
+  const driversIndexPath = path.join(process.cwd(), "public", "data", "drivers-index.json");
+  const driverNameById = new Map(
+    Object.entries(
+      fs.existsSync(driversIndexPath) ? readJson<Record<string, string>>("public", "data", "drivers-index.json") : {}
+    )
+  );
+  const constructorsIndexPath = path.join(process.cwd(), "public", "data", "constructors-index.json");
+  const teamNameById = new Map(
+    Object.entries(
+      fs.existsSync(constructorsIndexPath)
+        ? readJson<Record<string, string>>("public", "data", "constructors-index.json")
+        : {}
+    )
+  );
 
   // Coordinate dei circuiti (vista 4, sezione 5.3): esportate a parte da
   // data-layer/scripts/build_circuits_geo.py, che legge data/raw/circuits.csv
@@ -190,6 +234,7 @@ export default async function EventoPage({
       const race = raceById.get(raceId);
       return {
         ...occ,
+        ...resolveNames(occ, driverNameById, teamNameById),
         raceId,
         anno,
         circuitRef,
