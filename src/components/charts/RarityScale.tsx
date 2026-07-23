@@ -48,14 +48,29 @@ interface TooltipState {
   event: CatalogEventEntry;
 }
 
-const MARGIN = { top: 36, right: 100, bottom: 40, left: 16 };
-const ROW_HEIGHT = 24;
-const LABEL_WIDTH = 300;
+const MARGIN = { top: 36, right: 110, bottom: 40, left: 16 };
+const ROW_HEIGHT = 30;
+const LABEL_WIDTH = 340;
+const LABEL_MAX_CHARS = 50;
 const WINDOW_WIDTH = 110;
-const GUTTER = 20;
-const WIDTH = 1080;
+const GUTTER = 24;
+const WIDTH = 1180;
 const TIMELINE_FROM = 1950;
 const TIMELINE_TO = 2024;
+// Altezza oltre la quale il pannello smette di allungare la pagina e apre
+// uno scroll verticale suo: con 33+ righe a piena leggibilità il grafico
+// da solo supererebbe i 1000px, spingendo il resto della pagina fuori
+// schermo. Il pannello resta un riquadro di dimensione fissa, non la
+// pagina intera.
+const MAX_PANEL_HEIGHT = 640;
+
+// Un'etichetta come "Pit stop sotto Safety Car / sotto VSC
+// (contesto=UNDER_SC)" non entra in nessuna colonna ragionevole senza
+// spingere i pallini fuori schermo: si tronca con l'ellissi, il nome
+// completo resta sempre nel tooltip (eventTooltipLines), mai perso.
+function truncateLabel(label: string): string {
+  return label.length > LABEL_MAX_CHARS ? `${label.slice(0, LABEL_MAX_CHARS - 1)}…` : label;
+}
 
 export default function RarityScale({ events }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -181,28 +196,28 @@ export default function RarityScale({ events }: Props) {
       .attr("x", MARGIN.left + 10)
       .attr("y", (d) => yScale(d.eventId))
       .attr("dy", "0.32em")
-      .attr("font-size", 12)
+      .attr("font-size", 13)
       .attr("fill", TEXT_PRIMARY_COLOR)
       .attr("opacity", (d) => (hoveredFamily && d.famiglia !== hoveredFamily ? 0.35 : 1))
-      .text((d) => `${d.nome}${parameterSuffix(d)}`);
+      .text((d) => truncateLabel(`${d.nome}${parameterSuffix(d)}`));
 
     merged
       .select<SVGRectElement>("rect.row-window-bg")
       .attr("x", windowLeft)
-      .attr("y", (d) => yScale(d.eventId) - 3)
+      .attr("y", (d) => yScale(d.eventId) - 3.5)
       .attr("width", WINDOW_WIDTH)
-      .attr("height", 6)
+      .attr("height", 7)
       .attr("fill", TEXT_MUTED_COLOR)
       .attr("opacity", 0.15)
-      .attr("rx", 3);
+      .attr("rx", 3.5);
 
     merged
       .select<SVGRectElement>("rect.row-window-fill")
       .attr("x", (d) => windowScale(d.annoDa))
-      .attr("y", (d) => yScale(d.eventId) - 3)
+      .attr("y", (d) => yScale(d.eventId) - 3.5)
       .attr("width", (d) => Math.max(2, windowScale(d.annoA) - windowScale(d.annoDa)))
-      .attr("height", 6)
-      .attr("rx", 3)
+      .attr("height", 7)
+      .attr("rx", 3.5)
       .attr("fill", (d) => familyColor(d.famiglia))
       .attr("opacity", (d) => (hoveredFamily && d.famiglia !== hoveredFamily ? 0.15 : 0.75));
 
@@ -218,7 +233,7 @@ export default function RarityScale({ events }: Props) {
     merged
       .select<SVGCircleElement>("circle.row-dot")
       .attr("cy", (d) => yScale(d.eventId))
-      .attr("r", 5)
+      .attr("r", 5.5)
       .attr("fill", (d) => familyColor(d.famiglia))
       .attr("stroke", (d) =>
         tooltip?.event.eventId === d.eventId ? HIGHLIGHT_COLOR : "none"
@@ -233,31 +248,41 @@ export default function RarityScale({ events }: Props) {
   }, [sorted, xScale, yScale, windowScale, windowLeft, chartLeft, hoveredFamily, tooltip?.event.eventId, router]);
 
   return (
-    <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative overflow-x-auto hide-scrollbar">
-      <div style={{ position: "relative", width: WIDTH }}>
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${WIDTH} ${height}`}
-          width="100%"
-          height={height}
-          role="img"
-          aria-label="Tutti gli eventi del catalogo ordinati per rarità, dal più comune al più raro"
-        />
-        {tooltip && (
-          <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
-            <div className="font-bold">{eventTooltipLines(tooltip.event)[0]}</div>
-            <div className="text-neutral-gray mt-1">{familyLabel(tooltip.event.famiglia)}</div>
-            {eventTooltipLines(tooltip.event)
-              .slice(1)
-              .map((line) => (
-                <div key={line} className="text-neutral-gray">
-                  {line}
-                </div>
-              ))}
-            <div className="text-racing-red mt-1">Clic per aprire la scheda evento →</div>
-          </ChartTooltip>
-        )}
+    <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
+      {/* Pannello di altezza fissa con scroll verticale suo, non l'intera
+          pagina: con 33+ eventi a piena leggibilità il grafico da solo
+          supererebbe abbondantemente uno schermo — qui resta un riquadro
+          consultabile, non un ostacolo da scorrere per arrivare al resto
+          della pagina. La legenda sotto resta invece sempre visibile. */}
+      <div
+        className="overflow-auto hide-scrollbar rounded-lg"
+        style={{ maxHeight: Math.min(height, MAX_PANEL_HEIGHT) }}
+      >
+        <div style={{ position: "relative", width: WIDTH }}>
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${WIDTH} ${height}`}
+            width="100%"
+            height={height}
+            role="img"
+            aria-label="Tutti gli eventi del catalogo ordinati per rarità, dal più comune al più raro"
+          />
+        </div>
       </div>
+      {tooltip && (
+        <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
+          <div className="font-bold">{eventTooltipLines(tooltip.event)[0]}</div>
+          <div className="text-neutral-gray mt-1">{familyLabel(tooltip.event.famiglia)}</div>
+          {eventTooltipLines(tooltip.event)
+            .slice(1)
+            .map((line) => (
+              <div key={line} className="text-neutral-gray">
+                {line}
+              </div>
+            ))}
+          <div className="text-racing-red mt-1">Clic per aprire la scheda evento →</div>
+        </ChartTooltip>
+      )}
       <div className="flex gap-4 flex-wrap mt-4">
         {FAMILY_LEGEND.map((item) => (
           <button
