@@ -25,7 +25,7 @@
 // OpportunityWindow.tsx (vista "decisione"/"opportunità"): stessa
 // convenzione in tutto il sito per un controllo a più stati.
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import clsx from "clsx";
 import RarityScale from "@/components/charts/RarityScale";
 import EventCardsGrid from "@/components/EventCardsGrid";
@@ -73,6 +73,27 @@ interface Props {
 export default function HomeCatalogView({ events, catalog, familyTimelineData }: Props) {
   const view = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  // Famiglia da isolare all'apertura di "I riquadri" (roadmap T5, link "Vedi
+  // gli eventi di [famiglia] →" dal fiume): solo un valore di innesco, non
+  // uno stato persistente del filtro — che resta sotto EventCardsGrid. Va
+  // azzerato ogni volta che la vista cambia per qualunque ALTRA via (i tre
+  // bottoni del toggle in alto), altrimenti un passaggio manuale successivo
+  // su "I riquadri" riapplicherebbe un filtro ormai stantio. Niente
+  // useEffect per questo azzeramento (vietato dal lint del progetto per un
+  // setState dentro un effetto, roadmap R3.1): lo si fa direttamente negli
+  // handler dei click, che sono l'unico altro posto da cui la vista cambia.
+  const [pendingFamily, setPendingFamily] = useState<string | null>(null);
+
+  function selectView(mode: ViewMode) {
+    setPendingFamily(null);
+    setStoredView(mode);
+  }
+
+  function showFamilyInGrid(familyKey: string) {
+    setPendingFamily(familyKey);
+    setStoredView("riquadri");
+  }
+
   return (
     <div>
       <div className="flex justify-end mb-4">
@@ -81,7 +102,7 @@ export default function HomeCatalogView({ events, catalog, familyTimelineData }:
             <button
               key={mode}
               type="button"
-              onClick={() => setStoredView(mode)}
+              onClick={() => selectView(mode)}
               aria-pressed={view === mode}
               className={clsx(
                 "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
@@ -95,8 +116,10 @@ export default function HomeCatalogView({ events, catalog, familyTimelineData }:
       </div>
 
       {view === "scala" && <RarityScale events={events} />}
-      {view === "riquadri" && <EventCardsGrid catalog={catalog} />}
-      {view === "tempo" && <FamilyStream data={familyTimelineData} />}
+      {view === "riquadri" && (
+        <EventCardsGrid key={pendingFamily ?? "all"} catalog={catalog} initialFamily={pendingFamily} />
+      )}
+      {view === "tempo" && <FamilyStream data={familyTimelineData} onSelectFamily={showFamilyInGrid} />}
     </div>
   );
 }

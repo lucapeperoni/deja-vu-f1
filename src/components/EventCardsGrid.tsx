@@ -23,11 +23,18 @@ import { FAMILY_LEGEND } from "@/lib/colors";
 
 interface Props {
   catalog: CatalogEventEntry[];
+  // Famiglia già isolata all'apertura (roadmap T5): arriva dal link "Vedi
+  // gli eventi di [famiglia] →" del fiume delle famiglie. Serve solo come
+  // valore iniziale (il chiamante deve passare una key diversa, es. tramite
+  // il prop React "key" sul componente, per farla riapplicare) — da qui in
+  // poi il filtro resta interamente sotto il controllo di questo
+  // componente, come già succede senza il link.
+  initialFamily?: string | null;
 }
 
-export default function EventCardsGrid({ catalog }: Props) {
+export default function EventCardsGrid({ catalog, initialFamily = null }: Props) {
   const defaultEvents = dedupeToDefaultParams(catalog);
-  const [isolatedFamily, setIsolatedFamily] = useState<string | null>(null);
+  const [isolatedFamily, setIsolatedFamily] = useState<string | null>(initialFamily);
 
   function toggleFamily(key: string) {
     setIsolatedFamily((prev) => (prev === key ? null : key));

@@ -49,6 +49,13 @@ export type FamilyTimelinePoint = { anno: number } & Record<string, number>;
 
 interface Props {
   data: FamilyTimelinePoint[];
+  // Chiamato quando l'utente clicca "Vedi gli eventi di [famiglia] →" con
+  // una famiglia isolata (roadmap T5): a differenza di RarityScale/
+  // EventCardsGrid, il fiume non porta a nessuna scheda di dettaglio da
+  // solo — questo callback chiude il cerchio, passando la mano a "I
+  // riquadri" già filtrato sulla stessa famiglia. Opzionale: se assente
+  // (es. nella demo isolata), il link non compare.
+  onSelectFamily?: (key: string) => void;
 }
 
 interface TooltipState {
@@ -70,7 +77,7 @@ const MIN_WIDTH = 900;
 
 const FAMILY_KEYS = FAMILY_LEGEND.map((f) => f.key);
 
-export default function FamilyStream({ data }: Props) {
+export default function FamilyStream({ data, onSelectFamily }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -294,6 +301,21 @@ export default function FamilyStream({ data }: Props) {
           </button>
         )}
       </div>
+      {/* Il fiume da solo non porta a nessun dettaglio (a differenza di
+          RarityScale/EventCardsGrid, che finiscono sempre su un evento o sul
+          compositore) — questo link chiude il cerchio verso "I riquadri",
+          già filtrato sulla stessa famiglia isolata qui. */}
+      {selectedFamily !== null && onSelectFamily && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => onSelectFamily(selectedFamily)}
+            className="text-xs uppercase tracking-widest text-racing-red hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-racing-red"
+          >
+            Vedi gli eventi di {familyLabel(selectedFamily).toLowerCase()} →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
