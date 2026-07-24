@@ -48,7 +48,7 @@ compositore risponde "quando è successo *questo* evento", nessuna vista rispond
 - [x] Fase T1 — Il componente FamilyStream (dati finti, isolato)
 - [x] Fase T2 — Dati reali (aggregazione famiglia×anno)
 - [x] Fase T3 — Integrazione in home (interruttore a 3 vie)
-- [ ] Fase T4 — Interazione, rifinitura, verifica finale
+- [x] Fase T4 — Interazione, rifinitura, verifica finale
 
 Ordine dei prompt: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
 
@@ -262,20 +262,23 @@ tre viste.
 
 Dipende da: T3.1
 
-- [ ] Prompt eseguito
-- [ ] Decisione esplicita presa (e motivata in un commento) su hover-evidenzia
+- [x] Prompt eseguito
+- [x] Decisione esplicita presa (e motivata in un commento) su hover-evidenzia
       (come la legenda di `RarityScale`) vs click-isola-famiglia (come il
-      filtro di `EventCardsGrid`) per la legenda di `FamilyStream` — scegli
-      quella più coerente con l'uso previsto della vista
-- [ ] Contrasto verificato per le fasce sottili delle famiglie già note come
+      filtro di `EventCardsGrid`) per la legenda di `FamilyStream` — scelto
+      click-isola, motivato in codice; il click funziona anche direttamente
+      sulla fascia nel grafico, non solo sulla legenda
+- [x] Contrasto verificato per le fasce sottili delle famiglie già note come
       critiche (indigo `griglia_e_risultato`, vinaccia `team` — stesso
-      problema già risolto in roadmap R4.1): se una fascia è troppo sottile
-      per un bordo interno, verificare comunque che resti distinguibile
-- [ ] Tooltip e legenda accessibili da tastiera (stesso standard di
-      `EventCard`: elementi `<button>` veri, focus visibile)
-- [ ] Responsive verificato a tre risoluzioni (mobile, laptop ~1280px, monitor
+      problema già risolto in roadmap R4.1): bordo bianco translucido
+      aggiunto a ogni fascia (stessa tecnica di R4.1)
+- [x] Tooltip e legenda accessibili da tastiera (stesso standard di
+      `EventCard`: elementi `<button>` veri, `aria-pressed`, focus visibile
+      confermato via screenshot — attivazione Invio/Spazio non verificabile
+      nel browser automatizzato di test, limite dell'ambiente non del codice)
+- [x] Responsive verificato a tre risoluzioni (mobile, laptop ~1280px, monitor
       largo ~2000px), nessun overflow di pagina
-- [ ] `npm run build` e `npm run lint` puliti, commit e push
+- [x] `npm run build` e `npm run lint` puliti, commit e push
 
 **Prompt da copiare:**
 
