@@ -44,10 +44,10 @@ compositore risponde "quando è successo *questo* evento", nessuna vista rispond
 
 ## Avanzamento generale
 
-- [ ] Fase T0 — Allineamento e piano dati
-- [ ] Fase T1 — Il componente FamilyStream (dati finti, isolato)
-- [ ] Fase T2 — Dati reali (aggregazione famiglia×anno)
-- [ ] Fase T3 — Integrazione in home (interruttore a 3 vie)
+- [x] Fase T0 — Allineamento e piano dati
+- [x] Fase T1 — Il componente FamilyStream (dati finti, isolato)
+- [x] Fase T2 — Dati reali (aggregazione famiglia×anno)
+- [x] Fase T3 — Integrazione in home (interruttore a 3 vie)
 - [ ] Fase T4 — Interazione, rifinitura, verifica finale
 
 Ordine dei prompt: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
@@ -61,14 +61,14 @@ Ordine dei prompt: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
 Nessuna riga di codice in questo prompt: serve a confermare da dove vengono i
 dati e con che struttura, prima di scrivere il componente.
 
-- [ ] Prompt eseguito
-- [ ] Confermato che `perStagione` (occorrenze per anno) esiste per il
+- [x] Prompt eseguito
+- [x] Confermato che `perStagione` (occorrenze per anno) esiste per il
       parametro di default di ogni evento, in ciascuno dei 33 file
       `public/data/events/<eventId>.json`
-- [ ] Confermato l'elenco di helper esistenti da riusare:
+- [x] Confermato l'elenco di helper esistenti da riusare:
       `dedupeToDefaultParams`, `FAMILY_LEGEND`, `familyColor`, `familyLabel`
       (`src/lib/eventCatalog.ts`, `src/lib/colors.ts`)
-- [ ] Proposta la struttura dati TypeScript per il grafico (es.
+- [x] Proposta la struttura dati TypeScript per il grafico (es.
       `{ anno: number; famiglia: string; occorrenze: number }[]`, o una
       struttura già pronta per `d3.stack`), senza ancora scriverla nei file
 
@@ -107,19 +107,19 @@ Non toccare nessun file in questo prompt: è solo un allineamento.
 
 Dipende da: T0.1
 
-- [ ] Prompt eseguito
-- [ ] `FamilyStream.tsx` disegna uno stream/stacked area chart con `d3.stack` +
+- [x] Prompt eseguito
+- [x] `FamilyStream.tsx` disegna uno stream/stacked area chart con `d3.stack` +
       `d3.area` (curva morbida, es. `curveBasis` o `curveMonotoneX`), un livello
       per famiglia, colore `familyColor`, asse X anni 1950-2024
-- [ ] Larghezza del grafico misurata dal contenitore reale (`ResizeObserver`,
+- [x] Larghezza del grafico misurata dal contenitore reale (`ResizeObserver`,
       stesso pattern di `RarityScale.tsx`) fin da subito, non una costante fissa
-- [ ] Legenda sotto il grafico (stesso stile della legenda di `RarityScale`),
+- [x] Legenda sotto il grafico (stesso stile della legenda di `RarityScale`),
       hover su una voce evidenzia quella fascia e attenua le altre
-- [ ] Tooltip on hover con anno, famiglia, numero di occorrenze in quell'anno
+- [x] Tooltip on hover con anno, famiglia, numero di occorrenze in quell'anno
       (stesso componente `ChartTooltip` già usato altrove)
-- [ ] Verificato isolato con dati finti (es. `src/app/dev/family-stream-demo`),
+- [x] Verificato isolato con dati finti (es. `src/app/dev/family-stream-demo`),
       screenshot mostrato prima di dire che funziona
-- [ ] Diff letto
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -164,20 +164,20 @@ finestra, mostrami gli screenshot prima di dirmi che funziona.
 
 Dipende da: T1.1
 
-- [ ] Prompt eseguito
-- [ ] Funzione/loader che legge i 33 file `public/data/events/<eventId>.json`
+- [x] Prompt eseguito
+- [x] Funzione/loader che legge i 33 file `public/data/events/<eventId>.json`
       (uno per eventId di `dedupeToDefaultParams`), estrae `perStagione` del
       parametro di default, e aggrega per famiglia×anno nella struttura decisa
       in T0.1
-- [ ] Nessuna richiesta di rete lato client: l'aggregazione avviene server-side
+- [x] Nessuna richiesta di rete lato client: l'aggregazione avviene server-side
       (component `async function`, `fs.readFileSync`), stesso pattern già usato
       in `src/app/eventi/[eventId]/page.tsx`
-- [ ] `FamilyStream` collegato ai dati reali al posto dei dati finti nella
+- [x] `FamilyStream` collegato ai dati reali al posto dei dati finti nella
       pagina di prova
-- [ ] Verificato che la somma delle occorrenze per famiglia nel grafico
+- [x] Verificato che la somma delle occorrenze per famiglia nel grafico
       coincida con `occorrenze` del catalogo per quella famiglia (nessun anno
       perso, nessun doppio conteggio)
-- [ ] Diff letto
+- [x] Diff letto
 
 **Prompt da copiare:**
 
@@ -211,20 +211,21 @@ prima di procedere, poi uno screenshot del grafico con i dati veri.
 
 Dipende da: T2.1
 
-- [ ] Prompt eseguito
-- [ ] `HomeCatalogView.tsx` passa da un interruttore a 2 vie a 3 vie: "La scala
-      della rarità" (default), "I riquadri", e la nuova vista (nome da
-      scegliere, es. "Nel tempo")
-- [ ] La persistenza già esistente (`sessionStorage` + `useSyncExternalStore`,
+- [x] Prompt eseguito
+- [x] `HomeCatalogView.tsx` passa da un interruttore a 2 vie a 3 vie: "La scala
+      della rarità" (default), "I riquadri", e la nuova vista — "Il fiume
+      delle famiglie" (nome scelto per coerenza stilistica con le altre due
+      etichette)
+- [x] La persistenza già esistente (`sessionStorage` + `useSyncExternalStore`,
       roadmap R3.1) si estende alle 3 opzioni senza perdere la scelta tornando
       indietro dal compositore (stesso bug già risolto una volta, non
-      ripresentarlo)
-- [ ] Il paragrafo introduttivo della sezione aggiornato per spiegare le tre
+      ripresentarlo) — verificato esplicitamente
+- [x] Il paragrafo introduttivo della sezione aggiornato per spiegare le tre
       letture dello stesso catalogo, non tre cataloghi diversi
-- [ ] Verificato nel browser: passaggio tra le tre viste più volte, nessun
+- [x] Verificato nel browser: passaggio tra le tre viste più volte, nessun
       errore console, le altre due viste continuano a funzionare come prima
-- [ ] `npm run build` e `npm run lint` puliti
-- [ ] Diff letto
+- [x] `npm run build` e `npm run lint` puliti
+- [x] Diff letto
 
 **Prompt da copiare:**
 

@@ -1,33 +1,40 @@
 "use client";
 
-// L'interruttore della vista 1 (roadmap R3.1, docs/ROADMAP-4.md): due modi
-// di leggere lo STESSO catalogo di eventi, non due cataloghi diversi — "La
-// scala della rarità" (RarityScale, il default) e "I riquadri"
-// (EventCardsGrid). Solo stato React locale (useState), nessuna route o
-// querystring nuova: chi apre il sito per la prima volta vede sempre
-// RarityScale.
+// L'interruttore della vista 1 (roadmap R3.1 e T3.1, docs/ROADMAP-4.md e
+// docs/ROADMAP-5.md): TRE modi di leggere lo STESSO catalogo di eventi, non
+// tre cataloghi diversi — "La scala della rarità" (RarityScale, il default),
+// "I riquadri" (EventCardsGrid), "Il fiume delle famiglie" (FamilyStream,
+// nome scelto per restare coerente con le altre due etichette — un
+// sostantivo con articolo, non "Nel tempo" che avrebbe rotto lo stile).
+// Solo stato React locale, nessuna route o querystring nuova: chi apre il
+// sito per la prima volta vede sempre RarityScale.
 //
 // Persistenza in sessionStorage (non nell'URL): tornando indietro dal
 // compositore (link "Apri nel compositore →" di una card), Next.js a
 // volte rimonta questa pagina da zero, azzerando lo useState e riportando
-// l'utente sulla scala anche se stava guardando i riquadri. sessionStorage
-// sopravvive al rimontaggio; useSyncExternalStore (non un setState dentro
-// useEffect, vietato dal lint del progetto) è il modo corretto di
-// sincronizzare React con uno store esterno: sul server e al primo paint
-// client restituisce sempre "scala" (getServerSnapshot, nessun flash alla
-// prima visita), poi si allinea al valore salvato.
+// l'utente sulla scala anche se stava guardando un'altra vista.
+// sessionStorage sopravvive al rimontaggio; useSyncExternalStore (non un
+// setState dentro useEffect, vietato dal lint del progetto) è il modo
+// corretto di sincronizzare React con uno store esterno: sul server e al
+// primo paint client restituisce sempre "scala" (getServerSnapshot, nessun
+// flash alla prima visita), poi si allinea al valore salvato. Stesso
+// meccanismo di R3.1, esteso da 2 a 3 valori — non un caso nuovo da
+// reinventare.
 //
 // Stile del segmented control riusato identico a quello già validato in
 // OpportunityWindow.tsx (vista "decisione"/"opportunità"): stessa
-// convenzione in tutto il sito per un controllo a due stati.
+// convenzione in tutto il sito per un controllo a più stati.
 
 import { useSyncExternalStore } from "react";
 import clsx from "clsx";
 import RarityScale from "@/components/charts/RarityScale";
 import EventCardsGrid from "@/components/EventCardsGrid";
+import FamilyStream, { type FamilyTimelinePoint } from "@/components/charts/FamilyStream";
 import type { CatalogEventEntry } from "@/lib/eventCatalog";
 
-type ViewMode = "scala" | "riquadri";
+type ViewMode = "scala" | "riquadri" | "tempo";
+
+const VIEW_MODES: ViewMode[] = ["scala", "riquadri", "tempo"];
 
 const STORAGE_KEY = "home-catalog-view";
 const listeners = new Set<() => void>();
@@ -38,7 +45,8 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot(): ViewMode {
-  return sessionStorage.getItem(STORAGE_KEY) === "riquadri" ? "riquadri" : "scala";
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  return VIEW_MODES.includes(stored as ViewMode) ? (stored as ViewMode) : "scala";
 }
 
 function getServerSnapshot(): ViewMode {
@@ -50,44 +58,45 @@ function setStoredView(next: ViewMode) {
   listeners.forEach((callback) => callback());
 }
 
+const VIEW_LABELS: Record<ViewMode, string> = {
+  scala: "La scala della rarità",
+  riquadri: "I riquadri",
+  tempo: "Il fiume delle famiglie",
+};
+
 interface Props {
   events: CatalogEventEntry[];
   catalog: CatalogEventEntry[];
+  familyTimelineData: FamilyTimelinePoint[];
 }
 
-export default function HomeCatalogView({ events, catalog }: Props) {
+export default function HomeCatalogView({ events, catalog, familyTimelineData }: Props) {
   const view = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md">
-          <button
-            type="button"
-            onClick={() => setStoredView("scala")}
-            aria-pressed={view === "scala"}
-            className={clsx(
-              "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
-              view === "scala" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
-            )}
-          >
-            La scala della rarità
-          </button>
-          <button
-            type="button"
-            onClick={() => setStoredView("riquadri")}
-            aria-pressed={view === "riquadri"}
-            className={clsx(
-              "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
-              view === "riquadri" ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
-            )}
-          >
-            I riquadri
-          </button>
+        <div className="flex gap-1 p-1 bg-panel border border-graphite rounded-md flex-wrap">
+          {VIEW_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setStoredView(mode)}
+              aria-pressed={view === mode}
+              className={clsx(
+                "px-3 py-1.5 text-xs font-condensed uppercase tracking-wider rounded transition-colors",
+                view === mode ? "bg-racing-red text-white font-bold" : "text-neutral-gray hover:text-white"
+              )}
+            >
+              {VIEW_LABELS[mode]}
+            </button>
+          ))}
         </div>
       </div>
 
-      {view === "scala" ? <RarityScale events={events} /> : <EventCardsGrid catalog={catalog} />}
+      {view === "scala" && <RarityScale events={events} />}
+      {view === "riquadri" && <EventCardsGrid catalog={catalog} />}
+      {view === "tempo" && <FamilyStream data={familyTimelineData} />}
     </div>
   );
 }

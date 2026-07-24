@@ -2,6 +2,41 @@ import fs from "fs";
 import path from "path";
 import HomeCatalogView from "@/components/HomeCatalogView";
 import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
+import { buildFamilyTimeline, type FamilyYearSource } from "@/lib/familyTimeline";
+
+// Stessa chiave canonica di src/app/eventi/[eventId]/page.tsx e di
+// src/app/dev/family-stream-demo/page.tsx: fa corrispondere la variante di
+// default (index.json) alla entry giusta dentro perParametro del file di
+// dettaglio, indipendentemente dall'ordine in cui compaiono nei due file.
+function paramsKey(parametri: Record<string, number | string>): string {
+  return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+interface EventDetailFile {
+  perParametro: {
+    parametri: Record<string, number | string>;
+    perStagione?: Record<string, number>;
+  }[];
+}
+
+// Legge, per ognuno dei 33 eventi di default, il suo file di dettaglio e ne
+// estrae perStagione — server-side, nessuna richiesta di rete dal browser
+// (roadmap T3.1, stessa lettura già validata in T2.1).
+function loadFamilyYearSources(events: CatalogEventEntry[]): FamilyYearSource[] {
+  return events.map((entry) => {
+    const detailPath = path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      "public",
+      "data",
+      "events",
+      `${entry.eventId}.json`
+    );
+    const detail: EventDetailFile = JSON.parse(fs.readFileSync(detailPath, "utf-8"));
+    const key = paramsKey(entry.parametri);
+    const variant = detail.perParametro.find((p) => paramsKey(p.parametri) === key) ?? detail.perParametro[0];
+    return { famiglia: entry.famiglia, perStagione: variant?.perStagione ?? {} };
+  });
+}
 
 // Home v3 = vista 1 della specifica (docs/PROGETTAZIONE.md, sezione 7):
 // "la scala della rarità", l'overview del catalogo eventi nel mantra di
@@ -17,6 +52,7 @@ export default async function Home() {
   const indexPath = path.join(process.cwd(), "public", "data", "events", "index.json");
   const catalog: CatalogEventEntry[] = JSON.parse(fs.readFileSync(indexPath, "utf-8"));
   const events = dedupeToDefaultParams(catalog);
+  const familyTimelineData = buildFamilyTimeline(loadFamilyYearSources(events));
 
   const mostCommon = [...events].sort((a, b) => b.rarita - a.rarita)[0];
   const rarest = [...events].sort((a, b) => a.rarita - b.rarita)[0];
@@ -62,15 +98,17 @@ export default async function Home() {
             La scala della <span className="text-racing-red">rarità</span>
           </h3>
           <p className="text-text-secondary max-w-3xl text-sm">
-            Due modi di leggere lo stesso catalogo di eventi, non due cataloghi diversi. &quot;La scala della
+            Tre modi di leggere lo stesso catalogo di eventi, non tre cataloghi diversi. &quot;La scala della
             rarità&quot;: asse logaritmico, dal più comune (in alto, a sinistra) al più raro (in basso, a destra),
             colore per famiglia, finestra di copertura come barra accanto al nome. &quot;I riquadri&quot;: gli
             stessi eventi raggruppati per famiglia, ognuno con la sua risposta pronta e un controllo per cambiare
-            parametro sul posto. In entrambe le viste il colore codifica la famiglia, mai la rarità, e la finestra
-            di copertura resta sempre visibile accanto al numero.
+            parametro sul posto. &quot;Il fiume delle famiglie&quot;: come cambia nel tempo il mix di famiglie
+            lungo le 75 stagioni, una fascia colorata per famiglia. In tutte le viste il colore codifica sempre
+            la famiglia, mai la rarità o la quantità, e la finestra di copertura resta sempre visibile accanto al
+            numero.
           </p>
         </div>
-        <HomeCatalogView events={events} catalog={catalog} />
+        <HomeCatalogView events={events} catalog={catalog} familyTimelineData={familyTimelineData} />
       </section>
     </main>
   );
