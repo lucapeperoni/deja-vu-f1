@@ -8,7 +8,7 @@
 //
 // Convenzione D3 del progetto (docs/PROGETTAZIONE.md, sezione 7): D3 possiede
 // l'intero <svg> — scale, stack layout, area generator, data join dentro un
-// unico useEffect. React tiene solo ref, stato di hover/tooltip. Il colore
+// unico useEffect. React tiene solo ref, stato di selezione/tooltip. Il colore
 // codifica la FAMIGLIA (familyColor, stessa palette di RarityScale/
 // EventCardsGrid), mai la quantità.
 //
@@ -23,6 +23,18 @@
 // affollata negli ultimi) comunicherebbe peggio. Per questo niente asse Y
 // esplicito — è un silhouette, non un grafico di quantità assolute da
 // leggere sull'asse.
+//
+// Legenda: CLICK isola la famiglia, non hover (roadmap T4.1, a differenza
+// della legenda hover-only di RarityScale). Motivo: qui l'obiettivo è
+// seguire l'andamento di UNA famiglia lungo 75 anni di larghezza del
+// grafico — un'ispezione prolungata, con lo sguardo che percorre tutto
+// l'asse X. L'hover richiederebbe di tenere il mouse fermo sulla legenda
+// mentre gli occhi si spostano, ma almeno lascia libero lo sguardo (il
+// mouse resta parcheggiato); il click invece FISSA la selezione senza
+// vincolare il mouse a nessun punto, ed è più adatto anche da tastiera
+// (Invio/Spazio su un bottone reale) di un hover che da tastiera non
+// esisterebbe. Stesso pattern del filtro di EventCardsGrid (click per
+// isolare, click di nuovo per deselezionare), riusato qui per coerenza.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
@@ -62,8 +74,12 @@ export default function FamilyStream({ data }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const [hoveredFamily, setHoveredFamily] = useState<string | null>(null);
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+
+  function toggleFamily(key: string) {
+    setSelectedFamily((prev) => (prev === key ? null : key));
+  }
 
   // Stesso pattern di RarityScale.tsx: misura il contenitore reale invece di
   // una larghezza fissa indovinata a mano.
@@ -153,7 +169,18 @@ export default function FamilyStream({ data }: Props) {
       )
       .attr("d", (d) => area(d))
       .attr("fill", (d) => familyColor(d.key))
-      .attr("opacity", (d) => (hoveredFamily && d.key !== hoveredFamily ? 0.25 : 0.9))
+      // Bordo chiaro sempre presente (roadmap T4.1, passata di contrasto):
+      // stessa ragione del pallino in EventCardsGrid e della striscia in
+      // EventCard (roadmap R4.1) — indigo (griglia_e_risultato) e vinaccia
+      // (team) hanno un contrasto sotto 2:1 contro lo sfondo quasi nero, e
+      // qui il problema è amplificato perché una fascia può assottigliarsi
+      // fino a pochi pixel in un anno con poche occorrenze, sparendo quasi
+      // del tutto. Un filo bianco translucido attorno a OGNI fascia (non
+      // solo le due critiche, per uniformità) la rende sempre percepibile
+      // come forma anche quando il riempimento si confonde con lo sfondo.
+      .attr("stroke", "rgba(255,255,255,0.18)")
+      .attr("stroke-width", 1)
+      .attr("opacity", (d) => (selectedFamily && d.key !== selectedFamily ? 0.2 : 0.9))
       .style("cursor", "default");
 
     // Overlay trasparente su tutta l'area del grafico: un unico target per
@@ -170,6 +197,7 @@ export default function FamilyStream({ data }: Props) {
       .attr("width", Math.max(0, width - MARGIN.left - MARGIN.right))
       .attr("height", HEIGHT - MARGIN.top - MARGIN.bottom)
       .attr("fill", "transparent")
+      .style("cursor", "pointer")
       .on("pointermove", (event) => {
         const [pointerX, pointerY] = d3.pointer(event, svgRef.current);
         const anno = Math.round(xScale.invert(pointerX));
@@ -195,8 +223,22 @@ export default function FamilyStream({ data }: Props) {
           occorrenze: point[layer.key] ?? 0,
         });
       })
-      .on("pointerleave", () => setTooltip(null));
-  }, [series, area, xScale, yScale, yearExtent, sorted, hoveredFamily, bisectYear, width]);
+      .on("pointerleave", () => setTooltip(null))
+      // Click sul grafico stesso, non solo sulla legenda: l'overlay sta
+      // SOPRA le fasce (serve così per il tooltip), quindi un click su una
+      // fascia arriva qui, non al path — stessa bisezione già usata per il
+      // tooltip per capire su quale fascia si è cliccato.
+      .on("click", (event) => {
+        const [pointerX, pointerY] = d3.pointer(event, svgRef.current);
+        const idx = Math.min(bisectYear(sorted, Math.round(xScale.invert(pointerX))), sorted.length - 1);
+        const valueAtPointer = yScale.invert(pointerY);
+        const layer = series.find((s) => {
+          const [y0, y1] = s[idx];
+          return valueAtPointer >= Math.min(y0, y1) && valueAtPointer <= Math.max(y0, y1);
+        });
+        if (layer) toggleFamily(layer.key);
+      });
+  }, [series, area, xScale, yScale, yearExtent, sorted, selectedFamily, bisectYear, width]);
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
@@ -221,18 +263,36 @@ export default function FamilyStream({ data }: Props) {
           </div>
         </ChartTooltip>
       )}
-      <div className="flex gap-4 flex-wrap mt-4">
-        {FAMILY_LEGEND.map((item) => (
+      <div className="flex gap-4 flex-wrap mt-4" role="group" aria-label="Isola una famiglia">
+        {FAMILY_LEGEND.map((item) => {
+          const isActive = selectedFamily === null || selectedFamily === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => toggleFamily(item.key)}
+              aria-pressed={selectedFamily === item.key}
+              className={`flex items-center gap-2 text-xs uppercase tracking-widest transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-racing-red ${
+                isActive ? "text-neutral-gray hover:text-white" : "text-neutral-gray/40 hover:text-neutral-gray"
+              }`}
+            >
+              <div
+                className="w-3 h-3 rounded-full shrink-0 ring-1 ring-white/40"
+                style={{ backgroundColor: item.color, opacity: isActive ? 1 : 0.4 }}
+              />
+              {item.label}
+            </button>
+          );
+        })}
+        {selectedFamily !== null && (
           <button
-            key={item.key}
-            onMouseEnter={() => setHoveredFamily(item.key)}
-            onMouseLeave={() => setHoveredFamily(null)}
-            className="flex items-center gap-2 text-xs uppercase tracking-widest text-neutral-gray hover:text-white transition-colors"
+            type="button"
+            onClick={() => setSelectedFamily(null)}
+            className="text-xs uppercase tracking-widest text-racing-red hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-racing-red"
           >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-            {item.label}
+            Mostra tutte
           </button>
-        ))}
+        )}
       </div>
     </div>
   );
