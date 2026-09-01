@@ -81,7 +81,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 ## Avanzamento generale
 
 - [x] Fase S0 — Allineamento e piano dati (nessun codice)
-- [ ] Fase S1 — L'indice delle occorrenze e il motore di match (lato client)
+- [~] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1 fatto, S1.2 da fare)
 - [ ] Fase S2 — Il compositore a chip (ricerca + menu a macro-aree)
 - [ ] Fase S3 — Lo scaffale delle corrispondenze (la vista D3)
 - [ ] Fase S4 — La frase in chiaro e la finestra che si restringe
@@ -152,57 +152,54 @@ Esito, **verificato a mano sui dati** — decisioni chiuse, non da ridiscutere:
 
 # Fase S1 — L'indice delle occorrenze e il motore di match
 
-## S1.1 — L'indice in memoria
+## S1.1 — L'indice in memoria  ✅ FATTO (1 set 2026)
 
-Dipende da: S0.1
+`src/lib/scenarioIndex.ts`: legge lui stesso i 33 file + `races-index.json`,
+normalizza le 17.208 occorrenze e mette il risultato in cache a livello di
+modulo (nessuna pagina esistente legge già tutte le `occorrenzeDettaglio`,
+quindi non c'era un chiamante naturale da cui estrarre i dati a monte come fa
+`familyTimeline.ts`).
 
-- [ ] Prompt eseguito
-- [ ] `src/lib/scenarioIndex.ts` costruisce, dai file eventi già esistenti, un
-      indice normalizzato delle occorrenze (una riga per occorrenza, chiavi
-      `raceId` / piloti / team / circuito / anno)
-- [ ] L'indice è costruito **lato server** in un componente Next.js (stesso
-      pattern di `src/lib/familyTimeline.ts`) e passato al client già pronto,
-      oppure caricato una volta sola: scegliere e motivare in un commento
-- [ ] Verificato con un conteggio: per un evento singolo con un solo chip, il
-      motore deve restituire **esattamente** le occorrenze e la rarità già
-      scritte in `index.json` (se differisce, è un bug del motore, non del dato)
-- [ ] Le occorrenze troncate di `ritiro_per_causa_specifica` sono ricostruite
-      (anno/circuito da `races-index.json`) e i campi mancanti sono marcati
-      **assenti**, non vuoti — vedi il terzo stato deciso in S0.1
-- [ ] Diff letto
+- [x] Controllo di correttezza: **67 su 67** combinazioni evento×parametro con
+      occorrenze, denominatore e rarità identici a `index.json`. Zero `NaN`.
+- [x] Occorrenze troncate di `ritiro_per_causa_specifica` ricostruite via
+      `races-index.json`.
 
-**Prompt da copiare:**
+**Due cose scoperte strada facendo, che S0.1 non aveva visto:**
 
-```
-Crea src/lib/scenarioIndex.ts seguendo le strutture concordate in S0.1.
+1. **`driverId` è una stringa numerica** (`"832"`) in 4 eventi ereditati dalla
+   pipeline v2 (`pilota_fregato`, `pit_double_stack`,
+   `pit_sotto_neutralizzazione`, `pilota_locked_out`). Con un controllo
+   `typeof === "number"` finivano in silenzio nel ramo "nessun soggetto".
+   Normalizzati con `Number()`.
 
-Deve costruire un indice normalizzato di tutte le occorrenze dei 33 eventi
-(parametro di default + parametri alternativi), leggendo i file
-public/data/events/<eventId>.json gia' esistenti. Guarda
-src/lib/familyTimeline.ts come riferimento per come questo progetto aggrega
-quei file lato server.
+2. **La regola del "non valutabile" decisa in S0.1 era troppo stretta.** Non è
+   vero che solo `ritiro_per_causa_specifica` perde dei soggetti: **4 eventi di
+   unità `RISULTATO` non hanno alcun pilota nelle occorrenze** —
+   `rimonta_almeno_n_posizioni` (1990), `pilota_con_almeno_n_soste` (550),
+   `causa_non_vista_da_anni` (86), `vincitore_con_almeno_n_soste` (85). Con la
+   costante `TRUNCATED_EVENT_ID` scritta a mano, un chip "pilota" su una
+   *rimonta* avrebbe risposto "non regge" invece di "non lo so" — la bugia
+   silenziosa esatta che il terzo stato doveva impedire, e per giunta su uno
+   degli eventi più richiesti da un telecronista.
 
-Attenzione a tre cose gia' verificate in S0.1, non da riscoprire:
-- results-plane.json e' COLONNARE (quattro array paralleli griglia/arrivo/
-  raceId/driverId da 26.354, non un array di oggetti): si scorre per indice.
-- ritiro_per_causa_specifica ha occorrenze TRONCATE {raceId, driverId}: anno e
-  circuitRef si risalgono da races-index.json, ma constructorId e' PERDUTO e va
-  marcato come assente (campo non presente), non come lista vuota. La differenza
-  conta: piu' avanti un chip "team" su quelle occorrenze dara' "non valutabile",
-  non "non regge".
-- la forma di occorrenzeDettaglio NON dipende da "unita" ma dalla forma del
-  payload: gestisci driverId singolo, driverId1/driverId2, driverIds array, e
-  payload numerico puro senza alcun pilota.
+   **Regola corretta, ora nel codice:** soggetto assente + unità che lo implica
+   = **perso** (`undefined`, non valutabile); soggetto assente + unità che non
+   lo implica = **genuinamente vuoto** (`[]`). `RISULTATO` e `TEAM_GARA`
+   implicano pilota e team, `GARA` nessuno dei due.
 
-Requisito di correttezza non negoziabile: con UN SOLO chip evento, il numero di
-occorrenze e la rarita' calcolati da questo indice devono coincidere ESATTAMENTE
-con "occorrenze", "denominatore" e "rarita" gia' scritti in
-public/data/events/index.json per quell'evento e quel parametro. Scrivi un
-controllo che lo verifichi su tutti e 33 gli eventi e mostrami l'esito prima di
-dire che funziona. Se qualcosa non torna, fermati e dimmi cosa.
+   Totali risultanti, verificati: **2.711 occorrenze senza pilota**, **10.249
+   senza team** (le 4 sopra + `ritiro_per_causa_specifica` + i 4 eventi di pit
+   stop, che hanno il pilota ma mai il team), su 17.208.
 
-Non toccare data-layer/ ne' scripts/.
-```
+**Punto aperto per S2, da decidere lì:** l'indice serializzato pesa **4,1 MB**
+con `raw`, **2,9 MB** senza. Troppo per spedirlo al client così com'è, e la
+ricerca deve essere istantanea. Le strade: una codifica compatta colonnare
+(come fa già `results-plane.json`), oppure tenere il match sul server. Da
+risolvere prima di scrivere il compositore, non dopo.
+
+- [x] Prompt eseguito
+- [x] Diff letto
 
 ## S1.2 — Il motore di match a cascata
 
