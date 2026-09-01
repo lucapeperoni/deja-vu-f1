@@ -192,7 +192,7 @@ quindi non c'era un chiamante naturale da cui estrarre i dati a monte come fa
    senza team** (le 4 sopra + `ritiro_per_causa_specifica` + i 4 eventi di pit
    stop, che hanno il pilota ma mai il team), su 17.208.
 
-**Punto aperto per S2.2, ancora da decidere:** l'indice serializzato pesa **4,1 MB**
+**Punto chiuso (1 set 2026), era aperto per S2.2:** l'indice serializzato pesa **4,1 MB**
 con `raw`, **2,9 MB** senza. Troppo per spedirlo al client così com'è, e la
 ricerca deve essere istantanea. Le strade: una codifica compatta colonnare
 (come fa già `results-plane.json`), oppure tenere il match sul server. Da
@@ -267,16 +267,76 @@ Controprove dopo la correzione: 30 risultati / 30 gare distinte; Monza 2 su
 
 Dipende da: S2.1
 
+**Decisione presa prima di scrivere il codice: l'indice va al client, in forma
+colonnare.** I 2,9 MB misurati in S1.1 erano quasi tutti nomi di campo ripetuti
+17.208 volte. Misurato il 1 set 2026 su una codifica colonnare (array paralleli,
+lo stesso schema che `results-plane.json` usa già in questo progetto): **160 KB
+grezzi, 31 KB compressi**. Nessun motivo di tenere il match sul server: la
+ricerca dev'essere istantanea mentre si digita, e a 31 KB lo è.
+
+Conseguenza sul codice già scritto: `scenarioMatch.ts` va **separato in due**.
+La logica di match diventa pura (lavora sull'indice compatto ricevuto come
+argomento, nessun `fs`, importabile da un componente client); la lettura dei
+file resta in un modulo server che produce l'indice compatto. Oggi
+`EventPicker.tsx` importa da `scenarioMatch` solo un `type` e regge per caso —
+basta un import di valore per rompere la build.
+
 - [ ] Prompt eseguito
+- [ ] `scenarioMatch.ts` separato: logica pura (client) vs lettura file (server)
+- [ ] Indice compatto colonnare, verificato ≤ 200 KB grezzi
+- [ ] I risultati del motore restano **identici** a quelli verificati in S1.2
+      (30 risultati / 30 gare; Monza 2 su 1016; un chip solo = 37 su 1114)
 - [ ] Una sola barra cerca su tutti e cinque i tipi insieme (eventi, piloti,
-      team, circuiti, ere), risultati raggruppati per tipo, tastiera funzionante
-      (frecce + invio, senza mouse)
-- [ ] I chip scelti si accumulano in una riga sopra il risultato, ognuno
-      rimovibile; i chip `evento` restano modificabili nei parametri
+      team, circuiti, ere), risultati raggruppati per tipo
+- [ ] Tastiera funzionante: frecce e invio, senza mai toccare il mouse
+- [ ] I chip scelti si accumulano in una riga, ognuno rimovibile; i chip
+      `evento` restano modificabili nei parametri
 - [ ] Il menu di S2.1 è raggiungibile da lì, come alternativa alla digitazione
 - [ ] Diff letto
 
----
+**Prompt da copiare:**
+
+```
+Leggi docs/ROADMAP-6.md (le decisioni in cima e le fasi S1.1, S1.2, S2.1 gia'
+chiuse), src/lib/scenarioIndex.ts, src/lib/scenarioMatch.ts,
+src/components/scenario/EventPicker.tsx e public/data/results-plane.json (per
+lo schema colonnare gia' usato nel progetto).
+
+Fai due cose, in quest'ordine.
+
+1. Separa scenarioMatch.ts in due moduli:
+   - uno PURO, senza fs, che riceve l'indice come argomento e fa il match:
+     deve poter essere importato da un componente client.
+   - uno SERVER che legge i file e produce l'indice in forma COLONNARE
+     compatta (array paralleli, stesso schema di results-plane.json).
+     Misurato: 160 KB grezzi, 31 KB compressi — se la tua codifica supera i
+     200 KB grezzi, fermati e dimmi perche'.
+   Requisito non negoziabile: i risultati del motore devono restare IDENTICI a
+   quelli verificati in S1.2. Ricontrollali e mostrami i numeri:
+   doppietta + nessun_cambio_di_leader = 30 risultati su 30 gare distinte;
+   vittoria_da_griglia N=10 + circuito Monza = 2 su 1016;
+   vittoria_da_griglia N=10 da solo = 37 su 1114 (fonte "precalcolato");
+   un chip team -> denominatore "non calcolabile".
+   Se un numero cambia, e' un bug della separazione: fermati e dimmelo.
+
+2. Scrivi src/components/scenario/ScenarioComposer.tsx: una barra di ricerca
+   che cerca insieme su eventi (catalogo), piloti (drivers-index.json), team
+   (constructors-index.json), circuiti (circuits.json) ed ere (decenni), con i
+   risultati raggruppati per tipo. Selezionare un risultato emette il chip del
+   tipo giusto. I chip scelti stanno in una riga sopra, ognuno rimovibile.
+   EventPicker (S2.1) e' raggiungibile da li' come alternativa a digitare.
+
+   Tutto navigabile da TASTIERA: frecce su/giu' tra i risultati, invio per
+   scegliere, backspace su input vuoto per togliere l'ultimo chip. E' lo
+   scenario d'uso — chi ha fretta non prende il mouse.
+
+   NON disegnare ancora i risultati del match: e' la fase S3. Qui basta
+   mostrare i chip scelti e, in una riga di testo provvisoria, quanti
+   risultati escono per ogni livello della cascata.
+
+Verifica in una demo isolata sotto src/app/dev/, screenshot, e mostrami i
+numeri del punto 1 prima di dire che funziona.
+```
 
 # Fase S3 — Lo scaffale delle corrispondenze
 
