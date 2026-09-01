@@ -80,7 +80,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 
 ## Avanzamento generale
 
-- [ ] Fase S0 — Allineamento e piano dati (nessun codice)
+- [x] Fase S0 — Allineamento e piano dati (nessun codice)
 - [ ] Fase S1 — L'indice delle occorrenze e il motore di match (lato client)
 - [ ] Fase S2 — Il compositore a chip (ricerca + menu a macro-aree)
 - [ ] Fase S3 — Lo scaffale delle corrispondenze (la vista D3)
@@ -94,62 +94,61 @@ Ordine dei prompt: S0.1 → S1.1 → S1.2 → S2.1 → S2.2 → S3.1 → S4.1 �
 
 # Fase S0 — Allineamento e piano dati
 
-## S0.1 — Lettura e piano
+## S0.1 — Lettura e piano  ✅ FATTO (1 set 2026)
 
-Nessuna riga di codice: serve a fissare le strutture dati prima di scriverle,
-e a decidere le due cose che ancora non sono decise (il denominatore composto e
-la forma dell'indice).
+Esito, **verificato a mano sui dati** — decisioni chiuse, non da ridiscutere:
 
-- [ ] Prompt eseguito
-- [ ] Confermata la forma esatta di `occorrenzeDettaglio` per tutte e tre le
-      unità (`RISULTATO`, `GARA`, `TEAM_GARA`) e le differenze di chiave tra
-      loro (`driverId` singolo vs `driverIds`/`driverId1`+`driverId2`)
-- [ ] Deciso **come si calcola il denominatore di uno scenario composto**
-      (proposta di partenza: gare nella finestra intersecata da
-      `races-index.json` per gli scenari a livello gara; risultati nella stessa
-      finestra per quelli a livello pilota — ma va confermato leggendo come
-      `engine.py` calcola oggi `denominatore`, per non dare due numeri diversi
-      per la stessa domanda)
-- [ ] Proposte le strutture TypeScript: il chip (unione discriminata sui 5
-      tipi), l'indice delle occorrenze, il risultato di un match
-- [ ] Confermato che nessun file in `data-layer/` o `scripts/` va toccato
+- **Tre forme di `occorrenzeDettaglio`, più una quarta troncata.** La forma NON
+  dipende da `unita` ma dalla forma del payload: singolo Result
+  (`driverId`/`constructorId`), coppia (`driverId1`/`driverId2`…), lista
+  (`driverIds`/`constructorIds`), e payload numerico puro (`valore`, nessun
+  pilota). La quarta è il troncamento a 300 KB
+  (`_occorrenza_essenziale`, `scripts/build_events.py:135-149`): oggi colpisce
+  **solo `ritiro_per_causa_specifica`** (272 KB), che porta `{raceId, driverId}`
+  e basta.
+- **Tipo comune `NormalizedOccurrence`**: `raceId`, `anno`, `circuitRef`,
+  `driverIds: number[]`, `constructorIds: number[]`, `raw`. Liste sempre, anche
+  con un elemento; vuote se l'evento non ha soggetti. `anno`/`circuitRef` per le
+  occorrenze troncate si risalgono da `races-index.json` via `raceId`.
+- **Terzo stato obbligatorio: `non valutabile`.** Le occorrenze troncate perdono
+  `constructorId`, quindi un chip `team` su `ritiro_per_causa_specifica` non è
+  "non regge": è **non determinabile**. Un chip che non si può valutare NON va
+  contato come fallito — falserebbe la cascata K/K-1 dicendo una cosa falsa in
+  silenzio. La normalizzazione deve distinguere *campo assente* da *campo vuoto*,
+  e la UI lo dichiara.
+- **Denominatore composto, regola in tre casi** (motivo: `engine.py:62` calcola
+  `denominatore = len(osservazioni(dataset))`, cioè un universo **specifico per
+  evento** con le sue esclusioni — due eventi con stessa unità e stessa finestra
+  possono avere denominatori diversi):
+  1. **Un solo chip evento, niente che restringa** → si usa il `denominatore`
+     già precalcolato. Stesso numero della scheda evento, per costruzione.
+  2. **Più chip / contesto ristretto** → si ricalcola con la proxy più fedele
+     per l'unità più stretta coinvolta, ed è un **limite superiore onesto**, non
+     il numero esatto. Va dichiarato in UI che viene dalla proxy.
+     - `GARA` → `races-index.json` con `isIndy500 === false` = **1114 gare**
+       (verificato: coincide con il denominatore di `vittoria_da_griglia`; ma
+       `doppietta` è 1113, quindi la proxy sovrastima di 1 dove l'evento ha
+       esclusioni proprie).
+     - `RISULTATO` → `results-plane.json` con `griglia` e `arrivo` non nulli =
+       **15.518 su 26.354** (verificato: coincide esatto con
+       `rimonta_almeno_n_posizioni`).
+  3. **`TEAM_GARA` con contesto ristretto → "non calcolabile", dichiarato.**
+     Nessun file pubblico porta l'universo coppie team×gara (`doppio_ritiro` ha
+     denominatore 11.422, non ricostruibile da `results-plane.json`, che non ha
+     `constructorId`). Si dice, non si inventa.
+- **`results-plane.json` è colonnare, non un array di righe**: quattro array
+  paralleli `{griglia, arrivo, raceId, driverId}` da 26.354 elementi. Si scorre
+  per indice.
+- **Tipi TypeScript concordati**: `Chip` (unione discriminata sui 5 tipi),
+  `ScenarioIndexEntry` (= `NormalizedOccurrence` + `eventId`, `parametri`,
+  `famiglia`, `unita`), `ChipMatchResult` (`entry`, `chipsHeld`, `chipsMissed`,
+  **`chipsNonValutabili`**, `score`), `ScenarioResult` (`byScore`,
+  `finestraIntersecata`, `denominatoreComposto: {valore, fonte:
+  "precalcolato" | "proxy" | "non_calcolabile"}`, `joinMode`, `joinModeDedotto`).
+- **Confermato: nessuna modifica a `data-layer/` o `scripts/`.** Un roster
+  `raceId × driverId × constructorId` risolverebbe il caso 3, ma è fuori scope.
 
-**Prompt da copiare:**
-
-```
-Leggi per intero: src/lib/eventCatalog.ts, src/lib/colors.ts,
-src/app/eventi/[eventId]/page.tsx, src/components/charts/QuandoStrip.tsx,
-e data-layer/app/events/engine.py (in particolare come calcola "denominatore"
-e "rarita" per le tre unita RISULTATO / GARA / TEAM_GARA).
-
-Guarda anche la forma di occorrenzeDettaglio in tre file diversi, uno per
-unita: public/data/events/vittoria_da_griglia.json (RISULTATO),
-public/data/events/doppietta.json (GARA),
-public/data/events/doppio_ritiro.json (TEAM_GARA).
-
-Non scrivere codice. Dimmi:
-
-1. La forma esatta di occorrenzeDettaglio per ciascuna delle tre unita, e come
-   normalizzarle in UN tipo comune che porti sempre: raceId, anno, circuitRef,
-   e la lista dei piloti e dei team coinvolti (liste, anche quando ce n'e' uno
-   solo).
-
-2. Come calcolare il denominatore di uno scenario composto da piu chip, in modo
-   COERENTE con quello che engine.py gia' fa per un evento singolo (non
-   vogliamo che la stessa domanda dia due numeri diversi a seconda della
-   pagina). Dimmi da dove prendi il conteggio delle unita nella finestra
-   intersecata.
-
-3. Le strutture TypeScript che proponi: il tipo Chip (unione discriminata sui
-   5 tipi evento/pilota/team/circuito/era), l'indice in memoria, e il tipo del
-   risultato di un match (che deve poter dire, per ogni occorrenza trovata,
-   QUALI chip reggono e QUALI no).
-
-4. Conferma che tutto si fa leggendo i file gia' presenti in public/data/,
-   senza toccare data-layer/ ne' scripts/build_events.py.
-```
-
----
+- [x] Prompt eseguito
 
 # Fase S1 — L'indice delle occorrenze e il motore di match
 
@@ -167,6 +166,9 @@ Dipende da: S0.1
 - [ ] Verificato con un conteggio: per un evento singolo con un solo chip, il
       motore deve restituire **esattamente** le occorrenze e la rarità già
       scritte in `index.json` (se differisce, è un bug del motore, non del dato)
+- [ ] Le occorrenze troncate di `ritiro_per_causa_specifica` sono ricostruite
+      (anno/circuito da `races-index.json`) e i campi mancanti sono marcati
+      **assenti**, non vuoti — vedi il terzo stato deciso in S0.1
 - [ ] Diff letto
 
 **Prompt da copiare:**
@@ -179,6 +181,18 @@ Deve costruire un indice normalizzato di tutte le occorrenze dei 33 eventi
 public/data/events/<eventId>.json gia' esistenti. Guarda
 src/lib/familyTimeline.ts come riferimento per come questo progetto aggrega
 quei file lato server.
+
+Attenzione a tre cose gia' verificate in S0.1, non da riscoprire:
+- results-plane.json e' COLONNARE (quattro array paralleli griglia/arrivo/
+  raceId/driverId da 26.354, non un array di oggetti): si scorre per indice.
+- ritiro_per_causa_specifica ha occorrenze TRONCATE {raceId, driverId}: anno e
+  circuitRef si risalgono da races-index.json, ma constructorId e' PERDUTO e va
+  marcato come assente (campo non presente), non come lista vuota. La differenza
+  conta: piu' avanti un chip "team" su quelle occorrenze dara' "non valutabile",
+  non "non regge".
+- la forma di occorrenzeDettaglio NON dipende da "unita" ma dalla forma del
+  payload: gestisci driverId singolo, driverId1/driverId2, driverIds array, e
+  payload numerico puro senza alcun pilota.
 
 Requisito di correttezza non negoziabile: con UN SOLO chip evento, il numero di
 occorrenze e la rarita' calcolati da questo indice devono coincidere ESATTAMENTE
@@ -197,7 +211,10 @@ Dipende da: S1.1
 - [ ] Prompt eseguito
 - [ ] `src/lib/scenarioMatch.ts`: dati K chip, restituisce le occorrenze
       raggruppate per **numero di chip soddisfatti** (K, K-1, … 1), e per
-      ciascuna occorrenza l'elenco dei chip che reggono e di quelli che saltano
+      ciascuna occorrenza l'elenco dei chip che reggono, di quelli che saltano
+      e di quelli **non valutabili** (dato assente, ≠ dato negativo)
+- [ ] Un chip non valutabile non conta come fallito: l'occorrenza resta nel
+      gruppo giusto e la UI dichiarerà l'incertezza
 - [ ] Implementata la regola "stesso pilota" / "stessa gara" come parametro
       esplicito della funzione, con il default dedotto come da decisioni sopra
 - [ ] Calcolata la **finestra di copertura intersecata** e il denominatore
@@ -222,6 +239,9 @@ La modalita' di join ha un default dedotto: "stesso pilota" se TUTTI i chip
 evento sono di unita' RISULTATO, altrimenti "stessa gara" (con almeno un chip
 di unita' GARA l'ambiguita' non esiste). La funzione deve restituire anche
 quale default ha dedotto, perche' la UI lo scrivera' in chiaro.
+
+Il denominatore segue la regola in tre casi decisa in S0.1 (precalcolato /
+proxy / non_calcolabile per TEAM_GARA ristretto): rileggila, non reinventarla.
 
 Calcola inoltre: la finestra di copertura INTERSECATA tra i chip (il minimo
 annoDa e il massimo annoA che valgono per tutti), il denominatore composto
