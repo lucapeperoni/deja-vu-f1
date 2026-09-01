@@ -7,7 +7,7 @@
 import { useState } from "react";
 import EventPicker from "@/components/scenario/EventPicker";
 import type { CatalogEventEntry } from "@/lib/eventCatalog";
-import type { EventoChip } from "@/lib/scenarioMatch";
+import type { EventoChip } from "@/lib/scenarioEngine";
 
 interface Props {
   catalog: CatalogEventEntry[];

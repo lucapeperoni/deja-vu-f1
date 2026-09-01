@@ -82,7 +82,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 
 - [x] Fase S0 — Allineamento e piano dati (nessun codice)
 - [x] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1, S1.2 fatti)
-- [~] Fase S2 — Il compositore a chip (S2.1 fatto, S2.2 da fare)
+- [x] Fase S2 — Il compositore a chip (S2.1, S2.2 fatti)
 - [ ] Fase S3 — Lo scaffale delle corrispondenze (la vista D3)
 - [ ] Fase S4 — La frase in chiaro e la finestra che si restringe
 - [ ] Fase S5 — La nuova home e l'area "Esplora"
@@ -263,7 +263,7 @@ Controprove dopo la correzione: 30 risultati / 30 gare distinte; Monza 2 su
 - [x] Verificato nella demo isolata, screenshot mostrato
 - [x] Diff letto
 
-## S2.2 — La barra di ricerca e la riga dei chip
+## S2.2 — La barra di ricerca e la riga dei chip  ✅ FATTO (1 set 2026)
 
 Dipende da: S2.1
 
@@ -281,17 +281,65 @@ file resta in un modulo server che produce l'indice compatto. Oggi
 `EventPicker.tsx` importa da `scenarioMatch` solo un `type` e regge per caso —
 basta un import di valore per rompere la build.
 
-- [ ] Prompt eseguito
-- [ ] `scenarioMatch.ts` separato: logica pura (client) vs lettura file (server)
-- [ ] Indice compatto colonnare, verificato ≤ 200 KB grezzi
-- [ ] I risultati del motore restano **identici** a quelli verificati in S1.2
+`scenarioMatch.ts` non esiste più: al suo posto `src/lib/scenarioEngine.ts`
+(puro, nessun `fs`, importabile dal client) e `src/lib/scenarioIndexServer.ts`
+(legge i file, produce la forma colonnare). `EventPicker.tsx` ora importa il
+tipo da `scenarioEngine`. Demo isolata in `src/app/dev/scenario-composer-demo/`.
+
+**Il peso misurato, con il conto onesto di cosa ci sta dentro** — la stima di
+160 KB scritta sopra copriva le sole occorrenze, e non aveva contato quello
+che serve ai denominatori:
+
+- occorrenze + varianti + gare: **187,2 KB grezzi** (sotto il tetto di 200 KB)
+- piano dei risultati (`results-plane.json` compattato: serve solo al
+  denominatore composto di S0.1 caso 2, che senza di esso non sarebbe più
+  calcolabile e cambierebbe i numeri): **69,3 KB grezzi**
+- totale **256,5 KB grezzi, 53,1 KB compressi** — l'RSC dell'intera pagina
+  demo pesa 343 KB, e la ricerca è in memoria: nessun ritorno al server per
+  tasto premuto.
+
+Le codifiche che fanno stare in piedi il numero, tutte verificabili in
+`scenarioIndexServer.ts`: dizionario di driverId/constructorId ordinato per
+frequenza (gli id più ricorrenti prendono gli indici più corti); indice gara
+per differenza dentro la variante; **il "perso" (terzo stato di S0.1) hoistato
+a livello di variante** — verificato sui dati che nessuna variante è mista, e
+il codice *si rifiuta di costruire l'indice* se un giorno lo diventasse,
+invece di degradare in silenzio a "non regge".
+
+Un bug trovato e corretto con la controprova, non a occhio: nelle liste a più
+soggetti la decodifica restituiva i **codici del dizionario** invece dei
+driverId veri (3.766 occorrenze su 17.208 con i piloti sbagliati). Il
+confronto vecchio-motore/nuovo-motore su 402 scenari lo ha fatto saltare
+fuori subito; a schermo sarebbe passato inosservato, perché i numeri della
+cascata restavano plausibili.
+
+Controprova, ora in `scripts/verify-s22.ts` con i numeri attesi scritti nel
+codice (non in un commento):
+
+- `doppietta` + `nessun_cambio_di_leader` → **30 risultati su 30 gare
+  distinte** al livello pieno (cascata 2→30, 1→350), denominatore 544 proxy
+- `vittoria_da_griglia` N=10 + circuito Monza → **2 su 1016** (proxy)
+- `vittoria_da_griglia` N=10 da solo → **37 su 1114**, fonte "precalcolato"
+- con un chip team → denominatore **"non calcolabile"**, dichiarato
+
+Prima di cancellare il vecchio modulo, i due motori sono stati confrontati
+occorrenza per occorrenza su **402 scenari** (ogni variante da sola, con
+ciascuno dei quattro tipi di chip di contesto, e a coppie): **zero
+differenze**, entry comprese (17.208 su 17.208 identiche).
+
+- [x] Prompt eseguito
+- [x] `scenarioMatch.ts` separato: logica pura (client) vs lettura file (server)
+- [x] Indice compatto colonnare, verificato ≤ 200 KB grezzi (187,2 KB; più
+      69,3 KB di piano dei risultati, dichiarati sopra)
+- [x] I risultati del motore restano **identici** a quelli verificati in S1.2
       (30 risultati / 30 gare; Monza 2 su 1016; un chip solo = 37 su 1114)
-- [ ] Una sola barra cerca su tutti e cinque i tipi insieme (eventi, piloti,
+- [x] Una sola barra cerca su tutti e cinque i tipi insieme (eventi, piloti,
       team, circuiti, ere), risultati raggruppati per tipo
-- [ ] Tastiera funzionante: frecce e invio, senza mai toccare il mouse
-- [ ] I chip scelti si accumulano in una riga, ognuno rimovibile; i chip
-      `evento` restano modificabili nei parametri
-- [ ] Il menu di S2.1 è raggiungibile da lì, come alternativa alla digitazione
+- [x] Tastiera funzionante: frecce e invio, senza mai toccare il mouse
+      (backspace su campo vuoto toglie l'ultimo chip)
+- [x] I chip scelti si accumulano in una riga, ognuno rimovibile; i chip
+      `evento` restano modificabili nei parametri (menu a tendina sul chip)
+- [x] Il menu di S2.1 è raggiungibile da lì, come alternativa alla digitazione
 - [ ] Diff letto
 
 **Prompt da copiare:**

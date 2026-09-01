@@ -14,7 +14,7 @@
 // eventCatalog.ts, non li ricalcola.
 //
 // Selezionare una foglia non naviga: chiama onEmit con un EventoChip già
-// nella forma esatta attesa da scenarioMatch.ts. Nessun D3 (non è un
+// nella forma esatta attesa da scenarioEngine.ts. Nessun D3 (non è un
 // grafico, stessa motivazione già accettata per EventCardsGrid).
 
 import { useState } from "react";
@@ -26,7 +26,7 @@ import {
   parameterSuffix,
   type CatalogEventEntry,
 } from "@/lib/eventCatalog";
-import type { EventoChip } from "@/lib/scenarioMatch";
+import type { EventoChip } from "@/lib/scenarioEngine";
 
 interface Props {
   catalog: CatalogEventEntry[];
