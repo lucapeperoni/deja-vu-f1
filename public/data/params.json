@@ -22,6 +22,13 @@
       "siccita": 0.3,
       "pesoEditoriale": 0.3
     },
+    "pesiChipContesto": {
+      "descrizione": "Pesi per la percentuale di similarita' del compositore di scenari (roadmap S, fase S1.2, src/lib/scenarioMatch.ts). Un chip evento pesa 1 - rarita' (letta dal suo stesso denominatore precalcolato): una condizione rara che regge vale piu' di una comune. Un chip pilota/team/circuito/era non ha una rarita' precalcolata propria (non e' un evento con un denominatore), quindi il suo peso e' dichiarato qui a mano, in ordine di specificita': un pilota (~850 possibili) e' piu' specifico di un team (~210), un circuito (77) piu' specifico di un'era (un intervallo di anni, la piu' larga delle quattro).",
+      "pilota": 0.65,
+      "team": 0.55,
+      "circuito": 0.4,
+      "era": 0.25
+    },
     "trappole": {
       "indy500": {
         "descrizione": "Le gare a Indianapolis 1950-1960 erano la 500 Miglia, valida per il mondiale ma non una gara di Formula 1: escluse dalla finestra di ogni evento salvo dove esplicitamente richiesto (es. races-index.json, che è un indice di navigazione, non un denominatore).",

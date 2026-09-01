@@ -81,8 +81,8 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 ## Avanzamento generale
 
 - [x] Fase S0 — Allineamento e piano dati (nessun codice)
-- [~] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1 fatto, S1.2 da fare)
-- [ ] Fase S2 — Il compositore a chip (ricerca + menu a macro-aree)
+- [x] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1, S1.2 fatti)
+- [~] Fase S2 — Il compositore a chip (S2.1 fatto, S2.2 da fare)
 - [ ] Fase S3 — Lo scaffale delle corrispondenze (la vista D3)
 - [ ] Fase S4 — La frase in chiaro e la finestra che si restringe
 - [ ] Fase S5 — La nuova home e l'area "Esplora"
@@ -192,86 +192,76 @@ quindi non c'era un chiamante naturale da cui estrarre i dati a monte come fa
    senza team** (le 4 sopra + `ritiro_per_causa_specifica` + i 4 eventi di pit
    stop, che hanno il pilota ma mai il team), su 17.208.
 
-**Punto aperto per S2, da decidere lì:** l'indice serializzato pesa **4,1 MB**
+**Punto aperto per S2.2, ancora da decidere:** l'indice serializzato pesa **4,1 MB**
 con `raw`, **2,9 MB** senza. Troppo per spedirlo al client così com'è, e la
 ricerca deve essere istantanea. Le strade: una codifica compatta colonnare
 (come fa già `results-plane.json`), oppure tenere il match sul server. Da
-risolvere prima di scrivere il compositore, non dopo.
+risolvere prima di scrivere la ricerca, non dopo. Nota collegata: sia
+`scenarioIndex.ts` sia `scenarioMatch.ts` usano `fs`, quindi sono **solo
+server**. Oggi `EventPicker.tsx` (client) importa da `scenarioMatch` solo un
+`type`, che sparisce in compilazione — ma basta un import di valore da un
+componente client per rompere la build. Da sistemare insieme al peso.
 
 - [x] Prompt eseguito
 - [x] Diff letto
 
-## S1.2 — Il motore di match a cascata
+## S1.2 — Il motore di match a cascata  ✅ FATTO (1 set 2026)
 
-Dipende da: S1.1
+`src/lib/scenarioMatch.ts`. Il pool di occorrenze candidate è l'unione delle
+occorrenze proprie dei chip evento (mai l'intero indice: un chip circuito da
+solo non identifica "cosa è successo"). Pesi della similarità in
+`params.json` → `eventi.pesiChipContesto`, nessuna costante nel TypeScript.
 
-- [ ] Prompt eseguito
-- [ ] `src/lib/scenarioMatch.ts`: dati K chip, restituisce le occorrenze
-      raggruppate per **numero di chip soddisfatti** (K, K-1, … 1), e per
-      ciascuna occorrenza l'elenco dei chip che reggono, di quelli che saltano
-      e di quelli **non valutabili** (dato assente, ≠ dato negativo)
-- [ ] Un chip non valutabile non conta come fallito: l'occorrenza resta nel
-      gruppo giusto e la UI dichiarerà l'incertezza
-- [ ] Implementata la regola "stesso pilota" / "stessa gara" come parametro
-      esplicito della funzione, con il default dedotto come da decisioni sopra
-- [ ] Calcolata la **finestra di copertura intersecata** e il denominatore
-      composto secondo la decisione di S0.1
-- [ ] Calcolata la percentuale di similarità con i pesi letti da `params.json`
-      (nessun peso scritto a mano nel codice TypeScript)
-- [ ] Verificato su almeno tre scenari a mano, con i numeri mostrati
-- [ ] Diff letto
+- [x] Cascata K → 1, con `chipsHeld` / `chipsMissed` / `chipsNonValutabili`
+- [x] `joinMode` dedotta ("stesso pilota" solo se tutti i chip evento sono
+      RISULTATO) e restituita insieme al default dedotto, per la frase di S4
+- [x] Finestra intersecata (verificato: evento di griglia + evento di
+      neutralizzazioni → crolla a 2023-2024)
+- [x] Livelli `byScore` sempre presenti anche vuoti, così S3 può disegnare una
+      riga vuota dichiarata invece di dedurla dall'assenza
 
-**Prompt da copiare:**
+**Due bug di conteggio trovati rileggendo il diff, corretti prima del commit:**
 
-```
-Crea src/lib/scenarioMatch.ts sopra l'indice di S1.1.
+1. **Doppio conteggio.** Due chip evento che capitano nella stessa gara
+   mettevano nel pool due occorrenze distinte, che nel mondo reale sono un
+   fatto solo: `doppietta` + `nessun_cambio_di_leader` dava **60 risultati per
+   30 gare**. Il sito avrebbe detto "è successo 60 volte" — cioè avrebbe
+   sbagliato l'unico numero che la tesi promette di dare giusto. Ora il pool si
+   deduplica sull'unità del join (la gara, o il pilota in quella gara) e le
+   copie si fondono: un chip regge se lo prova anche una sola copia, e
+   "non valutabile" batte "salta" (un dato che manca non è una smentita).
+   Le occorrenze senza pilota noto restano separate invece di essere fuse a
+   indovinare.
 
-Firma: dati K chip (evento/pilota/team/circuito/era) e la modalita' di join
-("stessa gara" | "stesso pilota"), restituisce le occorrenze raggruppate per
-quanti chip soddisfano: K su K, K-1 su K, ... fino a 1. Per ogni occorrenza
-deve dire QUALI chip reggono e QUALI saltano, perche' la UI mostrera' il nome
-del chip mancante come "differenza".
+2. **Il denominatore ignorava i chip di contesto.** Restringeva solo per anno,
+   non per circuito/pilota: "vittoria dalla 10° **a Monza**" dava 2 su 15.518
+   (**0,013%**) invece di 2 su 1016 (**0,20%**) — sbagliato di ~70 volte, ed
+   era già la decisione di S0.1, solo non implementata. Ora `countRaces...` /
+   `countResults...` intersecano anche circuito e pilota; **con un chip team il
+   denominatore diventa "non calcolabile"** e lo dichiara, perché
+   `results-plane.json` non porta `constructorId` (S0.1, caso 3).
 
-La modalita' di join ha un default dedotto: "stesso pilota" se TUTTI i chip
-evento sono di unita' RISULTATO, altrimenti "stessa gara" (con almeno un chip
-di unita' GARA l'ambiguita' non esiste). La funzione deve restituire anche
-quale default ha dedotto, perche' la UI lo scrivera' in chiaro.
+Controprove dopo la correzione: 30 risultati / 30 gare distinte; Monza 2 su
+1016; chip team → `non_calcolabile`; un chip solo → 37 su 1114, identico a
+`index.json`.
 
-Il denominatore segue la regola in tre casi decisa in S0.1 (precalcolato /
-proxy / non_calcolabile per TEAM_GARA ristretto): rileggila, non reinventarla.
-
-Calcola inoltre: la finestra di copertura INTERSECATA tra i chip (il minimo
-annoDa e il massimo annoA che valgono per tutti), il denominatore composto
-secondo la decisione presa in S0.1, e una percentuale di similarita' = quota
-dei chip soddisfatti pesati per la loro rarita'. I pesi vanno letti da
-public/data/params.json (aggiungi la voce sotto "eventi", accanto a
-pesiNotevolezza): NON scrivere costanti numeriche nel codice TypeScript.
-
-Verifica a mano tre scenari e mostrami i numeri:
-- "vittoria partendo 10 o peggio" + "a Monza"
-- "vittoria partendo 10 o peggio" + un chip di neutralizzazioni (2023-2024):
-  qui la finestra intersecata deve crollare a 46 gare, mostrami che succede
-- tre chip insieme, di cui almeno uno che non fa match con nessuno (il caso
-  "mai successo", che deve dare 0 su K esatti ma dei K-1)
-```
-
----
+- [x] Prompt eseguito
+- [x] Diff letto
 
 # Fase S2 — Il compositore a chip
 
-## S2.1 — Il menu a macro-aree
+## S2.1 — Il menu a macro-aree  ✅ FATTO (1 set 2026)
 
-Dipende da: S1.2
+`src/components/scenario/EventPicker.tsx` + demo isolata in
+`src/app/dev/event-picker-demo/`.
 
-- [ ] Prompt eseguito
-- [ ] `src/components/scenario/EventPicker.tsx`: navigazione gerarchica
-      famiglia (9) → evento → parametro, stile "Comandi" iOS — una colonna che
-      scende di livello, con la briciola di pane per tornare su
-- [ ] Ogni voce mostra già la sua rarità e la sua finestra (chi sceglie deve
-      sapere cosa sta scegliendo prima di sceglierlo)
-- [ ] Selezionare una voce **emette un chip**, non naviga da nessuna parte
-- [ ] Verificato in isolamento in `src/app/dev/`, screenshot mostrato
-- [ ] Diff letto
+- [x] Una colonna che scende di livello (famiglia → evento → parametro) con
+      briciola di pane, mai due colonne affiancate da tenere sincronizzate
+- [x] Rarità e finestra mostrate a ogni livello, prima della scelta
+- [x] I 14 eventi parametrici scendono al terzo livello, gli altri emettono
+      subito; il chip emesso ha già la forma `EventoChip` di `scenarioMatch.ts`
+- [x] Verificato nella demo isolata, screenshot mostrato
+- [x] Diff letto
 
 ## S2.2 — La barra di ricerca e la riga dei chip
 
