@@ -436,6 +436,88 @@ Dipende da: S1.2, S2.2
 - [ ] Screenshot mostrato prima di dire che funziona
 - [ ] Diff letto
 
+**Punto sciolto dal coordinatore prima di aprire la fase (2 set 2026):** il
+click su un punto deve portare a `/gara/<slug>`, ma lo slug è
+`<anno>-<circuitRef>` con `-r<round>` per le 4 coppie di gare 2020/2021 che
+condividono anno+circuito (algoritmo in `src/app/gara/[raceSlug]/page.tsx`,
+`buildSlugByRaceId`). L'indice compatto di S2.2 (`gare` in
+`scenarioIndexServer.ts`) porta raceId/anno/circuito ma **non il round**, quindi
+il client non può costruire lo slug per quelle 4 gare. Va aggiunto `round` alla
+tabella `gare` dell'indice compatto (1114 interi piccoli, si delta-codifica come
+gli altri) — è una modifica all'indice di S2.2 con motivo scritto, e **non deve
+cambiare nessun numero di regressione** (il round non entra nel match). In
+alternativa: passare la mappa `slugByRaceId` già pronta come prop dalla pagina
+server. Prima scelta preferita: tiene tutto dentro l'indice.
+
+**Prompt da copiare:**
+
+```
+Leggi in docs/ROADMAP-6.md le decisioni in cima e le fasi gia' chiuse S1.1,
+S1.2, S2.1, S2.2 (soprattutto la forma di ScenarioResult / ChipMatchResult che
+il motore restituisce e il "punto sciolto dal coordinatore" qui sopra sul
+click). Leggi poi:
+- src/lib/scenarioEngine.ts (il motore puro: matchScenario -> ScenarioResult,
+  con byScore[] gia' presente per ogni livello K..1 anche vuoto)
+- src/components/scenario/ScenarioComposer.tsx (dove va agganciata la vista, al
+  posto della riga di testo provvisoria dopo il commento "Riga provvisoria")
+- src/components/charts/QuandoStrip.tsx e src/components/charts/RarityScale.tsx
+  (la scala X del tempo e il pattern ResizeObserver del progetto)
+- src/components/charts/D3Chart.tsx (la base: D3 possiede l'SVG)
+- src/lib/colors.ts (familyColor), src/components/ChartTooltip.tsx
+- src/app/gara/[raceSlug]/page.tsx (l'algoritmo di slug, funzione
+  buildSlugByRaceId)
+
+Fai, in quest'ordine:
+
+1. Aggiungi `round` alla tabella `gare` dell'indice compatto in
+   src/lib/scenarioIndexServer.ts (delta-codificato come raceIdDelta/annoDelta)
+   e alla RaceRow decodificata in src/lib/scenarioEngine.ts. Esegui
+   scripts/verify-s22.ts: i quattro numeri attesi devono restare IDENTICI
+   (30 su 30 gare / denom 544 proxy; Monza 2 su 1016; da solo 37 su 1114
+   "precalcolato"; chip team -> non calcolabile). Se cambia un numero, il round
+   e' finito per errore dentro il match: fermati e dimmelo. Se l'indice supera
+   i 200 KB grezzi (oggi 187,2), fermati e dimmelo.
+
+2. Scrivi src/components/charts/ScaffaleCorrispondenze.tsx (componente client,
+   "use client"):
+   - X = tempo 1950-2024, stessa scala lineare e stesso stile d'asse di
+     QuandoStrip (tick d3.format("d"), colori da colors.ts).
+   - Y = quante condizioni reggono: una riga per ogni livello da K (in alto) a
+     1 (in basso). Le righe vengono da result.byScore, che e' GIA' completo
+     anche per i livelli vuoti: NON dedurre le righe dai dati, usa byScore.
+   - Un punto per ogni ChipMatchResult, posizionato per anno (result.entry.anno)
+     sulla riga del suo score. Colore = familyColor(result.entry.famiglia).
+     Mai la rarita' sul colore.
+   - La riga "K su K" (il primo livello di byScore) e' enfatizzata: e' la
+     risposta alla domanda "e' gia' successo?". Sfondo/bordo diverso, non solo
+     un'etichetta.
+   - Una riga vuota RESTA visibile con scritto "mai successo" (o simile): la
+     sua presenza vuota e' un'informazione, non deve sparire.
+   - Hover su un punto -> ChartTooltip con: anno, gara (entry.circuitRef, o il
+     nome se lo passi come prop), e QUALI chip saltano in quel caso
+     (result.chipsMissed, gia' con label in chiaro) piu' quali sono "non
+     valutabili" (result.chipsNonValutabili). Non ricostruire le differenze:
+     sono i chip stessi.
+   - Click su un punto -> naviga a /gara/<slug>, slug costruito con lo stesso
+     algoritmo di buildSlugByRaceId (ora che l'indice porta il round). Usa
+     useRouter di next/navigation, come RarityScale.
+   - Responsive con ResizeObserver dal primo colpo (pattern di RarityScale),
+     mai una costante WIDTH fissa scritta a mano.
+   - D3 possiede l'SVG: scale, assi, data join, transizioni in un unico
+     useEffect. React tiene ref, stato hover/tooltip e router.
+
+3. Aggancia la vista in ScenarioComposer.tsx al posto della riga di testo
+   provvisoria (il blocco dopo "Riga provvisoria"). La finestra intersecata e
+   il denominatore composto restano scritti in chiaro accanto alla vista,
+   visibili e non in un tooltip (regola d'oro del progetto).
+
+Verifica nella demo isolata src/app/dev/scenario-composer-demo, con almeno lo
+scenario doppietta + nessun_cambio_di_leader: la riga "2 su 2" deve mostrare
+30 punti, la riga "1 su 2" 350 punti, e deve restare disegnata anche se un
+livello e' vuoto. Screenshot e output di scripts/verify-s22.ts prima di dire
+che funziona.
+```
+
 ---
 
 # Fase S4 — La frase in chiaro e la finestra
