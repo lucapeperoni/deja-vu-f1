@@ -340,7 +340,37 @@ differenze**, entry comprese (17.208 su 17.208 identiche).
 - [x] I chip scelti si accumulano in una riga, ognuno rimovibile; i chip
       `evento` restano modificabili nei parametri (menu a tendina sul chip)
 - [x] Il menu di S2.1 è raggiungibile da lì, come alternativa alla digitazione
-- [ ] Diff letto
+- [x] Diff letto
+
+**Verifica del coordinatore (2 set 2026) — rifatta a mano, non fidandosi del
+rapporto:**
+
+- Ricalcolo indipendente in Python sui file grezzi in `public/data/events/`:
+  **17.208 occorrenze totali**, **67 combinazioni** con occorrenze, occorrenze
+  + denominatore + rarità identici a `index.json` per tutte e 67. Confermato.
+- Round-trip provato entry per entry: `buildScenarioIndex()` (S1.1, a oggetti)
+  contro `decodeScenarioIndex(buildCompactScenarioIndex())` (nuovo, colonnare)
+  → **17.208 su 17.208 identiche**, comprese tutte le **3.766 occorrenze a più
+  piloti** (il bug della decodifica citato sopra resta chiuso). **2.711 senza
+  pilota**, **10.249 senza team**: identici ai numeri di regressione.
+- Scenari ricalcolati a mano dai file grezzi: `doppietta` ∩
+  `nessun_cambio_di_leader` = **30 gare**; `vittoria_da_griglia` N=10 = **37
+  gare**, di cui **2 a Monza**; denominatore Monza (piano risultati) = **1016**;
+  non-Indy 1996-2024 = **544**; doppiette Ferrari = **87**. Tutti combaciano con
+  quello che stampano il motore e la UI.
+- `scenarioEngine.ts` non importa `fs` né `scenarioIndex`: solo un `type` da
+  `eventCatalog`. `scenarioIndexServer.ts` (con `fs`) è importato solo dalla
+  pagina demo server. `ScenarioComposer.tsx` (`"use client"`) importa valori
+  solo da `scenarioEngine`. La build non si rompe.
+- `npm run build` e `npm run lint`: **puliti** (la build segnala solo l'uso di
+  `process.cwd()` nella pagina demo, stesso pattern di `event-picker-demo`, e
+  la pagina viene comunque prerenderizzata statica).
+- Provato nel browser sulla demo isolata: barra + cascata + finestra +
+  denominatore visibili accanto ai numeri (non in tooltip); frecce+invio per
+  scegliere, backspace su campo vuoto toglie l'ultimo chip, "Sfoglia per
+  famiglia" apre il menu di S2.1. Il pallino colorato è la famiglia solo sui
+  chip evento; piloti/team/circuiti/ere hanno il pallino grigio (regola del
+  colore rispettata).
 
 **Prompt da copiare:**
 
