@@ -1,74 +1,55 @@
 import fs from "fs";
 import path from "path";
-import HomeCatalogView from "@/components/HomeCatalogView";
-import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
-import { buildFamilyTimeline, type FamilyYearSource } from "@/lib/familyTimeline";
+import ScenarioComposer, { type SoggettiRicerca } from "@/components/scenario/ScenarioComposer";
+import { buildCompactScenarioIndex } from "@/lib/scenarioIndexServer";
+import type { CatalogEventEntry } from "@/lib/eventCatalog";
 
-// Stessa chiave canonica di src/app/eventi/[eventId]/page.tsx e di
-// src/app/dev/family-stream-demo/page.tsx: fa corrispondere la variante di
-// default (index.json) alla entry giusta dentro perParametro del file di
-// dettaglio, indipendentemente dall'ordine in cui compaiono nei due file.
-function paramsKey(parametri: Record<string, number | string>): string {
-  return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));
-}
-
-interface EventDetailFile {
-  perParametro: {
-    parametri: Record<string, number | string>;
-    perStagione?: Record<string, number>;
-  }[];
-}
-
-// Legge, per ognuno dei 33 eventi di default, il suo file di dettaglio e ne
-// estrae perStagione — server-side, nessuna richiesta di rete dal browser
-// (roadmap T3.1, stessa lettura già validata in T2.1).
-function loadFamilyYearSources(events: CatalogEventEntry[]): FamilyYearSource[] {
-  return events.map((entry) => {
-    const detailPath = path.join(
-      /* turbopackIgnore: true */ process.cwd(),
-      "public",
-      "data",
-      "events",
-      `${entry.eventId}.json`
-    );
-    const detail: EventDetailFile = JSON.parse(fs.readFileSync(detailPath, "utf-8"));
-    const key = paramsKey(entry.parametri);
-    const variant = detail.perParametro.find((p) => paramsKey(p.parametri) === key) ?? detail.perParametro[0];
-    return { famiglia: entry.famiglia, perStagione: variant?.perStagione ?? {} };
-  });
-}
-
-// Home v3 = vista 1 della specifica (docs/PROGETTAZIONE.md, sezione 7):
-// "la scala della rarità", l'overview del catalogo eventi nel mantra di
-// Shneiderman ("overview first"). Sostituisce la home v2 (la mappa "quando
-// conviene" del pit stop, ora sezione della famiglia "neutralizzazioni",
-// vista 7 — non riscritta, solo reinquadrata altrove).
+// Home v4 (roadmap S5.1, docs/ROADMAP-6.md — decisione "Diventa la home"): la
+// prima pagina è il compositore di scenari. Le tre viste del catalogo
+// (scala/riquadri/fiume) sono ora sotto /esplora — niente si butta, si sposta.
 //
-// Nessun backend (sezione 6): il catalogo è già precalcolato da
-// data-layer/scripts/build_events.py in public/data/events/index.json, il
-// frontend legge solo occorrenze/denominatore/rarità già calcolati.
+// Stessa lettura file della vecchia demo isolata
+// (src/app/dev/scenario-composer-demo/page.tsx): questa pagina (server) legge
+// i file e costruisce l'indice COMPATTO; il compositore (client) fa il match
+// in memoria, senza backend a runtime e senza tornare al server a ogni tasto.
 
-export default async function Home() {
-  const indexPath = path.join(process.cwd(), "public", "data", "events", "index.json");
-  const catalog: CatalogEventEntry[] = JSON.parse(fs.readFileSync(indexPath, "utf-8"));
-  const events = dedupeToDefaultParams(catalog);
-  const familyTimelineData = buildFamilyTimeline(loadFamilyYearSources(events));
+function readJson<T>(...segmenti: string[]): T {
+  return JSON.parse(fs.readFileSync(path.join(process.cwd(), ...segmenti), "utf-8"));
+}
 
-  const mostCommon = [...events].sort((a, b) => b.rarita - a.rarita)[0];
-  const rarest = [...events].sort((a, b) => a.rarita - b.rarita)[0];
+export default function Home() {
+  const catalog = readJson<CatalogEventEntry[]>("public", "data", "events", "index.json");
+  const drivers = readJson<Record<string, string>>("public", "data", "drivers-index.json");
+  const constructors = readJson<Record<string, string>>("public", "data", "constructors-index.json");
+  const circuits = readJson<Record<string, unknown>>("public", "data", "circuits.json");
+  const circuitsGeo = readJson<Record<string, { nome: string }>>("public", "data", "circuits-geo.json");
+
+  const soggetti: SoggettiRicerca = {
+    piloti: Object.entries(drivers).map(([id, nome]) => ({ driverId: Number(id), nome })),
+    team: Object.entries(constructors).map(([id, nome]) => ({ constructorId: Number(id), nome })),
+    // circuits.json non porta il nome leggibile (solo le metriche): il nome
+    // sta in circuits-geo.json, con il circuitRef come ripiego dichiarato.
+    circuiti: Object.keys(circuits).map((circuitRef) => ({
+      circuitRef,
+      nome: circuitsGeo[circuitRef]?.nome ?? circuitRef,
+    })),
+  };
+
+  const indiceCompatto = buildCompactScenarioIndex();
 
   return (
     <main className="flex-1 flex flex-col bg-background min-h-screen">
       {/* Apertura (docs/PROGETTAZIONE.md, sezioni 1 e 8): il problema è "è già
-          successo?" — la domanda del giornalista sotto scadenza, o del tifoso
-          che ha appena visto qualcosa di strano in gara. */}
+          successo?" — la domanda del telecronista sotto scadenza. Il catalogo
+          si esplora da /esplora; qui si interroga in fretta, guidati da uno
+          scenario preciso. */}
       <section className="relative px-6 py-14 flex flex-col items-center justify-center border-b border-graphite overflow-hidden">
         <div className="absolute inset-0 bg-texture-grid opacity-20 pointer-events-none" />
         <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-racing-red to-transparent opacity-50" />
 
         <div className="relative z-10 text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-block px-4 py-1 border border-racing-red/30 bg-racing-red/10 text-racing-red font-condensed tracking-widest text-sm uppercase rounded-sm mb-2">
-            {events.length} eventi · 75 stagioni di Formula 1
+            il compositore di scenari · 75 stagioni di Formula 1
           </div>
 
           <h1 className="font-condensed text-4xl md:text-6xl font-bold uppercase tracking-tight text-white drop-shadow-lg">
@@ -76,39 +57,23 @@ export default async function Home() {
           </h1>
 
           <p className="text-base text-neutral-gray max-w-2xl mx-auto leading-relaxed">
-            Ogni riga qui sotto è un evento del catalogo — da{" "}
-            <strong className="text-white">{mostCommon.nome.toLowerCase()}</strong>, che succede quasi ogni gara, a{" "}
-            <strong className="text-white">{rarest.nome.toLowerCase()}</strong>, capitato solo {rarest.occorrenze}{" "}
-            {rarest.occorrenze === 1 ? "volta" : "volte"} dal {rarest.annoDa}. La posizione sull&apos;asse è la
-            rarità reale, non un&apos;impressione: un evento valido su 285 gare e uno valido su 1125 non si
-            confrontano allo stesso modo, e la finestra di copertura di ciascuno è disegnata accanto al suo nome,
-            sempre visibile.
+            Succede qualcosa in gara. Ricomponilo in pochi secondi: aggiungi i pezzi — un evento
+            (&quot;doppietta&quot;, &quot;nessun cambio al comando&quot;), un pilota, una squadra, un circuito,
+            un decennio — e leggi subito quante volte è già capitato tutto insieme, quando, e quali casi sono{" "}
+            <em>quasi</em> identici. Nessun punteggio opaco: solo un conteggio di condizioni che reggono, con la
+            finestra di copertura sempre in chiaro accanto al numero.
+          </p>
+          <p className="text-sm text-neutral-gray">
+            Vuoi invece scorrere tutto il catalogo?{" "}
+            <a href="/esplora" className="text-racing-red hover:text-white transition-colors underline">
+              Esplora il catalogo →
+            </a>
           </p>
         </div>
       </section>
 
-      {/* La scala della rarità (vista 1). max-w-[1600px] invece di max-w-7xl
-          (1280px): su un monitor largo il pannello della scala e la griglia
-          a riquadri restavano centrati con enormi margini neri ai lati —
-          qui e in RarityScale.tsx (WIDTH) e EventCardsGrid.tsx (colonna
-          2xl in più) la larghezza usabile è aumentata in proporzione. */}
-      <section className="px-6 py-10 max-w-[1600px] mx-auto w-full">
-        <div className="mb-6">
-          <h3 className="font-condensed text-3xl font-bold uppercase text-white mb-2">
-            La scala della <span className="text-racing-red">rarità</span>
-          </h3>
-          <p className="text-text-secondary max-w-3xl text-sm">
-            Tre modi di leggere lo stesso catalogo di eventi, non tre cataloghi diversi. &quot;La scala della
-            rarità&quot;: asse logaritmico, dal più comune (in alto, a sinistra) al più raro (in basso, a destra),
-            colore per famiglia, finestra di copertura come barra accanto al nome. &quot;I riquadri&quot;: gli
-            stessi eventi raggruppati per famiglia, ognuno con la sua risposta pronta e un controllo per cambiare
-            parametro sul posto. &quot;Il fiume delle famiglie&quot;: come cambia nel tempo il mix di famiglie
-            lungo le 75 stagioni, una fascia colorata per famiglia. In tutte le viste il colore codifica sempre
-            la famiglia, mai la rarità o la quantità, e la finestra di copertura resta sempre visibile accanto al
-            numero.
-          </p>
-        </div>
-        <HomeCatalogView events={events} catalog={catalog} familyTimelineData={familyTimelineData} />
+      <section className="px-6 py-10 max-w-4xl mx-auto w-full">
+        <ScenarioComposer catalog={catalog} indiceCompatto={indiceCompatto} soggetti={soggetti} />
       </section>
     </main>
   );

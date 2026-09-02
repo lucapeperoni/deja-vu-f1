@@ -427,8 +427,8 @@ export default function MethodologyPage() {
         </p>
 
         <div>
-          <Link href="/" className="text-racing-red hover:text-white transition-colors font-condensed uppercase tracking-widest text-sm">
-            ← Torna alla home
+          <Link href="/esplora" className="text-racing-red hover:text-white transition-colors font-condensed uppercase tracking-widest text-sm">
+            ← Torna al catalogo
           </Link>
         </div>
       </div>

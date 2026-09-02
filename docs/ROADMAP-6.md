@@ -85,10 +85,11 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 - [x] Fase S2 — Il compositore a chip (S2.1, S2.2 fatti)
 - [x] Fase S3 — Lo scaffale delle corrispondenze (S3.1 fatto e verificato)
 - [x] Fase S4 — La frase in chiaro e la finestra che si restringe (S4.1 fatto)
-- [ ] Fase S5 — La nuova home e l'area "Esplora"
+- [x] Fase S5 — La nuova home e l'area "Esplora" (S5.1 fatto)
 - [ ] Fase S6 — Rifinitura, accessibilità, verifica finale
 
 Ordine dei prompt: S0.1 → S1.1 → S1.2 → S2.1 → S2.2 → S3.1 → S4.1 → S5.1 → S6.1.
+Prossimo: **S6.1**.
 
 ---
 
@@ -694,20 +695,50 @@ di regressione di S2.2/S3.1 cambia, e' un bug: fermati e dimmelo.
 
 # Fase S5 — La nuova home
 
-## S5.1 — Il compositore diventa la prima pagina
+## S5.1 — Il compositore diventa la prima pagina  ✅ FATTO (2 set 2026)
 
 Dipende da: S4.1
 
-- [ ] Prompt eseguito
-- [ ] `src/app/page.tsx` mostra il compositore; le tre viste attuali si
-      spostano in una route "Esplora" (`HomeCatalogView` invariato, solo
-      spostato — non riscritto)
-- [ ] `Header.tsx` aggiornato di conseguenza
-- [ ] Nessun link rotto: verificate tutte le rotte esistenti (`/eventi/[id]`,
-      `/gara/[slug]`, `/race/[id]`, `/methodology`)
-- [ ] Il `sessionStorage` di `HomeCatalogView` continua a funzionare dopo lo
-      spostamento
-- [ ] Diff letto
+- [x] Prompt eseguito
+- [x] `src/app/esplora/page.tsx` (`git mv` da `page.tsx`): tiene la lettura di
+      `index.json`, `loadFamilyYearSources`, `buildFamilyTimeline`, l'hero e la
+      sezione "La scala della rarità" con `<HomeCatalogView>`. `HomeCatalogView`
+      e i suoi figli **non toccati** — solo spostati.
+- [x] `src/app/page.tsx` riscritto: stessa lettura file della demo
+      (`buildCompactScenarioIndex()` + drivers/constructors/circuits/
+      circuits-geo per i soggetti), `<ScenarioComposer>`, hero da home ("È già
+      successo?" + rimando "Esplora il catalogo →"). Nessun backend a runtime.
+- [x] `Header.tsx`: voce "Esplora il catalogo" → `/esplora` prima di "Race
+      Anatomy". Il logo "/" resta (ora è il compositore).
+- [x] `methodology/page.tsx:430`: il link ora è "← Torna al catalogo" → `/esplora`.
+- [x] `sessionStorage` di `HomeCatalogView` verificato: chiave
+      `"home-catalog-view"`, sopravvive a `/esplora` → `/eventi/doppietta` →
+      indietro (rimane su "riquadri", `aria-pressed=true`).
+- [x] Rotte verificate una per una: `/` (compositore), `/esplora` (tre viste),
+      `/eventi/doppietta`, `/gara/2002-catalunya`, `/race/2023-bahrain`,
+      `/methodology` — tutte rispondono. `npm run build` / `npm run lint`
+      puliti; solo l'avviso `process.cwd()` già noto sulla demo `dev/`.
+- [x] `scripts/verify-s22.ts`: **4/4 identico a S1.2** — motore e scaffale non
+      toccati.
+- [x] Diff letto
+
+**Note di esecuzione:**
+
+- La demo `src/app/dev/scenario-composer-demo/` **resta** finché non la si
+  toglie in S6 (come da nota del coordinatore).
+- Verifica browser: `/` con `doppietta` + `nessun_cambio_di_leader` → riga
+  "2 su 2" **30 casi**, "1 su 2" **350 casi**, finestra 1996–2024, denominatore
+  544 (proxy), join "stessa gara" — identico a S3.1/S4.1.
+
+**Verifica del coordinatore (2 set 2026):** diff riletto — spostamento pulito,
+`esplora/page.tsx` differisce dal vecchio `page.tsx` solo per il nome della
+funzione, `HomeCatalogView` intatto, il nuovo `page.tsx` ricalca la pagina
+demo. `verify-s22.ts` 4/4, `build` e `lint` puliti, `/` e `/esplora`
+prerenderizzate statiche. Provato in browser: `/` compositore (30/350/544),
+`/esplora` tre viste, il `sessionStorage "home-catalog-view"` sopravvive a
+`/esplora → /eventi/doppietta → indietro` (resta "riquadri", `aria-pressed`),
+`/gara/2002-catalunya`, `/race/2023-bahrain`, `/methodology` (link "← Torna al
+catalogo" → `/esplora`) tutte OK, console pulita.
 
 **Nota per l'esecutore (dal coordinatore):**
 

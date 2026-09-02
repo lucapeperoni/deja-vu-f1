@@ -11,6 +11,10 @@ export default function Header() {
           </span>
         </Link>
         <nav className="flex gap-8 text-sm font-condensed tracking-widest uppercase">
+          <Link href="/esplora" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
+            Esplora il catalogo
+          </Link>
+          <div className="w-[1px] h-4 bg-graphite my-auto mx-2" />
           <Link href="/race/2023-bahrain" className="text-sm font-medium text-racing-red hover:text-white uppercase tracking-wider transition-colors">
             Race Anatomy
           </Link>
