@@ -83,7 +83,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 - [x] Fase S0 — Allineamento e piano dati (nessun codice)
 - [x] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1, S1.2 fatti)
 - [x] Fase S2 — Il compositore a chip (S2.1, S2.2 fatti)
-- [ ] Fase S3 — Lo scaffale delle corrispondenze (la vista D3)
+- [x] Fase S3 — Lo scaffale delle corrispondenze (S3.1 fatto e verificato)
 - [ ] Fase S4 — La frase in chiaro e la finestra che si restringe
 - [ ] Fase S5 — La nuova home e l'area "Esplora"
 - [ ] Fase S6 — Rifinitura, accessibilità, verifica finale
@@ -418,23 +418,81 @@ numeri del punto 1 prima di dire che funziona.
 
 # Fase S3 — Lo scaffale delle corrispondenze
 
-## S3.1 — La vista D3
+## S3.1 — La vista D3  ✅ FATTO (2 set 2026)
 
 Dipende da: S1.2, S2.2
 
-- [ ] Prompt eseguito
-- [ ] `src/components/charts/ScaffaleCorrispondenze.tsx`: x = tempo 1950-2024
+- [x] Prompt eseguito
+- [x] `src/components/charts/ScaffaleCorrispondenze.tsx`: x = tempo 1950-2024
       (stessa scala e stesso stile di `QuandoStrip`), y = numero di chip
       soddisfatti (K in alto, 1 in basso), un punto per occorrenza, colore =
       famiglia
-- [ ] La riga "K su K" è visivamente enfatizzata: è la risposta alla domanda
-- [ ] Una riga vuota resta visibile e dichiarata ("mai successo"), non
+- [x] La riga "K su K" è visivamente enfatizzata: è la risposta alla domanda
+      (sfondo/bordo rosso `STORY_ACCENT_COLOR`, non solo un'etichetta)
+- [x] Una riga vuota resta visibile e dichiarata ("mai successo"), non
       scompare: l'assenza è un'informazione
-- [ ] Hover su un punto: anno, gara, e **quali chip saltano** in quel caso
-- [ ] Click su un punto: porta alla scheda gara `/gara/[raceSlug]` esistente
-- [ ] Responsive con `ResizeObserver` dal primo colpo
-- [ ] Screenshot mostrato prima di dire che funziona
-- [ ] Diff letto
+- [x] Hover su un punto: anno, gara, e **quali chip saltano** in quel caso
+      (`chipsMissed` + `chipsNonValutabili`, con la label in chiaro del chip)
+- [x] Click su un punto: porta alla scheda gara `/gara/[raceSlug]` esistente
+- [x] Responsive con `ResizeObserver` dal primo colpo
+- [x] Screenshot mostrato prima di dire che funziona
+- [x] Diff letto
+
+**Il punto sciolto dal coordinatore, risolto con la prima scelta (round nell'
+indice):** aggiunti `round` alla tabella `gare` di `scenarioIndexServer.ts`
+(delta-codificato come `raceIdDelta`/`annoDelta`, `roundDelta`) e a `RaceRow`
+in `scenarioEngine.ts`. Il round **non entra nel match** — `scripts/verify-s22.ts`
+resta **4/4 identico a S1.2** (30 su 30 gare / denom 544 proxy; Monza 2 su 1016;
+da solo 37 su 1114 "precalcolato"; chip team → non calcolabile). L'indice sale
+da 187,2 a **189,5 KB grezzi** (occorrenze + varianti + gare), sotto il tetto
+di 200 KB.
+
+Lo slug lato client (`buildSlugByRaceId` in `ScaffaleCorrispondenze.tsx`) ordina
+per `(anno, round)` invece che per data — il round è progressivo dentro la
+stagione, quindi l'ordine cronologico è lo stesso senza portarsi dietro la
+stringa di data. Verificato: **0 differenze su 1125 gare** contro l'algoritmo
+originale di `src/app/gara/[raceSlug]/page.tsx`.
+
+Verifica nella demo isolata (`/dev/scenario-composer-demo`):
+- `doppietta` + `nessun_cambio_di_leader` → riga "2 su 2" **30 punti**, riga
+  "1 su 2" **350 punti**, finestra 1996–2024, denominatore 544 (proxy).
+- aggiunto un terzo chip `era` "Anni 1950" → la riga "3 su 3" resta disegnata,
+  enfatizzata, con scritto **"mai successo"** (0 casi), e le righe "2 su 3"
+  (60) e "1 su 3" (320) sotto.
+- hover: tooltip con anno + nome circuito + "Salta: Doppietta 1-2 dello stesso
+  team" per un caso "1 su 2"; "Tutte le condizioni reggono" per un "2 su 2".
+- click su un punto → `/gara/2002-catalunya` (Spanish Grand Prix 2002).
+- `npm run build` e `npm run lint`: puliti.
+
+**Verifica del coordinatore (2 set 2026) — rifatta a mano:**
+
+- `scripts/verify-s22.ts` rieseguito: **4/4 identico a S1.2**, nessun numero di
+  regressione toccato dall'aggiunta del `round`. Diff di `scenarioEngine.ts` /
+  `scenarioIndexServer.ts` letto: il `round` è solo trasportato e decodificato,
+  non compare in nessuna funzione di match né di denominatore. Confermato.
+- Slug: ricalcolato in Python l'ordinamento `(anno, round)` contro
+  `(data)` su **tutte le 1125 gare** → **0 differenze**, e ognuno dei 1125 slug
+  ha il suo file in `public/data/facts/`. Il click porta sempre a una scheda
+  gara reale (provato in browser: `/gara/2024-bahrain` carica "Bahrain Grand
+  Prix 2024").
+- Cascata a 3 chip ricalcolata dai file grezzi: `doppietta` +
+  `nessun_cambio_di_leader` + `era` "Anni 1950" → **score 2 = 60, score 1 =
+  320, score 3 = 0**. I 60 sono le 30 gare doppietta∩nessun_cambio (post-1996,
+  era salta) **più** le 30 doppiette degli anni '50 (era regge, nessun_cambio
+  salta). Identico a quello che disegna la vista. La cascata **ridistribuisce**
+  quando si aggiunge un chip — non resta 30/350 — ed è corretto così.
+- Nel DOM: 380 cerchi `circle.scaffale-dot` (= 311 + 99 − 30 gare distinte),
+  righe `3 su 3 / 2 su 3 / 1 su 3`, la riga vuota tiene `opacity 0.7` con
+  "mai successo". Tooltip e click provati via evento reale: "Salta: Anni 1950"
+  + "Clic per aprire la scheda gara →", e il click naviga. Console pulita
+  (solo il websocket HMR, artefatto dell'ambiente).
+
+**Punto aperto, da sciogliere in S4.1:** con chip che non si sovrappongono
+(es. `nessun_cambio_di_leader` 1996-2024 + `era` "Anni 1950") la finestra
+intersecata si stampa **"1996–1959"**, rovesciata, con denominatore 0. Il
+numero 0 è onesto (scenario impossibile), ma la finestra rovesciata è brutta:
+S4.1 possiede la presentazione della finestra e deve gestire il caso
+"intersezione vuota" con una frase esplicita invece di due anni al contrario.
 
 **Punto sciolto dal coordinatore prima di aprire la fase (2 set 2026):** il
 click su un punto deve portare a `/gara/<slug>`, ma lo slug è
@@ -535,6 +593,11 @@ Dipende da: S3.1
 - [ ] La finestra di copertura intersecata è scritta accanto ai numeri, sempre
       visibile e mai in un tooltip; quando si restringe aggiungendo un chip, il
       cambiamento è percepibile (transizione, non un salto silenzioso)
+- [ ] Caso "intersezione vuota" (chip che non si sovrappongono, es.
+      `nessun_cambio_di_leader` + `era` "Anni 1950"): oggi S3.1 stampa la
+      finestra rovesciata "1996–1959". Va sostituita con una frase esplicita
+      ("nessuna stagione in comune tra i pezzi scelti") — il denominatore 0 resta,
+      è corretto
 - [ ] Diff letto
 
 ---

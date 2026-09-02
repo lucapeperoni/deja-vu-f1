@@ -42,6 +42,13 @@ export interface CompactScenarioIndex {
   gare: {
     raceIdDelta: number[];
     annoDelta: number[];
+    // round della stagione: NON entra nel match (nessun numero di regressione
+    // cambia), serve solo al client per ricostruire lo slug /gara/<slug> come
+    // buildSlugByRaceId — "<anno>-<circuitRef>", con "-r<round>" per le 4
+    // coppie 2020/2021 che condividono anno+circuito. Delta-codificato come
+    // gli altri, anche se non è monotòno (torna a 1 a ogni stagione): i salti
+    // restano interi piccoli.
+    roundDelta: number[];
     circuito: number[];
     indy: number[]; // 0/1 = isIndy500, l'esclusione di ogni denominatore del sito
   };
@@ -139,6 +146,7 @@ export interface VarianteMeta {
 export interface RaceRow {
   raceId: number;
   anno: number;
+  round: number;
   circuitRef: string;
   isIndy500: boolean;
 }
@@ -259,12 +267,15 @@ export function decodeScenarioIndex(compact: CompactScenarioIndex): ScenarioRunt
   const races: RaceRow[] = [];
   let raceId = 0;
   let anno = 0;
+  let round = 0;
   for (let i = 0; i < compact.gare.raceIdDelta.length; i++) {
     raceId += compact.gare.raceIdDelta[i];
     anno += compact.gare.annoDelta[i];
+    round += compact.gare.roundDelta[i];
     races.push({
       raceId,
       anno,
+      round,
       circuitRef: compact.circuiti[compact.gare.circuito[i]],
       isIndy500: compact.gare.indy[i] === 1,
     });

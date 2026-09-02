@@ -23,6 +23,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import EventPicker from "./EventPicker";
+import ScaffaleCorrispondenze from "@/components/charts/ScaffaleCorrispondenze";
 import { familyColor } from "@/lib/colors";
 import {
   dedupeToDefaultParams,
@@ -126,6 +127,12 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
   const eventiDefault = useMemo(() => dedupeToDefaultParams(catalog), [catalog]);
 
   const idsPresenti = useMemo(() => new Set(chips.map((c) => c.id)), [chips]);
+
+  // circuitRef → nome leggibile, per il tooltip dello scaffale (S3.1).
+  const nomiCircuiti = useMemo(
+    () => Object.fromEntries(soggetti.circuiti.map((c) => [c.circuitRef, c.nome])),
+    [soggetti.circuiti]
+  );
 
   const suggerimenti = useMemo<Suggerimento[]>(() => {
     const q = normalizza(query.trim());
@@ -419,33 +426,31 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
         />
       )}
 
-      {/* Riga provvisoria: la vista vera dei risultati è la fase S3 (lo
-          scaffale delle corrispondenze). Qui si dichiarano solo i conteggi
-          per livello della cascata, la finestra e il denominatore — che
-          restano visibili accanto ai numeri, mai in un tooltip. */}
-      <div className="border-t border-graphite pt-3 text-sm">
+      {/* Lo scaffale delle corrispondenze (fase S3.1): la vista portante. La
+          finestra intersecata e il denominatore composto restano scritti in
+          chiaro accanto alla vista, sempre visibili e mai in un tooltip
+          (regola d'oro del progetto). */}
+      <div className="border-t border-graphite pt-4">
         {risultato === null ? (
-          <span className="text-neutral-gray">La cascata comparirà qui appena scegli il primo pezzo.</span>
+          <span className="text-sm text-neutral-gray">
+            Lo scaffale comparirà qui appena scegli il primo pezzo.
+          </span>
         ) : (
           <>
-            <div className="text-white">
-              {risultato.byScore.map((l) => (
-                <span key={l.score} className="mr-4">
-                  <span className="text-neutral-gray">
-                    {l.score} su {chips.length}
-                    {l.score === chips.length ? " (identico)" : ""}:
-                  </span>{" "}
-                  {l.risultati.length}
-                </span>
-              ))}
+            <div className="mb-3 text-sm text-neutral-gray">
+              Finestra intersecata{" "}
+              <span className="text-white">
+                {risultato.finestraIntersecata.annoDa}–{risultato.finestraIntersecata.annoA}
+              </span>{" "}
+              · denominatore composto{" "}
+              <span className="text-white">
+                {risultato.denominatoreComposto.valore === null
+                  ? "non calcolabile"
+                  : `${risultato.denominatoreComposto.valore} (${risultato.denominatoreComposto.fonte})`}
+              </span>{" "}
+              · join <span className="text-white">&quot;{risultato.joinMode}&quot;</span>
             </div>
-            <div className="text-neutral-gray text-xs mt-1">
-              Finestra intersecata {risultato.finestraIntersecata.annoDa}-{risultato.finestraIntersecata.annoA} · denominatore{" "}
-              {risultato.denominatoreComposto.valore === null
-                ? "non calcolabile"
-                : `${risultato.denominatoreComposto.valore} (${risultato.denominatoreComposto.fonte})`}{" "}
-              · join &quot;{risultato.joinMode}&quot;
-            </div>
+            <ScaffaleCorrispondenze result={risultato} races={indice.races} nomiCircuiti={nomiCircuiti} />
           </>
         )}
       </div>

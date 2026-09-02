@@ -29,6 +29,7 @@ const PARAMS_PATH = path.join(process.cwd(), "public", "data", "params.json");
 interface RaceIndexRow {
   raceId: number;
   anno: number;
+  round: number;
   circuitRef: string;
   isIndy500: boolean;
 }
@@ -111,6 +112,9 @@ export function buildCompactScenarioIndex(): CompactScenarioIndex {
   const gare = {
     raceIdDelta: races.map((r, i) => (i === 0 ? r.raceId : r.raceId - races[i - 1].raceId)),
     annoDelta: races.map((r, i) => (i === 0 ? r.anno : r.anno - races[i - 1].anno)),
+    // Il round non entra nel match: serve solo alla ricostruzione dello slug
+    // /gara/<slug> lato client (S3.1). Delta-codificato come gli altri.
+    roundDelta: races.map((r, i) => (i === 0 ? r.round : r.round - races[i - 1].round)),
     circuito: races.map((r) => circuitoIdx.get(r.circuitRef)!),
     indy: races.map((r) => (r.isIndy500 ? 1 : 0)),
   };
