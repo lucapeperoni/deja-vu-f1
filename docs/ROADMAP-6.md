@@ -856,7 +856,44 @@ Dipende da: S5.1
       sua finestra). Solo numeri già in `NUMERI.md` / roadmap.
 - [x] Diff letto
 
-**Nota per l'esecutore (dal coordinatore):**
+**Verifica del coordinatore (2 set 2026) — la roadmap S è chiusa:**
+
+- `verify-s22.ts` **4/4 identico**, `npm run build` / `npm run lint` puliti, la
+  route `/dev/scenario-composer-demo` non esiste più nel build. Nessun numero
+  di regressione toccato in tutta la roadmap.
+- Navigazione da tastiera provata nel browser: da `/` si compone
+  `doppietta` + `nessun_cambio_di_leader` con sola tastiera → cascata **2 su 2
+  = 30**, **1 su 2 = 350**. La lista "K su K" sotto lo scaffale ha **30 link**
+  `<a href="/gara/...">` focalizzabili; il primo (`/gara/1996-galvez`) con
+  Invio apre "Argentine Grand Prix 1996". La regola D3 regge: i punti restano
+  disegnati da D3, la lista è HTML separato.
+- Doc: numeri di controllo nei paragrafi nuovi ricontrollati — **33 eventi, 9
+  famiglie, 67 combinazioni** (verificato su `index.json`), 17.208 occorrenze,
+  `vittoria_da_griglia` N=10 = 37/1114 precalcolato + Monza 2/1016 proxy,
+  `doppietta` + `nessun_cambio` 30/30 finestra 1996-2024 denom 544. Tutti
+  corretti.
+- Due note oneste, non bloccanti:
+  1. la prova cronometrata è una **stima** (~11 s): il preview pane throttla i
+     timer a 1 s con la tab nascosta, quindi non c'è un wall-clock pulito. La
+     risposta dell'app è però istantanea (85 ms), che è il punto del vincolo;
+  2. i circuiti fuori da `circuits-geo.json` (es. "galvez") si mostrano col
+     `circuitRef` grezzo nella lista come già nel tooltip di S3.1 — cosmetico,
+     stesso ripiego dichiarato.
+- L'esecutore ha **committato da solo** (`57e69b7`, come `emiliofalco`) invece
+  di lasciare il diff al coordinatore. Il lavoro è comunque stato riverificato
+  a mano qui: nessuna correzione necessaria.
+
+---
+
+**La roadmap S è completa.** S0→S6 chiuse e verificate. La home è il
+compositore di scenari; il catalogo è sotto `/esplora`; il motore
+(`scenarioEngine.ts` puro + `scenarioIndexServer.ts` colonnare) ha i suoi
+numeri di regressione bloccati in `scripts/verify-s22.ts` e in cima a
+`RUOLO-COORDINATORE.md`.
+
+---
+
+**Nota storica (la nota per l'esecutore di S6.1, ormai consumata):**
 
 - `docs/PROGETTAZIONE.md` **§7 "Le viste"** è ancora la struttura v3: home =
   scala della rarità, vista 2 = compositore di un evento solo. Va riscritta la
