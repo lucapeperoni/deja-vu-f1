@@ -600,6 +600,74 @@ Dipende da: S3.1
       è corretto
 - [ ] Diff letto
 
+**Nota per l'esecutore (dal coordinatore):** il motore è già pronto per il
+toggle. `matchScenario(index, chips, joinMode?)` in `src/lib/scenarioEngine.ts`
+accetta un `joinMode` esplicito e restituisce `joinMode` (quello usato),
+`joinModeDedotto` (il default) e `joinModeEsplicita` (bool). L'ambiguità è
+**reale** solo quando ci sono **≥ 2 chip `evento`** e `joinModeDedotto ===
+"stesso pilota"` (cioè tutti i chip evento sono di unità `RISULTATO`): con un
+solo chip evento, o con un chip evento di unità `GARA` in mezzo, la domanda
+"stesso pilota o stessa gara" non si pone e il toggle **non deve comparire**.
+Lo stato del toggle vive in `ScenarioComposer.tsx` (un `useState<JoinMode |
+null>`), si passa a `matchScenario` e si azzera quando i chip cambiano in modo
+da far sparire l'ambiguità.
+
+**Prompt da copiare:**
+
+```
+Leggi in docs/ROADMAP-6.md le decisioni in cima (soprattutto quella su
+"Ambiguità stessa gara vs stesso pilota" e quella sulla finestra di copertura)
+e le fasi chiuse S2.2 e S3.1, compresa la "Nota per l'esecutore" in fondo a
+S4.1. Leggi poi:
+- src/lib/scenarioEngine.ts (matchScenario accetta gia' joinMode? e torna
+  joinMode / joinModeDedotto / joinModeEsplicita; JoinMode = "stessa gara" |
+  "stesso pilota")
+- src/components/scenario/ScenarioComposer.tsx (dove vive lo stato dei chip e
+  dove si chiama matchScenario e si mostra la finestra/denominatore in chiaro)
+- src/components/charts/ScaffaleCorrispondenze.tsx (la vista, per la
+  transizione della finestra)
+- src/lib/eventCatalog.ts (i nomi leggibili degli eventi, formatBigAnswer e
+  simili) e src/lib/colors.ts
+
+Fai tre cose:
+
+1. Frase in chiaro sopra lo scaffale. Una riga di italiano leggibile che
+   riformula lo scenario a partire dai chip: i chip evento uniti da " e " coi
+   loro nomi dal catalogo, i chip di contesto come complementi ("a <circuito>",
+   "negli anni <decennio>", "con <pilota>", "con la <team>"). Quando
+   l'ambiguita' e' reale (vedi Nota: >= 2 chip evento e joinModeDedotto ===
+   "stesso pilota") la frase inizia con la parte join: "Lo stesso pilota ..."
+   oppure "Nella stessa gara, piloti diversi ...".
+
+2. La parte join e' un bottone inline (non un link): cliccandola si passa
+   dall'una all'altra JoinMode, si ripassa il joinMode esplicito a
+   matchScenario e la vista si ricalcola. Lo stato sta in ScenarioComposer
+   (useState<JoinMode | null>, null = usa il dedotto) e si rimette a null
+   quando i chip cambiano in modo che l'ambiguita' sparisca. Se l'ambiguita'
+   NON e' reale, niente bottone e niente parte join nella frase.
+   Verifica coi numeri: doppietta + nessun_cambio_di_leader NON e' ambiguo
+   (doppietta e' unita' GARA) -> nessun toggle, join "stessa gara", 30 su 30.
+   Trova due eventi entrambi di unita' RISULTATO, mettili insieme e controlla
+   che il toggle compaia e che i due conteggi (stesso pilota / stessa gara)
+   siano diversi e coerenti con un ricalcolo a mano su public/data/events/.
+
+3. Finestra di copertura. Tienila dov'e' (in chiaro, sopra la vista, mai in
+   tooltip) ma:
+   - quando si restringe aggiungendo un chip, il cambiamento e' percepibile
+     (una transizione breve sui numeri o sull'asse, non un salto secco);
+   - caso intersezione vuota (gia' visto in S3.1: nessun_cambio_di_leader +
+     era "Anni 1950" da' "1996-1959" rovesciato): rilevalo
+     (finestraIntersecata.annoDa > annoA) e sostituisci i due anni con
+     "nessuna stagione in comune tra i pezzi scelti". Il denominatore 0 resta,
+     e' corretto.
+
+Verifica nella demo isolata src/app/dev/scenario-composer-demo con screenshot:
+lo scenario non ambiguo (doppietta + nessun_cambio) senza toggle; uno scenario
+ambiguo con il toggle e i due conteggi; il caso intersezione vuota con la
+frase al posto degli anni. npm run build e npm run lint puliti. Se un numero
+di regressione di S2.2/S3.1 cambia, e' un bug: fermati e dimmelo.
+```
+
 ---
 
 # Fase S5 — La nuova home
