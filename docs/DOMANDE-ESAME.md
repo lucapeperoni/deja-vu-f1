@@ -106,6 +106,39 @@ individuale misurata) ha un segnale reale ma debole (correlazione
 dichiarare la tendenza è più onesto che disegnare un confine che i dati
 non hanno.
 
+## "Non è solo un motore di ricerca su un database?"
+
+No. È un progetto di Visualizzazione delle Informazioni, e su tre punti si
+distingue da un `SELECT ... COUNT(*)`.
+
+1. **L'output è una vista, non una lista.** La risposta a "è già successo?" è
+   *lo scaffale delle corrispondenze*: x = il tempo 1950-2024, y = quante
+   condizioni reggono (da K su K a 1 su K), un punto per ogni occorrenza
+   passata, colore = famiglia. La siccità — "non succede da decenni" — si
+   **vede** come spazio vuoto tra i punti prima di leggerla; una riga senza
+   punti resta disegnata con scritto "mai successo". Nessuna schermata di
+   questo flusso restituisce solo testo.
+
+2. **La "similarità" non è un punteggio da un modello: è un conteggio.** Con K
+   chip, il risultato è una cascata: K su K (identico), K-1 su K (quasi), K-2,
+   ecc. La differenza di un caso "quasi" non la spieghiamo noi — è
+   **letteralmente il nome del chip che salta**, scritto in chiaro nel tooltip
+   e nella lista. Nessuna black box, stessa filosofia descrittiva del resto del
+   progetto (ed è la lezione già imparata nel fallimento della v2).
+
+3. **Ogni numero porta la sua finestra di copertura.** Intersecare un chip
+   Safety Car (2023-2024, 46 gare) con uno di griglia (1950-2024, 1114 gare)
+   dà un denominatore reale di 46, non 1114 — e la finestra si accorcia a
+   vista d'occhio *mentre* si aggiungono i chip, scritta accanto al numero,
+   mai in un tooltip. È il contrario di un `COUNT(*)` senza contesto:
+   `doppietta` + `nessun cambio di leader` sono **30 su 30 gare distinte** su
+   una finestra 1996-2024 (denominatore 544, proxy), non "30" e basta.
+
+Numeri di controllo (da `docs/NUMERI.md` e `docs/ROADMAP-6.md`): 33 eventi in
+9 famiglie, 67 combinazioni; l'indice sono 17.208 occorrenze in 1,6 MB, tutte
+in memoria nel browser; `vittoria_da_griglia` N=10 da sola = 37 su 1114
+(precalcolato), + circuito Monza = 2 su 1016 (proxy).
+
 ## Frase per il prof
 
 "Il problema è che verificare se un fatto è raro richiede minuti e

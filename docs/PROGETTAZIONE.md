@@ -251,37 +251,76 @@ client sui CSV, che sono 17 MB solo per `lap_times`.
 
 ## 7. Le viste
 
-Struttura del sito, coerente col mantra di Shneiderman: la **home** è la
-panoramica della rarità (overview), il **compositore** filtra (zoom and
-filter), la **scheda evento** e la **scheda gara** danno i dettagli
-(details-on-demand).
+Struttura del sito dopo la roadmap S (`docs/ROADMAP-6.md`), coerente col
+mantra di Shneiderman: la **home** è il **compositore di scenari** (comporre
+una condizione e vederla nel tempo — overview + zoom and filter sullo stesso
+schermo), l'**area `/esplora`** raccoglie le viste di panoramica sul catalogo
+(la scala della rarità, i riquadri, il fiume delle famiglie), la **scheda
+evento** e la **scheda gara** danno i dettagli (details-on-demand).
 
-| # | Vista | Ruolo | Da dove parte |
+**Il pivot della roadmap S — la home non è più la scala della rarità.** Le
+tre viste di panoramica rispondevano a "cosa c'è nel catalogo"; il compositore
+di un evento singolo rispondeva su **un** predicato alla volta. Mancava il
+modo di interrogare in fretta guidati da uno scenario preciso — "vittoria da
+lontano **+** sotto Safety Car **+** a Monza". Quella è ora la prima pagina.
+Regola d'oro dei pivot di questo progetto: **niente si butta** — le viste di
+panoramica si spostano in `/esplora`, non spariscono.
+
+| # | Vista | Dove | Ruolo |
 |---|---|---|---|
-| 1 | La scala della rarità (home) | overview: tutti gli eventi del catalogo ordinati per rarità, con la finestra dichiarata | da zero |
-| 2 | Il compositore di eventi | l'interrogazione: filtri parametrici → risposta "N volte su M" | da zero |
-| 3 | Quando: la striscia storica | 75 stagioni, occorrenze e siccità | riusa l'impianto assi/brush della race trace |
-| 4 | Dove: la mappa dei circuiti | occorrenze e **tasso** per gara ospitata | da zero |
-| 5 | Il piano griglia × arrivo | il contesto: 26.759 risultati come nuvola, l'evento evidenziato | riusa lo slope/scatter esistente |
-| 6 | La scheda gara | i fatti notevoli auto-generati, ordinati per rarità | riusa la struttura della pagina gara v2 |
-| 7 | Il capitolo neutralizzazioni | la famiglia 2023-2024 con race trace e matrice | **già implementato** (v2) |
+| 0 | **Il compositore di scenari** (home, `/`) | `/` | comporre K condizioni (chip tipizzati) e leggerle nel tempo: barra di ricerca + riga dei chip + **lo scaffale delle corrispondenze** |
+| 0b | Lo scaffale delle corrispondenze | `/` (dentro il compositore) | la vista portante della home: x = tempo 1950-2024, y = quante condizioni reggono (da K a 1), un punto per occorrenza passata, colore = famiglia |
+| 1 | La scala della rarità | `/esplora` | overview: tutti gli eventi del catalogo ordinati per rarità, con la finestra dichiarata |
+| 2 | I riquadri e il fiume delle famiglie | `/esplora` | le altre due viste di panoramica del catalogo (roadmap R e T) |
+| 3 | Quando: la striscia storica | `/esplora` | 75 stagioni, occorrenze e siccità |
+| 4 | Dove: la mappa dei circuiti | `/esplora` | occorrenze e **tasso** per gara ospitata |
+| 5 | Il piano griglia × arrivo | `/esplora` | il contesto: 26.759 risultati come nuvola, l'evento evidenziato |
+| 6 | La scheda gara | `/gara/[slug]` | i fatti notevoli auto-generati, ordinati per rarità |
+| 7 | Il capitolo neutralizzazioni | `/race/[id]` | la famiglia 2023-2024 con race trace e matrice — **già implementato** (v2) |
 
-**Vista 1 — La scala della rarità (home).** Tutti gli eventi del catalogo su
-un asse di rarità logaritmico: da "vittoria dalla pole" (481 volte) a
-"vittoria al debutto assoluto" (3 volte). Ogni evento è un segno posizionato
-sulla rarità, con la **finestra di copertura codificata visivamente** (per
-esempio la lunghezza o l'opacità di un segmento sull'asse temporale
-affiancato), perché il confronto tra un evento su 1125 gare e uno su 285
-dev'essere visibilmente diverso, non solo scritto. Click → vista 2 con
-l'evento caricato. È la vista che, da sola, dice cosa fa il sito.
+**Vista 0 — Il compositore di scenari (la home).** Una barra di ricerca in
+cima cerca **insieme** sui cinque tipi di chip (`evento`, `pilota`, `team`,
+`circuito`, `era`); i chip scelti si accumulano in una riga, ognuno rimovibile,
+i chip evento restano modificabili nei parametri. Il menu a macro-aree
+(famiglia → evento → parametro) resta raggiungibile come modo di **scoprire**
+cosa si può chiedere, ma la strada principale è digitare. Sopra lo scaffale una
+**frase in chiaro** riformula lo scenario ("Lo stesso pilota: prima vittoria e
+prima pole, a Monza"), con il prefisso del join cliccabile quando l'ambiguità
+"stesso pilota / stessa gara" è reale. La **finestra di copertura intersecata**
+e il **denominatore composto** stanno scritti accanto alla vista, mai in un
+tooltip, e la finestra si accorcia a vista d'occhio mentre si aggiungono chip.
+Tutto è navigabile da tastiera (è lo scenario d'uso: un telecronista con pochi
+secondi non prende il mouse).
 
-**Vista 2 — Il compositore di eventi.** Il pannello di interrogazione: si
-sceglie una famiglia, un evento e si muovono i suoi parametri (la soglia N).
-La risposta è grande e leggibile — *"40 volte su 1125 gare (3,6%), l'ultima
-2024 San Paolo, mai su questo circuito"* — e sotto compaiono, coordinate, le
-viste 3, 4 e 5 sullo stesso evento. Muovendo la soglia, tutte si aggiornano
-in transizione: è qui che si vede la rarità *diventare* rarità (10° o
-peggio: 40 volte; 15°: 9; 20°: 1).
+**Vista 0b — Lo scaffale delle corrispondenze.** È la risposta visuale a "è
+già successo?", e sostituisce qualunque lista di risultati. **Encoding:**
+- **x = posizione**: l'anno dell'occorrenza sulla stessa scala lineare
+  1950-2024 di `QuandoStrip` (tick `d3.format("d")`);
+- **y = posizione**: quante delle K condizioni reggono in quel caso — una
+  riga per livello, da **K su K** in alto (identico) a **1 su K** in basso.
+  La rarità del match sta **qui, sulla posizione**, non sul colore;
+- **un punto per occorrenza passata**, con jitter verticale deterministico
+  dal `raceId` dentro la banda della riga;
+- **colore = famiglia** dell'evento (`familyColor`), nominale, sempre — mai
+  la rarità, mai il punteggio (regola vincolante del progetto);
+- la riga **K su K** è enfatizzata con sfondo e bordo rossi
+  (`STORY_ACCENT_COLOR`): è la riga che risponde alla domanda. Una riga vuota
+  **resta disegnata** con scritto "mai successo" — l'assenza è informazione;
+- **hover** su un punto → anno, gara, e **quali chip saltano** in quel caso
+  (`chipsMissed` + `chipsNonValutabili`, con la label in chiaro: la
+  "differenza" non la spieghiamo noi, è il nome del chip mancante);
+- **click** su un punto → `/gara/<slug>`. Sotto lo scaffale, una lista HTML
+  compatta dei casi "K su K" con gli stessi link `/gara/<slug>` è la via
+  equivalente da tastiera (i cerchi SVG, disegnati da D3, non sono
+  focalizzabili — il fallback è HTML separato, la regola D3 resta intatta).
+
+**Viste 1-5 — sezioni di `/esplora`.** Le viste di panoramica del catalogo
+(la scala della rarità e, dalle roadmap R e T, i riquadri e il fiume delle
+famiglie), più le viste "quando/dove/griglia×arrivo" su un evento singolo,
+vivono ora sotto `/esplora`. Il loro contenuto non cambia (`HomeCatalogView`
+e i suoi figli sono stati solo spostati); cambia solo l'inquadramento — non
+sono più la home, ma il modo di **scorrere** il catalogo quando non si ha in
+mente uno scenario preciso. Le descrizioni di dettaglio restano qui sotto.
 
 **Vista 3 — Quando.** Asse X: le 75 stagioni. Le occorrenze come segni sulla
 striscia; sopra, il conteggio per stagione. La **siccità** è resa come lo
@@ -347,6 +386,16 @@ stretto, la siccità più lunga), **find anomalies** (gli eventi occorsi una
 volta sola), **sort** (la scala della rarità), **cluster** (le famiglie),
 **correlate** (griglia × arrivo).
 
+*Lo scaffale delle corrispondenze (home)* aggiunge un uso preciso della
+tassonomia di Amar et al.: è **retrieve value** ("quante volte è successo
+tutto insieme?", la riga K su K), **characterize distribution** (dove cadono
+i casi nei 75 anni, e la siccità come spazio vuoto tra i punti), e soprattutto
+un **query by example a soglia esplicita** — la cascata K / K-1 / K-2 non è un
+ranking di similarità opaco ma un conteggio di quante condizioni-esempio
+reggono, con la soglia (il livello della cascata) leggibile sull'asse y e la
+differenza scritta in chiaro come nome del chip che salta. Non c'è **compute
+derived value** nascosto: nessun punteggio, nessun modello.
+
 **Visual encoding e interaction idioms.** Marks: punti, segmenti, barre,
 celle, linee. Channels: posizione (rarità, anni, griglia×arrivo — il canale
 più preciso, riservato alle quantità che contano), lunghezza (conteggi),
@@ -357,6 +406,14 @@ pan sulla mappa), **reconfigure** (ordinamento della scala), **encode**
 (interruttore conteggio/tasso nella vista 4), **abstract/elaborate**
 (tooltip e drill-down alla gara), **filter** (i parametri del compositore,
 il brush sugli anni), **connect** (brushing and linking tra viste 3-4-5).
+
+Sullo scaffale della home gli idiom di Yi et al. in gioco sono due, netti:
+**filter** — aggiungere o togliere un chip ricompone lo scenario e
+ridistribuisce i punti tra i livelli della cascata; **connect** — un punto (o
+la voce equivalente nella lista da tastiera) porta alla scheda gara di quel
+caso. Nessuna codifica quantitativa in colore: la rarità del match resta sulla
+**posizione** (l'asse y della cascata), il colore è **solo la famiglia**
+dell'evento — la stessa regola vincolante di tutto il progetto.
 
 **Algorithm.** Precalcolo Python offline, rendering D3 su JSON statici. Il
 caso più pesante (26.759 punti nella vista 5) è gestibile in SVG; se non lo

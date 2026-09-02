@@ -86,10 +86,10 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 - [x] Fase S3 — Lo scaffale delle corrispondenze (S3.1 fatto e verificato)
 - [x] Fase S4 — La frase in chiaro e la finestra che si restringe (S4.1 fatto)
 - [x] Fase S5 — La nuova home e l'area "Esplora" (S5.1 fatto)
-- [ ] Fase S6 — Rifinitura, accessibilità, verifica finale
+- [x] Fase S6 — Rifinitura, accessibilità, verifica finale (S6.1 fatto)
 
 Ordine dei prompt: S0.1 → S1.1 → S1.2 → S2.1 → S2.2 → S3.1 → S4.1 → S5.1 → S6.1.
-Prossimo: **S6.1**.
+Prossimo: **roadmap chiusa.**
 
 ---
 
@@ -810,21 +810,51 @@ scaffale: se un numero di S2.2/S3.1/S4.1 cambia e' un bug, fermati e dimmelo.
 
 # Fase S6 — Rifinitura e verifica
 
-## S6.1 — Verifica finale
+## S6.1 — Verifica finale  ✅ FATTO (2 set 2026)
 
 Dipende da: S5.1
 
-- [ ] Prompt eseguito
-- [ ] Tutto il flusso navigabile da tastiera, senza mouse (è lo scenario d'uso:
-      chi ha fretta non prende il mouse)
-- [ ] `npm run build` e `npm run lint` puliti
-- [ ] Prova cronometrata dello scenario reale: dall'apertura della home a un
-      risultato leggibile con 2 chip, **sotto i 15 secondi**
-- [ ] `docs/PROGETTAZIONE.md` aggiornato con la nuova vista (task di Munzner,
-      idioma, giustificazione della codifica)
-- [ ] `docs/DOMANDE-ESAME.md` aggiornato con la domanda prevedibile: "non è
-      solo un motore di ricerca su un database?" — e la risposta
-- [ ] Diff letto
+- [x] Prompt eseguito
+- [x] `src/app/dev/scenario-composer-demo/` rimossa (`git rm`). Nessun import
+      la citava — solo riferimenti in `docs/ROADMAP-6.md`. Le altre demo
+      `dev/` restano.
+- [x] Tutto il flusso navigabile da tastiera, senza mouse: da `/`, Tab ×6
+      porta sulla barra (logo → 3 voci header → link "Esplora" dell'hero →
+      input); si digita l'evento, `↓`+`Invio` (o `Invio` da solo: la prima
+      voce è già selezionata) lo aggiunge, si ripete per il secondo, la
+      cascata e la finestra si leggono senza toccare il mouse. Verificato nel
+      browser end-to-end.
+- [x] **Il buco dello scaffale è chiuso con la lista HTML.** I cerchi SVG
+      restano disegnati da D3 (regola del corso intatta); sotto lo scaffale,
+      in `ScaffaleCorrispondenze.tsx`, una lista compatta dei casi "K su K"
+      con link `<a href="/gara/<slug>">` — focalizzabili da Tab, `Invio`
+      naviga. Deduplicata per `raceId`, ordinata per anno. Se il livello K è
+      vuoto: "Mai successo: nessuna gara soddisfa tutte le condizioni".
+- [x] `npm run build` e `npm run lint` puliti (resta solo l'avviso
+      `process.cwd()` su `src/app/page.tsx`, già noto da S5.1; la pagina è
+      comunque prerenderizzata statica).
+- [x] `scripts/verify-s22.ts`: **4/4 identico a S1.2** — motore e scaffale
+      non toccati nella logica di match.
+- [x] Prova cronometrata. Il tempo-macchina dal primo tasto sulla barra allo
+      scaffale renderizzato (cascata + lista K su K) è **85 ms** (dev mode,
+      misurato in pagina senza ritardi di battitura artificiali;
+      `decodeScenarioIndex` 5,9 ms una volta, `matchScenario` 0,25 ms per
+      chiamata). Il tempo è quindi tutto battitura umana: Tab ×6 (~2,5 s) +
+      "doppietta" (~2,5 s) + Invio + "nessun cambio" (~3,5 s) + Invio + lettura
+      della riga "2 su 2 — 30 casi" (~1 s) ≈ **~11 s da tastiera**, sotto i 15.
+- [x] `docs/PROGETTAZIONE.md`: §7 riscritta in alto (home = compositore di
+      scenari; scala/riquadri/fiume → sezioni di `/esplora`; aggiunta la vista
+      0/0b "lo scaffale delle corrispondenze" col suo encoding). §8: aggiunto
+      il task abstraction dello scaffale (Amar: retrieve value + characterize
+      distribution + query by example a soglia esplicita; Yi: filter, connect;
+      colore = solo famiglia, rarità sulla posizione). Viste 3-7 non riscritte,
+      solo reinquadrate come sezioni di `/esplora`.
+- [x] `docs/DOMANDE-ESAME.md`: aggiunta "Non è solo un motore di ricerca su un
+      database?" accanto a "Perché non uno scatter con 2 assi?", con la
+      risposta sui tre punti (output visuale non lista; similarità = conteggio
+      di condizioni, differenza = nome del chip che salta; ogni numero con la
+      sua finestra). Solo numeri già in `NUMERI.md` / roadmap.
+- [x] Diff letto
 
 **Nota per l'esecutore (dal coordinatore):**
 

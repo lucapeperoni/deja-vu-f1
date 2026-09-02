@@ -256,6 +256,26 @@ export default function ScaffaleCorrispondenze({ result, races, nomiCircuiti }: 
   const tt = tooltip?.result;
   const garaNome = tt ? nomiCircuiti?.[tt.entry.circuitRef] ?? tt.entry.circuitRef : "";
 
+  // La via da tastiera al "clic su un punto": i cerchi sono disegnati da D3
+  // dentro l'<svg> (regola del corso, docs/PROGETTAZIONE.md §7) e non sono
+  // focalizzabili. Sotto lo scaffale c'è quindi una lista HTML separata dei
+  // casi "K su K" — la riga che risponde alla domanda — con lo stesso link
+  // /gara/<slug> del punto. È il fallback dichiarato in S6.1 di ROADMAP-6.md,
+  // non un doppione del disegno: la vista resta D3, questo è testo navigabile.
+  const casiKsuK = useMemo(() => {
+    const perGara = new Map<number, { raceId: number; anno: number; slug: string | undefined; nome: string }>();
+    for (const res of rows[0]?.risultati ?? []) {
+      if (perGara.has(res.entry.raceId)) continue;
+      perGara.set(res.entry.raceId, {
+        raceId: res.entry.raceId,
+        anno: res.entry.anno,
+        slug: slugByRaceId.get(res.entry.raceId),
+        nome: nomiCircuiti?.[res.entry.circuitRef] ?? res.entry.circuitRef,
+      });
+    }
+    return [...perGara.values()].sort((a, b) => a.anno - b.anno);
+  }, [rows, slugByRaceId, nomiCircuiti]);
+
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl p-6 relative">
       <div ref={containerRef} className="overflow-x-auto hide-scrollbar">
@@ -270,6 +290,39 @@ export default function ScaffaleCorrispondenze({ result, races, nomiCircuiti }: 
           />
         </div>
       </div>
+
+      {/* Lista navigabile da tastiera dei casi "K su K" (fallback ai punti
+          SVG, non focalizzabili). Vedi S6.1 di docs/ROADMAP-6.md. */}
+      <div className="mt-4 border-t border-white/10 pt-3">
+        <h3 className="text-xs uppercase tracking-widest text-neutral-gray mb-2">
+          {K} su {K} — apri la scheda gara
+        </h3>
+        {casiKsuK.length === 0 ? (
+          <p className="text-sm text-neutral-gray italic">
+            Mai successo: nessuna gara soddisfa tutte le condizioni.
+          </p>
+        ) : (
+          <ul className="flex flex-wrap gap-2">
+            {casiKsuK.map((c) => (
+              <li key={c.raceId}>
+                {c.slug ? (
+                  <a
+                    href={`/gara/${c.slug}`}
+                    className="inline-block px-2 py-1 bg-panel border border-graphite rounded-sm text-sm text-white hover:border-racing-red transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-racing-red"
+                  >
+                    {c.anno} · {c.nome}
+                  </a>
+                ) : (
+                  <span className="inline-block px-2 py-1 text-sm text-neutral-gray">
+                    {c.anno} · {c.nome}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {tooltip && tt && (
         <ChartTooltip x={tooltip.x} y={tooltip.y} onDismiss={() => setTooltip(null)}>
           <div className="font-bold">
