@@ -825,3 +825,90 @@ Dipende da: S5.1
 - [ ] `docs/DOMANDE-ESAME.md` aggiornato con la domanda prevedibile: "non è
       solo un motore di ricerca su un database?" — e la risposta
 - [ ] Diff letto
+
+**Nota per l'esecutore (dal coordinatore):**
+
+- `docs/PROGETTAZIONE.md` **§7 "Le viste"** è ancora la struttura v3: home =
+  scala della rarità, vista 2 = compositore di un evento solo. Va riscritta la
+  parte alta di §7 per dire lo stato vero dopo la roadmap S: **home = il
+  compositore di scenari** (barra + chip + cascata + scaffale), le tre viste
+  scala/riquadri/fiume spostate in `/esplora` ("niente si butta"). Aggiungere
+  la voce nuova: **lo scaffale delle corrispondenze** (`x` = tempo 1950-2024,
+  `y` = quante condizioni reggono da K a 1, un punto per occorrenza, colore =
+  famiglia; la riga K su K enfatizzata). Non riscrivere le viste 3-7, solo
+  reinquadrarle come "sezioni di `/esplora`".
+- `docs/PROGETTAZIONE.md` **§8 "Aggancio al corso"**: aggiungere il task
+  abstraction dello scaffale nella tassonomia di Amar et al. — è
+  **retrieve value** + **characterize distribution** + un **query by example**
+  (la cascata K/K-1 è una similarità a soglia esplicita, non un ranking
+  opaco). Idiom di Yi et al.: **filter** (aggiungere/togliere chip),
+  **connect** (un punto → scheda gara). Nessuna codifica quantitativa in
+  colore: la rarità resta sulla posizione (l'asse `y` della cascata), il
+  colore è solo la famiglia — la stessa regola vincolante di tutto il
+  progetto.
+- `docs/DOMANDE-ESAME.md`: la nuova domanda va accanto a "Perché non uno
+  scatter con 2 assi?". Titolo: **"Non è solo un motore di ricerca su un
+  database?"**. La risposta, in una frase: no, perché (1) l'output non è una
+  lista ma una vista — lo scaffale, con il tempo sull'asse e la siccità
+  visibile come spazio vuoto; (2) la "similarità" non è un punteggio da un
+  modello: è il conteggio di condizioni che reggono, e la differenza è
+  letteralmente il nome del chip che salta, scritto in chiaro; (3) ogni numero
+  porta la sua finestra di copertura, che è il contrario di un `SELECT COUNT(*)`
+  senza contesto. Riusare i numeri di controllo già in `NUMERI.md` / in cima a
+  questa roadmap, non inventarne.
+- **Pulizia:** ora che `/` è il compositore, `src/app/dev/scenario-composer-demo/`
+  non serve più — va rimossa (era "da rimuovere prima di S6" fin da S2.2).
+- **Navigazione da tastiera:** la parte "comporre lo scenario e leggere la
+  cascata" è già tutta da tastiera (S2.2). Il buco è **il click su un punto
+  dello scaffale per aprire la scheda gara**: i cerchi SVG non sono
+  focalizzabili. O li si rende raggiungibili da tastiera (tabindex + Enter),
+  oppure si aggiunge sotto lo scaffale una lista compatta dei casi del livello
+  K su K con link `/gara/<slug>` — e la si dichiara come la via da tastiera.
+  Scelta dell'esecutore.
+
+**Prompt da copiare:**
+
+```
+Sei l'ultima fase (S6.1) della roadmap docs/ROADMAP-6.md. Leggi le decisioni
+in cima, le fasi chiuse S2.2/S3.1/S4.1/S5.1 e la "Nota per l'esecutore" in
+fondo a S6.1. Leggi docs/PROGETTAZIONE.md (§7 e §8), docs/DOMANDE-ESAME.md,
+docs/NUMERI.md, src/components/scenario/ScenarioComposer.tsx e
+src/components/charts/ScaffaleCorrispondenze.tsx.
+
+Fai, in quest'ordine:
+
+1. Rimuovi src/app/dev/scenario-composer-demo/ (non serve piu': / e' il
+   compositore). Controlla che niente la importi.
+
+2. Navigazione da tastiera. Verifica che dall'apertura di / si possa: mettere
+   a fuoco la barra (Tab), digitare un evento, sceglierlo con frecce+invio,
+   aggiungerne un secondo, e leggere la cascata — tutto senza mouse. Poi
+   sistema il buco dello scaffale: i punti SVG non sono raggiungibili da
+   tastiera. Rendi raggiungibile il click "apri scheda gara" da tastiera
+   (tabindex + onKeyDown Enter sui punti) OPPURE aggiungi sotto lo scaffale
+   una lista compatta dei casi "K su K" con link /gara/<slug>. Non rompere la
+   regola D3 (i punti restano disegnati da D3; il fallback e' HTML separato).
+
+3. Cronometra lo scenario reale: da / a un risultato leggibile con 2 chip,
+   sotto i 15 secondi solo da tastiera. Scrivi il tempo misurato.
+
+4. docs/PROGETTAZIONE.md: riscrivi la parte alta di §7 (home = compositore di
+   scenari; scala/riquadri/fiume spostate in /esplora; aggiungi "lo scaffale
+   delle corrispondenze" come vista nuova col suo encoding). In §8 aggiungi il
+   task abstraction dello scaffale (Amar: retrieve value + characterize
+   distribution + query by example a soglia esplicita; Yi: filter, connect;
+   colore = solo famiglia, rarita' sulla posizione). Non toccare le viste 3-7
+   se non per dire che sono sezioni di /esplora.
+
+5. docs/DOMANDE-ESAME.md: aggiungi "Non e' solo un motore di ricerca su un
+   database?" accanto a "Perche' non uno scatter con 2 assi?". Risposta sui
+   tre punti della Nota (output visuale non lista; similarita' = conteggio di
+   condizioni, differenza = nome del chip che salta; ogni numero con la sua
+   finestra). Usa solo numeri gia' in NUMERI.md / roadmap.
+
+6. npm run build e npm run lint: devono restare puliti. scripts/verify-s22.ts:
+   4/4 identico. Se un numero di regressione cambia, e' un bug: fermati.
+
+Verifica con screenshot: il flusso da tastiera, il tempo cronometrato, e le
+tre sezioni di doc aggiornate (incolla i paragrafi nuovi nella risposta).
+```
