@@ -84,7 +84,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 - [x] Fase S1 — L'indice delle occorrenze e il motore di match (S1.1, S1.2 fatti)
 - [x] Fase S2 — Il compositore a chip (S2.1, S2.2 fatti)
 - [x] Fase S3 — Lo scaffale delle corrispondenze (S3.1 fatto e verificato)
-- [ ] Fase S4 — La frase in chiaro e la finestra che si restringe
+- [x] Fase S4 — La frase in chiaro e la finestra che si restringe (S4.1 fatto)
 - [ ] Fase S5 — La nuova home e l'area "Esplora"
 - [ ] Fase S6 — Rifinitura, accessibilità, verifica finale
 
@@ -580,25 +580,47 @@ che funziona.
 
 # Fase S4 — La frase in chiaro e la finestra
 
-## S4.1 — Dire sempre cosa si sta chiedendo
+## S4.1 — Dire sempre cosa si sta chiedendo  ✅ FATTO (2 set 2026)
 
-Dipende da: S3.1
+Dipende da: S3.1. Tutto in `src/components/scenario/ScenarioComposer.tsx`,
+nessuna modifica al motore né allo scaffale.
 
-- [ ] Prompt eseguito
-- [ ] Sopra il risultato, una frase in italiano leggibile che riformula lo
-      scenario ("**lo stesso pilota** è stato fregato dalla Safety Car **e** si
-      è ritirato per il motore")
-- [ ] La parte "lo stesso pilota" è cliccabile e diventa "nella stessa gara",
-      ricalcolando tutto — e compare **solo** quando l'ambiguità esiste davvero
-- [ ] La finestra di copertura intersecata è scritta accanto ai numeri, sempre
-      visibile e mai in un tooltip; quando si restringe aggiungendo un chip, il
-      cambiamento è percepibile (transizione, non un salto silenzioso)
-- [ ] Caso "intersezione vuota" (chip che non si sovrappongono, es.
-      `nessun_cambio_di_leader` + `era` "Anni 1950"): oggi S3.1 stampa la
-      finestra rovesciata "1996–1959". Va sostituita con una frase esplicita
-      ("nessuna stagione in comune tra i pezzi scelti") — il denominatore 0 resta,
-      è corretto
-- [ ] Diff letto
+- [x] Prompt eseguito
+- [x] Frase in chiaro sopra lo scaffale: eventi uniti da " e " (label del
+      catalogo), contesto come complementi ("a &lt;circuito&gt;", "negli anni
+      &lt;decennio&gt;", "con &lt;pilota&gt;", "con la &lt;team&gt;")
+- [x] Il prefisso join ("Lo stesso pilota" / "Nella stessa gara, piloti
+      diversi") è un bottone inline che ribalta la `JoinMode`, ricalcola, e
+      compare **solo** quando l'ambiguità è reale: ≥ 2 chip evento **tutti** di
+      unità `RISULTATO` (calcolata dal catalogo, non dal risultato). Lo stato è
+      `useState<JoinMode | null>` in `ScenarioComposer`, si azzera a ogni
+      aggiunta/rimozione/cambio-parametro di chip
+- [x] Finestra intersecata in chiaro sopra la vista, mai in tooltip; una barra
+      1950–2024 con segmento che si accorcia (`transition-all duration-500`) a
+      ogni chip che restringe
+- [x] Intersezione vuota (`finestraIntersecata.annoDa > annoA`): i due anni
+      rovesciati sono sostituiti da "nessuna stagione in comune tra i pezzi
+      scelti", la barra sparisce, il denominatore 0 resta
+- [x] Diff letto
+
+**Verifica del coordinatore (2 set 2026) — rifatta a mano:**
+
+- `scripts/verify-s22.ts`: **4/4 identico**. `npm run build` / `npm run lint`:
+  puliti. Nessun file del motore/scaffale toccato — S2.2 e S3.1 intatte.
+- Ambiguità: `doppietta` + `nessun_cambio_di_leader` → **nessun bottone**
+  (doppietta è unità `GARA`), join "stessa gara", 30 su 30. Corretto.
+- `prima_vittoria_in_carriera` + `prima_pole_in_carriera` (entrambi
+  `RISULTATO`) → bottone presente. Ricalcolo indipendente in Python sui file
+  grezzi: **"stesso pilota" = 147** al livello pieno (1→35), **"stessa gara" =
+  24** (1→151). La UI mostra esattamente 147/35 e, dopo il clic, 24/151. Il
+  denominatore passa da 15.518 (proxy `RISULTATO`) a 1.114 (proxy `GARA`) —
+  giusto, cambia l'unità più stretta.
+- Intersezione vuota provata con 4 chip (le due carriere + `nessun_cambio` +
+  `era` "Anni 1950"): la finestra stampa "nessuna stagione in comune tra i
+  pezzi scelti", denominatore 0, barra assente, e il bottone join sparisce
+  (c'è un chip `GARA` in mezzo). Cascata 4→0 ("mai successo" enfatizzato),
+  3→6, 2→35, 1→230, tutte le righe disegnate.
+- Console pulita (solo il websocket HMR, artefatto dell'ambiente).
 
 **Nota per l'esecutore (dal coordinatore):** il motore è già pronto per il
 toggle. `matchScenario(index, chips, joinMode?)` in `src/lib/scenarioEngine.ts`

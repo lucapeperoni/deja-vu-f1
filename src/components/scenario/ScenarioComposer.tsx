@@ -39,6 +39,7 @@ import {
   type Chip,
   type CompactScenarioIndex,
   type EventoChip,
+  type JoinMode,
 } from "@/lib/scenarioEngine";
 
 export interface SoggettiRicerca {
@@ -111,6 +112,20 @@ const ERE = Array.from({ length: 8 }, (_, i) => {
   const annoA = Math.min(annoDa + 9, 2024);
   return { annoDa, annoA, label: `Anni ${annoDa}` };
 });
+
+// I chip di contesto diventano complementi della frase in chiaro: "a Monza",
+// "negli anni 1950", "con Hamilton", "con la Ferrari". L'ordine è quello in
+// cui sono stati aggiunti — lo stesso della riga dei chip.
+function complementiInChiaro(chips: Chip[], nomiCircuiti: Record<string, string>): string {
+  const parti: string[] = [];
+  for (const c of chips) {
+    if (c.tipo === "circuito") parti.push(`a ${nomiCircuiti[c.circuitRef] ?? c.label}`);
+    else if (c.tipo === "era") parti.push(`negli ${c.label.toLowerCase()}`);
+    else if (c.tipo === "pilota") parti.push(`con ${c.label}`);
+    else if (c.tipo === "team") parti.push(`con la ${c.label}`);
+  }
+  return parti.join(" ");
+}
 
 export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: Props) {
   const [chips, setChips] = useState<Chip[]>([]);
@@ -225,10 +240,38 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
     listaRef.current?.querySelector('[data-evidenziato="1"]')?.scrollIntoView({ block: "nearest" });
   }, [idxEvidenziato, suggerimenti]);
 
-  const risultato = useMemo(() => (chips.length > 0 ? matchScenario(indice, chips) : null), [indice, chips]);
+  // Il toggle "stesso pilota" / "stessa gara": null = usa il default dedotto
+  // dal motore. Si passa esplicito a matchScenario e si azzera appena
+  // l'ambiguità sparisce (chip cambiati). Vedi la Nota per l'esecutore in
+  // fondo a S4.1 di docs/ROADMAP-6.md.
+  const [joinModeManuale, setJoinModeManuale] = useState<JoinMode | null>(null);
+
+  // L'ambiguità è REALE solo con ≥ 2 chip evento tutti di unità RISULTATO
+  // (è la condizione con cui il motore deduce "stesso pilota"). Con un solo
+  // chip evento, o con un chip evento di unità GARA in mezzo, la domanda
+  // "stesso pilota o stessa gara" non si pone: niente bottone, niente parte
+  // join nella frase. Calcolata dal catalogo, senza passare dal risultato,
+  // così il joinMode esplicito non entra in un giro circolare.
+  const ambiguitaReale = useMemo(() => {
+    const evs = chips.filter((c): c is EventoChip => c.tipo === "evento");
+    return (
+      evs.length >= 2 &&
+      evs.every((c) => catalog.find((e) => e.eventId === c.eventId)?.unita === "RISULTATO")
+    );
+  }, [chips, catalog]);
+
+  // Quando l'ambiguità non è reale il toggle manuale si ignora (torna al
+  // dedotto): nessun effetto, nessun setState a cascata.
+  const joinModeEffettivo = ambiguitaReale ? joinModeManuale : null;
+
+  const risultato = useMemo(
+    () => (chips.length > 0 ? matchScenario(indice, chips, joinModeEffettivo ?? undefined) : null),
+    [indice, chips, joinModeEffettivo]
+  );
 
   function aggiungiChip(chip: Chip) {
     setChips((prev) => (prev.some((c) => c.id === chip.id) ? prev : [...prev, chip]));
+    setJoinModeManuale(null);
     setQuery("");
     setEvidenziato(0);
     inputRef.current?.focus();
@@ -236,6 +279,7 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
 
   function rimuoviChip(id: string) {
     setChips((prev) => prev.filter((c) => c.id !== id));
+    setJoinModeManuale(null);
     inputRef.current?.focus();
   }
 
@@ -243,6 +287,7 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
   // resta al suo posto nella riga, con lo stesso ordine di lettura.
   function cambiaParametro(chipId: string, entry: CatalogEventEntry) {
     setChips((prev) => prev.map((c) => (c.id === chipId ? chipEvento(entry) : c)));
+    setJoinModeManuale(null);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -436,22 +481,80 @@ export default function ScenarioComposer({ catalog, indiceCompatto, soggetti }: 
             Lo scaffale comparirà qui appena scegli il primo pezzo.
           </span>
         ) : (
-          <>
-            <div className="mb-3 text-sm text-neutral-gray">
-              Finestra intersecata{" "}
-              <span className="text-white">
-                {risultato.finestraIntersecata.annoDa}–{risultato.finestraIntersecata.annoA}
-              </span>{" "}
-              · denominatore composto{" "}
-              <span className="text-white">
-                {risultato.denominatoreComposto.valore === null
-                  ? "non calcolabile"
-                  : `${risultato.denominatoreComposto.valore} (${risultato.denominatoreComposto.fonte})`}
-              </span>{" "}
-              · join <span className="text-white">&quot;{risultato.joinMode}&quot;</span>
-            </div>
-            <ScaffaleCorrispondenze result={risultato} races={indice.races} nomiCircuiti={nomiCircuiti} />
-          </>
+          (() => {
+            const { annoDa, annoA } = risultato.finestraIntersecata;
+            const finestraVuota = annoDa > annoA;
+            const eventiTxt = chips
+              .filter((c): c is EventoChip => c.tipo === "evento")
+              .map((c) => c.label)
+              .join(" e ");
+            const compl = complementiInChiaro(chips, nomiCircuiti);
+            const joinPrefix =
+              risultato.joinMode === "stesso pilota" ? "Lo stesso pilota" : "Nella stessa gara, piloti diversi";
+            return (
+              <>
+                {/* 1. La frase in chiaro che riformula lo scenario dai chip. */}
+                {eventiTxt && (
+                  <p className="mb-3 text-sm text-white leading-relaxed">
+                    {ambiguitaReale ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setJoinModeManuale(
+                              risultato.joinMode === "stesso pilota" ? "stessa gara" : "stesso pilota"
+                            )
+                          }
+                          className="underline decoration-dotted decoration-racing-red underline-offset-2 text-racing-red hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-racing-red"
+                          aria-label={`Cambia in "${
+                            risultato.joinMode === "stesso pilota" ? "nella stessa gara" : "lo stesso pilota"
+                          }"`}
+                        >
+                          {joinPrefix}
+                        </button>
+                        : {eventiTxt}
+                        {compl ? ` ${compl}` : ""}
+                      </>
+                    ) : (
+                      <>
+                        {eventiTxt.charAt(0).toUpperCase() + eventiTxt.slice(1)}
+                        {compl ? ` ${compl}` : ""}
+                      </>
+                    )}
+                  </p>
+                )}
+
+                {/* 2. La finestra di copertura, in chiaro, con la barra che si
+                    accorcia (transizione) mentre si aggiungono chip. */}
+                <div className="mb-3 text-sm text-neutral-gray">
+                  Finestra intersecata{" "}
+                  <span className="text-white">
+                    {finestraVuota ? "nessuna stagione in comune tra i pezzi scelti" : `${annoDa}–${annoA}`}
+                  </span>{" "}
+                  · denominatore composto{" "}
+                  <span className="text-white">
+                    {risultato.denominatoreComposto.valore === null
+                      ? "non calcolabile"
+                      : `${risultato.denominatoreComposto.valore} (${risultato.denominatoreComposto.fonte})`}
+                  </span>{" "}
+                  · join <span className="text-white">&quot;{risultato.joinMode}&quot;</span>
+                  {!finestraVuota && (
+                    <span className="mt-1.5 block h-1 w-full rounded-full bg-graphite overflow-hidden">
+                      <span
+                        className="block h-full rounded-full bg-white/60 transition-all duration-500 ease-out"
+                        style={{
+                          marginLeft: `${((annoDa - 1950) / 74) * 100}%`,
+                          width: `${(Math.max(0, annoA - annoDa) / 74) * 100}%`,
+                        }}
+                      />
+                    </span>
+                  )}
+                </div>
+
+                <ScaffaleCorrispondenze result={risultato} races={indice.races} nomiCircuiti={nomiCircuiti} />
+              </>
+            );
+          })()
         )}
       </div>
     </div>
