@@ -709,6 +709,72 @@ Dipende da: S4.1
       spostamento
 - [ ] Diff letto
 
+**Nota per l'esecutore (dal coordinatore):**
+
+- La route nuova si chiama **`/esplora`** (`src/app/esplora/page.tsx`).
+- Il `page.tsx` attuale va spostato **quasi tutto** in `/esplora`: la lettura
+  di `index.json`, `loadFamilyYearSources`, `buildFamilyTimeline`, l'hero e la
+  sezione "La scala della rarità" con `<HomeCatalogView>`. `HomeCatalogView` e
+  i suoi figli **non si toccano**.
+- Il nuovo `page.tsx` fa quello che fa oggi `src/app/dev/scenario-composer-demo/
+  page.tsx` (legge i file, `buildCompactScenarioIndex()`, costruisce
+  `soggetti`) ma come home vera, con un hero adatto. La demo sotto `dev/`
+  **resta** finché non la togliamo in S6.
+- `sessionStorage` di `HomeCatalogView`: la chiave è `"home-catalog-view"`,
+  fissa, non dipende dalla route — sopravvive da sola. Va solo **verificato**.
+- `Header.tsx`: il logo "/" ora porta al compositore (è la home). Aggiungere
+  una voce **"Esplora il catalogo" → `/esplora`**, lasciare "Race Anatomy" e
+  "Metodologia".
+- `src/app/methodology/page.tsx:430` ha un link `← Torna alla home` a `/`: ora
+  "/" è il compositore, non il catalogo. Decidere: o lo si lascia (è la home)
+  o lo si punta a `/esplora` con testo "← Torna al catalogo". Scelta
+  dell'esecutore, purché il link non resti fuorviante.
+
+**Prompt da copiare:**
+
+```
+Leggi in docs/ROADMAP-6.md la decisione "Diventa la home" in cima, le fasi
+chiuse S2.2/S3.1/S4.1 e la "Nota per l'esecutore" in fondo a S5.1. Leggi poi
+src/app/page.tsx, src/app/dev/scenario-composer-demo/page.tsx,
+src/components/Header.tsx, src/components/HomeCatalogView.tsx (solo per
+capirlo, NON modificarlo) e src/app/methodology/page.tsx intorno alla riga 430.
+
+Fai:
+
+1. Crea src/app/esplora/page.tsx spostandoci QUASI TUTTO l'attuale page.tsx:
+   la lettura di index.json, loadFamilyYearSources, buildFamilyTimeline,
+   l'hero "È già successo?" e la sezione "La scala della rarità" con
+   <HomeCatalogView>. HomeCatalogView e i suoi figli NON si toccano: solo
+   spostati.
+
+2. Riscrivi src/app/page.tsx perche' mostri il compositore: stessa lettura
+   file di src/app/dev/scenario-composer-demo/page.tsx
+   (buildCompactScenarioIndex, drivers-index/constructors-index/circuits/
+   circuits-geo per i soggetti) e <ScenarioComposer>, con un hero adatto alla
+   home (non il titolo "Demo ..."). Nessun backend a runtime, come sempre.
+
+3. Header.tsx: aggiungi la voce "Esplora il catalogo" -> /esplora accanto a
+   "Race Anatomy" / "Metodologia". Il logo "/" resta.
+
+4. methodology/page.tsx: il link "← Torna alla home" a "/" ora porta al
+   compositore. Lascialo o puntalo a /esplora con "← Torna al catalogo" —
+   scegli tu, basta che non sia fuorviante.
+
+Verifica, con screenshot:
+- "/" mostra il compositore e funziona (cerca doppietta + nessun_cambio ->
+  30 su 30, come in S3.1/S4.1);
+- "/esplora" mostra le tre viste; cambia vista (scala/riquadri/tempo), vai su
+  un evento (/eventi/<id>), torna indietro: la vista scelta e' ancora quella
+  (sessionStorage "home-catalog-view");
+- le rotte /eventi/[id], /gara/[slug], /race/[id], /methodology rispondono
+  ancora (aprile una per una);
+- npm run build e npm run lint puliti; nessun link rotto nell'output del
+  build.
+
+Non toccare il motore (scenarioEngine.ts / scenarioIndexServer.ts) ne' lo
+scaffale: se un numero di S2.2/S3.1/S4.1 cambia e' un bug, fermati e dimmelo.
+```
+
 ---
 
 # Fase S6 — Rifinitura e verifica
