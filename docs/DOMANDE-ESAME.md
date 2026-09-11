@@ -178,3 +178,66 @@ Fonte: `docs/NUMERI.md` sezioni 1-8.
   gare).
 - BOX guadagna il 28,9% delle volte in generale, 29,4% sopra la soglia
   di margine dell'indice combinato, 16,2% sotto.
+
+
+---
+
+# v4 — Déjà vu (aggiornamento dell'11 settembre 2026)
+
+Riferimento: `docs/PROGETTAZIONE-v4.md`, `docs/ROADMAP-7.md`, `docs/NUMERI.md` §10.
+
+## "Cosa è cambiato rispetto a 'È già successo?'"
+
+Il vocabolario. In v3 si sceglieva tra 33 eventi precalcolati; non si poteva
+dire "questo pilota, partito quinto, è arrivato secondo a Monza". In v4 la
+situazione è una **frase a quattro slot** (chi · cosa · dove · quando) e
+"cosa" è fatto di **predicati atomici** valutati sul momento sulla tabella
+dei risultati (26.759 righe, nel browser). I 33 eventi restano come fatti a
+livello di gara. La pipeline Python produce due tabelle colonnari nuove;
+l'indice v3 e le sue viste restano sotto /esplora e /scenari.
+
+## "Come definite 'simile'? Non è un punteggio opaco?"
+
+No: è un **reticolo di allentamenti**. Ogni slot pieno si allenta in un modo
+dichiarato (chi → chiunque; circuito → stesso paese → ovunque; anno →
+decennio → sempre; parametro ±1, ±2 nella direzione dichiarata dal fatto;
+un fatto in più → si toglie). La distanza è la somma dei pesi degli
+allentamenti (in `params.json`, scritti a mano e motivati). Ogni caso
+compare una sola volta, nel gruppo più vicino. Le "differenze" non le
+spieghiamo noi: **sono lo slot che cambia, scritto accanto al gruppo** e
+codificato nel colore.
+
+## "Il denominatore: 'su quante'?"
+
+Dipende dall'unità che l'utente ha in mente, e la diciamo: con un pilota,
+"su N gare del pilota"; senza pilota e con un fatto unico per gara (vince,
+pole, giro veloce), "su N gare" (37 su 1114, come in v3); altrimenti "su N
+risultati". Le righe in cui un fatto non è valutabile (dato mancante o
+fuori finestra) escono dal denominatore e si contano a parte: mai "non è
+successo" al posto di "non lo sappiamo". La finestra è l'intersezione delle
+finestre delle colonne usate, e la vista la disegna come banda grigia.
+
+## "Perché il colore codifica lo slot e non la famiglia?"
+
+Perché in v4 la variabile nominale che conta è *cosa cambia* tra la
+situazione chiesta e il caso simile. Lo stesso colore sta sullo slot nella
+frase, sulla riga nella linea dei déjà vu, sul bordo del ritratto: il
+colore lega la differenza al suo slot in tutte le viste (Tol "muted",
+verificata per daltonismo). Il rosso ha un solo significato: la risposta
+esatta. La rarità va sulla posizione, mai sulla tinta (regola v3).
+
+## "Il parser del testo libero è un modello?"
+
+No: quattro passate a dizionario (nomi dai dizionari della pipeline, epoche,
+fatti tramite i sinonimi dichiarati accanto a ogni predicato, numeri
+assegnati al fatto vicino), 22 frasi di prova nel codice. Quello che non
+capisce lo scrive ("Non ho capito: pioggia") e la frase a slot resta la
+fonte di verità, correggibile a mano.
+
+## "Cosa avete verificato?"
+
+I numeri attesi sono calcolati a mano in Python prima del TypeScript e
+stanno negli script di verifica, non nei commenti. Regressione contro la
+v3: doppietta + nessun cambio di leader = 30 su 544. Un'attesa era sbagliata
+(vittorie al debutto: Python contava la 500 Miglia) e il motore aveva
+ragione lui: 2, non 3.

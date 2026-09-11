@@ -230,6 +230,46 @@ export default function MethodologyPage() {
           </p>
         </header>
 
+        {/* 0. v4 — Déjà vu: la frase a slot e il reticolo (docs/PROGETTAZIONE-v4.md) */}
+        <section className="space-y-6 bg-panel border border-graphite p-8">
+          <h2 className="font-condensed text-3xl font-bold text-white uppercase tracking-wider">
+            Déjà vu: la frase a slot e i casi simili
+          </h2>
+          <p className="text-text-secondary leading-relaxed">
+            Dalla v4 la domanda si fa con una frase a quattro slot — <span className="text-white">chi · cosa · dove · quando</span> —
+            e &quot;cosa&quot; è fatto di predicati atomici (vince, arriva 3°, partito 10° o peggio, si ritira entro il giro 1,
+            al comando entro il giro 28, con 3 soste…) valutati sul momento su una tabella di 26.759 risultati pilota×gara,
+            nel browser. Ogni fatto dichiara le colonne da cui dipende, e la finestra della risposta è l&apos;intersezione
+            delle finestre di quelle colonne (tempi sul giro dal 1996, soste dal 2011, qualifiche dal 1994, giro veloce
+            dal 2004, neutralizzazioni 2023-2024).
+          </p>
+          <div className="bg-background border border-graphite p-6 font-mono text-sm text-white">
+            N volte su M — M = unità (gare / gare del pilota / risultati) · Indy 500 escluse · nella finestra · con chi/dove/quando · dove ogni fatto è valutabile
+          </div>
+          <p className="text-text-secondary leading-relaxed">
+            Un fatto ha tre esiti, non due: vero, falso, <span className="text-white">non valutabile</span> (campo mancante o
+            fuori finestra). Le righe non valutabili escono dal denominatore e si contano a parte: mai &quot;non è
+            successo&quot; al posto di &quot;non lo sappiamo&quot;.
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            I casi simili non vengono da un punteggio: sono un <span className="text-white">reticolo di allentamenti</span>. Ogni
+            slot pieno si allenta in un modo dichiarato (chi → chiunque; circuito → stesso paese → ovunque; anno →
+            decennio → sempre; un parametro ±1, ±2 nella direzione dichiarata dal fatto; un fatto in più si toglie), al
+            massimo due slot alla volta. La distanza di un gruppo è la somma dei pesi degli allentamenti, scritti in
+            <span className="font-mono text-white"> params.json</span> (chi 1,0 · dove 0,8 · stesso paese 0,4 · quando 0,5 ·
+            stesso decennio 0,25 · parametro 0,6 per grado · togliere un fatto 0,9). Ogni caso compare una volta sola, nel
+            gruppo più vicino; la differenza è lo slot che cambia, scritto accanto al gruppo e codificato nel colore
+            (verde acqua chi, oliva cosa, ciano dove, rosa quando; il rosso è solo la risposta esatta).
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            Il testo libero (&quot;hamilton vince monza dalla decima&quot;) passa da un parser a dizionari, non da un modello:
+            nomi, epoche, fatti tramite i sinonimi dichiarati accanto a ogni predicato, numeri assegnati al fatto vicino.
+            Quello che non capisce lo scrive. I numeri attesi di motore, reticolo e parser stanno in
+            <span className="font-mono text-white"> scripts/verify-situazioni.ts</span> e
+            <span className="font-mono text-white"> scripts/verify-parser.ts</span>, calcolati a mano prima del codice.
+          </p>
+        </section>
+
         {/* 1. La rarità e la sua finestra */}
         <section className="space-y-6">
           <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">

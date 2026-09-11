@@ -78,6 +78,14 @@ const DEFAULT_WIDTH = 1100;
 
 const COLORE_DUE_SLOT = "#8A8F9C";
 
+// prefers-reduced-motion: la migrazione dei punti tra righe è l'unica
+// animazione con un significato, ma chi la disattiva nel sistema non la
+// vede — le durate vanno a zero, il risultato finale è identico.
+function durata(ms: number): number {
+  if (typeof window === "undefined") return ms;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : ms;
+}
+
 function jitter01(seed: number): number {
   const x = Math.sin(seed * 12.9898) * 43758.5453;
   return x - Math.floor(x);
@@ -212,7 +220,7 @@ export default function LineaDejaVu({ reticolo, finestra, gare, dizionari, onSce
     const rowsM = rowsEnter.merge(rows);
     rowsM
       .transition()
-      .duration(300)
+      .duration(durata(300))
       .attr("transform", (_, i) => `translate(0, ${rowY(i)})`);
     rowsM
       .select("rect.bg")
@@ -305,7 +313,7 @@ export default function LineaDejaVu({ reticolo, finestra, gare, dizionari, onSce
             .attr("cx", (d) => d.cx)
             .attr("cy", (d) => d.cy),
         (update) => update,
-        (exit) => exit.transition().duration(200).attr("r", 0).remove()
+        (exit) => exit.transition().duration(durata(200)).attr("r", 0).remove()
       )
       .style("cursor", "pointer")
       .on("pointerenter", (ev, d) => setTooltip({ x: ev.clientX, y: ev.clientY, o: d.o, riga: d.riga }))
@@ -313,7 +321,7 @@ export default function LineaDejaVu({ reticolo, finestra, gare, dizionari, onSce
       .on("pointerleave", () => setTooltip(null))
       .on("click", (_ev, d) => onScegli?.(d.o, d.riga))
       .transition()
-      .duration(450)
+      .duration(durata(450))
       .attr("cx", (d) => d.cx)
       .attr("cy", (d) => d.cy)
       .attr("r", (d) => (d.riga.esatto ? 5.5 : d.riga.gruppo ? 4.5 : 3.5))

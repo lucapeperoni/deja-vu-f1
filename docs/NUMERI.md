@@ -203,3 +203,21 @@ Fonte: `public/data/events/index.json`, le 5 voci con `siccitaAnniCorrente` più
 - **3337.4 KB totali** (1161 file: `public/data/events/*.json`, `public/data/facts/*.json`, `public/data/races-index.json`, `public/data/params.json`).
   Fonte: somma di `Path.stat().st_size` sui file elencati, stesso conteggio stampato a fine esecuzione da `build_events.py`.
 
+
+
+## 10. v4 — Déjà vu (le situazioni)
+
+Numeri verificati l'11 settembre 2026 con pandas sui CSV Ergast (`data/raw/`)
+e ripetuti da `scripts/verify-situazioni.ts` (motore + reticolo) e
+`scripts/verify-parser.ts` (22 frasi). Se uno cambia, è un bug.
+
+- **26.759 risultati** pilota×gara, **1125 gare** (1114 senza le 11 Indy 500 1950-60).
+  Fonte: `public/data/situazioni/risultati.json` e `gare.json`, `righe`.
+- **15.518 risultati** con griglia e arrivo noti (identico al denominatore v3 di `rimonta_almeno_n_posizioni`).
+- **45 fatti** nel vocabolario (34 sul risultato, 11 sulla gara). Fonte: `src/lib/situazioni/fatti.ts`.
+- Finestre per colonna: base 1950-2024; tempi sul giro 1996-2024 (**544 gare** con tracce); soste 2011-2024; qualifiche 1994-2024; giro veloce 2004-2024; neutralizzazioni 2023-2024.
+- **Vittorie partendo 10° o peggio: 37 su 1114 gare** (3,3%); a Monza **2 su 74** (Gethin 1971, Gasly 2020); Hamilton **2 su 356** GP (Hockenheim 2018, Interlagos 2021); Hamilton a Monza **0 su 18** (partito ≥10° tre volte: 2008, 2013, 2022 → 7°, 9°, 5°).
+- Regressione contro la v3: **doppietta + nessun cambio di leader = 30 gare su 544** (1996-2024), identico a S1.2/S2.2 di ROADMAP-6.
+- **Vittorie al debutto: 2** (Farina 1950, Baghetti 1961); Parsons alla 500 Miglia 1950 è esclusa (trappola 1).
+- Peso: `risultati.json` 1.858 KB grezzi / **177 KB gzip**, `gare.json` 17 KB gzip, `dizionari.json` 26,5 KB gzip. Decodifica 20 ms; una valutazione **0,8 ms**; un reticolo (15 gruppi) **14 ms**.
+- Pesi del reticolo (`params.json` → `situazioni.pesiAllentamento`): chi 1,0 · dove 0,8 · stesso paese 0,4 · quando 0,5 · stesso decennio 0,25 · parametro 0,6 per grado · togliere un fatto 0,9 · al massimo 2 slot.

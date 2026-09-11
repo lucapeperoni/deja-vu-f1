@@ -37,10 +37,10 @@ l'11 settembre 2026).
 - [x] D4 — La linea dei déjà vu (D3)  ✅ FATTO (11 set 2026)
 - [x] D5 — I ritratti (small multiples) e la mappa collegata  ✅ FATTO (11 set 2026)
 - [x] D6 — La nuova home, il nome, la scheda gara riletta, /esplora  ✅ FATTO (11 set 2026)
-- [ ] D7 — Accessibilità, verifica finale, documenti d'esame
+- [x] D7 — Accessibilità, verifica finale, documenti d'esame  ✅ FATTO (11 set 2026)
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
-D5.2 → D6.1 → D7.1.
+D5.2 → D6.1 → D7.1. **Roadmap chiusa l'11 settembre 2026.**
 
 ---
 
@@ -387,5 +387,19 @@ scuro; `prefers-reduced-motion`. `npm run build` e `npm run lint` puliti.
 `verify-situazioni.ts` tutto verde. Aggiornare `NUMERI.md`, `DOMANDE-ESAME.md`,
 `/methodology`. PROGETTAZIONE.md (v3) resta come storia.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D7.1.** `prefers-reduced-motion` azzera le transizioni della linea
+dei déjà vu (unica animazione con significato). Tastiera: frase a slot con
+combobox/listbox e `aria-activedescendant`, fallback `sr-only` ai punti SVG
+della linea, ritratti come bottoni. Contrasto: "cosa" usa #B8B04A invece
+dell'oliva Tol (#999933) per restare leggibile su #0B0C10. `npm run lint`
+e `npm run build` puliti (la venv Python è ignorata da eslint);
+`verify-situazioni.ts` e `verify-parser.ts` tutti verdi. Documenti:
+NUMERI.md §10 (numeri v4 con fonte), DOMANDE-ESAME.md sezione v4 (sei
+domande con risposta), /methodology sezione "Déjà vu: la frase a slot e i
+casi simili", PROGETTAZIONE-v4 §3.1 e §4 allineati alle decisioni prese in
+D2.2 e D2.1. Restano da fare, fuori roadmap: pagina "Gare" come elenco
+(oggi il menu porta a /gara/2024-monza); i fatti su Q1/Q2 (servono le
+colonne q1/q2/q3 in pipeline).

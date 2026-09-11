@@ -72,16 +72,18 @@ I "casi simili" non escono da un punteggio opaco. Ogni slot pieno si può
 
 | Slot | Allentamento di grado 1 | Grado 2 |
 |---|---|---|
-| Chi = pilota | lo stesso team | chiunque |
-| Chi = team | — | chiunque |
+| Chi = pilota | chiunque (un solo grado: "lo stesso team" è ambiguo, un pilota cambia team nel tempo — deciso in D2.2) | — |
+| Chi = team | chiunque | — |
 | Dove = circuito | lo stesso paese | ovunque |
 | Quando = anno | lo stesso decennio | sempre |
 | Cosa, parametro numerico | ±1 (es. "partito 9°-11°") | ±2 |
 | Cosa, fatto in più | si toglie il fatto | — |
 
 Il risultato è un reticolo: al vertice la situazione esatta (distanza 0), poi
-tutte le situazioni con un solo slot allentato (distanza 1), poi due (distanza
-2). La distanza è **un conteggio di allentamenti**, con pesi dichiarati in
+tutte le situazioni con un solo slot allentato, poi con due (al massimo due
+slot toccati; "togliere un fatto" si fa solo da solo, perché combinato con
+altro produce gruppi senza significato — regole fissate in D2.2 leggendo il
+primo output reale). La distanza è **un conteggio di allentamenti**, con pesi dichiarati in
 `params.json` (allentare "chi" pesa più di allentare "quando": un pilota è più
 specifico di un decennio). È la stessa filosofia difesa in v3, resa esplicita
 per slot invece che per chip: le differenze non le spieghiamo noi, **sono
@@ -123,7 +125,7 @@ browser (§6). Ogni fatto dichiara la finestra dei campi da cui dipende.
 | al comando al giro L / guida almeno N giri / vince senza mai guidare prima dell'ultimo giro | L, N | posizioni per giro | 1996-2024 |
 | rimonta dalla posizione P (peggiore in gara) al podio | P | posizioni per giro | 1996-2024 |
 | fa N soste / sosta al giro L o prima | N, L | soste | 2011-2024 |
-| eliminato in Q1 / Q2 | — | qualifiche | 2006-2024 |
+| in qualifica P o peggio (Q1/Q2 non distinte: la tabella porta solo la posizione finale) | P | qualifiche | 1994-2024 |
 
 **Fatti sulla gara (unità: gara)** — qui rientrano i 33 eventi v3, riletti:
 doppietta, tripletta, nessun cambio di leader, almeno N leader diversi,
