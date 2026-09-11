@@ -40,7 +40,8 @@ l'11 settembre 2026).
 - [x] D7 — Accessibilità, verifica finale, documenti d'esame  ✅ FATTO (11 set 2026)
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
-D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3).
+D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
+D7.4).
 **Roadmap chiusa l'11 settembre 2026.**
 
 ---
@@ -510,3 +511,47 @@ ai fatti già scelti, entra ed esce con clic, Invio, Esc e Backspace; cercando
 Ere/Decenni/Stagioni; "mostra tutti gli 861 piloti" porta la lista a 874 voci
 in ordine alfabetico (Abate, Abecassis, Acheson). `npx tsc`, `npx eslint` e
 `npm run build`: puliti.
+
+
+## D7.4 — La tendina sta nello schermo, il parametro si vede  ✅ FATTO (11 set 2026)
+
+Due segnalazioni di Luca sulle tendine nuove di D7.3.
+
+**1. "Non scorre bene in basso, sta tutto storto e scomodo."** Con le liste
+complete la tendina era alta 22rem fisse, sempre ancorata sotto lo slot:
+quando lo slot sta nella metà bassa della finestra, le ultime voci finivano
+sotto il bordo e per leggerle si doveva scrollare la pagina, non la lista. In
+D7.2 avevo sistemato solo il fuori-schermo orizzontale — lo stesso errore
+nell'altra direzione. Ora la tendina misura lo spazio libero e ci si adatta:
+altezza massima = spazio fra lo slot e il bordo (fra 220 e 384 px), e se sotto
+si starebbe stretti **si apre verso l'alto**, ma solo se sopra c'è davvero più
+posto (aprire in su è meno naturale, non va fatto per pochi pixel). Le misure
+si prendono dallo SLOT e non dal pannello: lo slot non si muove quando la
+tendina cambia lato o altezza, quindi la misura non rincorre sé stessa. Si
+ricalcola anche sullo `scroll` (in cattura: lo slot si muove con la pagina), e
+la lista ha `overscroll-contain`, così la rotellina arrivata in fondo alla
+lista non prosegue scrollando la pagina sotto.
+
+**2. "Il numero (5° posto) è un posto anonimo, non si capisce che è una cosa
+che si può modificare."** Vero: nella tendina i fatti parametrici si leggevano
+"partito 5°", "arriva 2°", e quel numero sembrava una scelta nostra invece del
+buco che l'utente riempirà. Ora la riga mostra la **variabile** al posto del
+numero — "partito P° o peggio", "guadagna almeno N posizioni", "vinta con meno
+di S s di margine" — nel giallo dello slot Cosa e sottolineata, cioè lo stesso
+colore che avrà il campo modificabile una volta scelto il fatto (anche il
+numero dentro lo slot è passato da bianco a giallo, per chiudere il legame).
+Sparisce il "parametro P" che stava a destra: era la stessa informazione detta
+in un posto dove non serviva a niente.
+
+Dove stia il numero dentro la frase non è dichiarato da nessuna parte —
+`etichetta` è una funzione — quindi lo si trova provandola: si parte dal
+default e, se lì il numero si dice a parole, si sale finché la cifra non
+compare (`almeno_n_neutralizzazioni` a 1 → "con almeno una Safety Car o VSC",
+a 2 → "con almeno 2 neutralizzazioni" → "con almeno **N** neutralizzazioni").
+Verificato su tutti e 24 i fatti con parametro: nessuno resta senza variabile.
+
+Provato nel browser a 1280×720: con lo slot in basso la tendina si apre verso
+l'alto e resta dentro lo schermo; con lo slot in alto resta sotto e si ferma a
+8 px dal bordo; espandendo "mostra tutti gli 861 piloti" le 874 voci scorrono
+dentro la lista e non sotto la pagina. `npx tsc`, `npm run lint`, `npm run
+build`: puliti.

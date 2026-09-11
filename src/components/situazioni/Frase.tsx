@@ -60,6 +60,9 @@ interface Opzione {
   // riga in piccolo sotto il titolo (le famiglie di "Cosa" dicono così cosa
   // contengono senza doverci entrare)
   sotto?: string;
+  // il titolo di un fatto con parametro, spezzato attorno al posto del
+  // numero: si disegna con il nome della variabile al centro, colorato
+  variabile?: { prima: string; nome: string; dopo: string };
   dettaglio?: string;
   // intestazione del gruppo sotto cui va mostrata; righe consecutive con la
   // stessa etichetta stanno sotto la stessa intestazione
@@ -91,6 +94,13 @@ type FonteMenu = (q: string, stato: StatoMenu) => Menu;
 // Quante voci mostrare a colpo d'occhio nei gruppi troppo lunghi da
 // scorrere (piloti e team): sotto c'è sempre una riga "mostra tutti".
 const ANTEPRIMA = 12;
+
+// Misure della tendina, in pixel. L'altezza non è fissa: è quanto spazio c'è
+// fra lo slot e il bordo della finestra, tagliato fra questi due estremi.
+const ALTEZZA_MAX = 384;
+const ALTEZZA_MIN = 220;
+const LARGHEZZA_MIN = 416; // le 26rem del pannello
+const MARGINE = 12;
 
 export default function Frase({ dizionari, value, onChange, apriSlot = null }: FraseProps) {
   const [aperto, setAperto] = useState<Slot | null>(apriSlot);
@@ -354,6 +364,34 @@ function opzioniQuando(q: string): Menu {
   return { righe: [...ordina(ere), ...ordina(decenni), ...ordina(anni)], segnaposto: "anno, decennio o era…" };
 }
 
+// L'etichetta di un fatto parametrico con la VARIABILE al posto del numero:
+// "partito P° o peggio", non "partito 5°". Nella tendina un numero già
+// scritto si legge come parte del fatto — "5°" sembra una posizione scelta
+// da noi, e per giunta anonima — e non lascia capire che è la cosa che
+// l'utente cambierà appena scelto il fatto.
+//
+// Dove sta il numero dentro la frase non è dichiarato da nessuna parte:
+// l'etichetta è una funzione, quindi lo si trova provandola. Si parte dal
+// default; se lì il numero si dice a parole (`almeno_n_neutralizzazioni` a 1
+// → "con almeno UNA Safety Car o VSC") si prova il valore successivo finché
+// la cifra non compare davvero nel testo. Il risultato si tiene in cache: i
+// fatti sono 48 e le etichette non cambiano mai.
+const CACHE_VARIABILE = new Map<string, Opzione["variabile"]>();
+
+function etichettaVariabile(f: Fatto): Opzione["variabile"] {
+  if (!f.parametro) return undefined;
+  if (CACHE_VARIABILE.has(f.id)) return CACHE_VARIABILE.get(f.id);
+  const spec = f.parametro;
+  let trovata: Opzione["variabile"];
+  for (let v = spec.default; v <= spec.max && trovata === undefined; v++) {
+    const testo = f.etichetta(v);
+    const at = testo.indexOf(String(v));
+    if (at >= 0) trovata = { prima: testo.slice(0, at), nome: spec.nome, dopo: testo.slice(at + String(v).length) };
+  }
+  CACHE_VARIABILE.set(f.id, trovata);
+  return trovata;
+}
+
 // Lo slot "Cosa" ha 48 fatti: la tendina si apre sulle nove famiglie e
 // scende dentro quella scelta. Appena si scrive, però, i due livelli
 // spariscono e si cerca in tutto il vocabolario: chi sa già la parola non
@@ -365,8 +403,10 @@ function opzioniCosa(q: string, giaScelti: string[], { dentro }: StatoMenu): Men
   const riga = (f: Fatto): Opzione => ({
     chiave: f.id,
     titolo: f.etichetta(f.parametro?.default ?? 0),
+    variabile: etichettaVariabile(f),
     gruppo: etichettaGruppo(f.gruppo),
-    dettaglio: f.unita === "gara" ? "sulla gara" : f.parametro ? `parametro ${f.parametro.nome}` : undefined,
+    // "parametro P" a destra non serve più: la variabile è nella frase
+    dettaglio: f.unita === "gara" ? "sulla gara" : undefined,
     applica: (s: Situazione): Situazione => ({ ...s, cosa: [...s.cosa, { id: f.id, parametro: f.parametro?.default }] }),
   });
 
@@ -574,22 +614,43 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
     if (o.applica) onScegli(o as Scelta);
   }
 
-  // L'ultimo slot della frase ("Quando") sta a destra: una tendina larga
-  // 26rem ancorata a sinistra gli uscirebbe dallo schermo. Si misura dopo
-  // il primo disegno e, se sborda, si ancora a destra.
+  // Dove sta la tendina rispetto allo slot. Due misure, tutte e due prese
+  // dallo SLOT (il contenitore del pannello) e non dal pannello: lo slot non
+  // si muove quando la tendina cambia lato o altezza, quindi la misura non
+  // può rincorrere sé stessa.
+  //
+  // - di lato: "Quando" è l'ultimo slot a destra e la tendina è larga 26rem,
+  //   quindi ancorata a sinistra uscirebbe dallo schermo;
+  // - in altezza: con elenchi lunghi (77 circuiti, 861 piloti) un'altezza
+  //   fissa ancorata sotto lo slot finisce sotto il bordo della finestra, e
+  //   le ultime voci si leggono solo scrollando la pagina — è il difetto
+  //   segnalato. La tendina si alza fin dove c'è posto, e se sotto non ce
+  //   n'è abbastanza si apre verso l'alto.
   const [aDestra, setADestra] = useState(false);
+  const [inAlto, setInAlto] = useState(false);
+  const [altezzaMax, setAltezzaMax] = useState(ALTEZZA_MAX);
   useLayoutEffect(() => {
     const misura = () => {
-      const el = pannelloRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      // Con la tendina già ancorata a destra si controlla il bordo opposto,
-      // per non rimbalzare avanti e indietro a ogni misura.
-      setADestra((prima) => (prima ? r.left < 8 ? false : true : r.right > window.innerWidth - 8));
+      const slot = pannelloRef.current?.parentElement;
+      if (!slot) return;
+      const r = slot.getBoundingClientRect();
+      setADestra(r.left + LARGHEZZA_MIN > window.innerWidth - MARGINE);
+      const sotto = window.innerHeight - r.bottom - MARGINE;
+      const sopra = r.top - MARGINE;
+      // verso l'alto solo se sotto si starebbe davvero stretti E sopra si sta
+      // meglio: aprire in su è meno naturale, non va fatto per pochi pixel
+      const su = sotto < ALTEZZA_MIN && sopra > sotto;
+      setInAlto(su);
+      setAltezzaMax(Math.max(ALTEZZA_MIN, Math.min(ALTEZZA_MAX, su ? sopra : sotto)));
     };
     misura();
     window.addEventListener("resize", misura);
-    return () => window.removeEventListener("resize", misura);
+    // scorrendo la pagina lo slot si muove e lo spazio libero cambia
+    window.addEventListener("scroll", misura, true);
+    return () => {
+      window.removeEventListener("resize", misura);
+      window.removeEventListener("scroll", misura, true);
+    };
   }, []);
 
   // L'opzione evidenziata deve restare visibile anche quando si scende con
@@ -633,10 +694,11 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
   return (
     <div
       ref={pannelloRef}
-      className={`absolute ${aDestra ? "right-0" : "left-0"} top-full mt-1 z-40 w-[min(26rem,90vw)] bg-panel border border-graphite shadow-xl`}
+      className={`absolute ${aDestra ? "right-0" : "left-0"} ${inAlto ? "bottom-full mb-1" : "top-full mt-1"} z-40 flex flex-col w-[min(26rem,90vw)] bg-panel border border-graphite shadow-xl`}
+      style={{ maxHeight: altezzaMax }}
     >
       {menu.titolo && (
-        <div className="flex items-center gap-2 px-2 py-1.5 border-b border-graphite">
+        <div className="shrink-0 flex items-center gap-2 px-2 py-1.5 border-b border-graphite">
           <button
             type="button"
             onMouseDown={(e) => {
@@ -666,9 +728,9 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
         aria-controls={`tendina-${slot}`}
         aria-activedescendant={lista[i] ? `opz-${slot}-${i}` : undefined}
         autoComplete="off"
-        className="w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
+        className="shrink-0 w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
       />
-      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="max-h-[22rem] overflow-y-auto">
+      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {lista.length === 0 && <li className="px-3 py-2 text-sm text-neutral-gray">Niente con questo nome.</li>}
         {lista.map((o, k) => (
           <Fragment key={o.chiave}>
@@ -699,7 +761,22 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
               <span className="min-w-0">
                 <span className={`text-sm ${o.espandi ? "text-neutral-gray" : "text-white"}`}>
                   {o.espandi && "↓ "}
-                  {o.titolo}
+                  {o.variabile ? (
+                    <>
+                      {o.variabile.prima}
+                      <span
+                        // niente padding: "partito P°" ha il grado attaccato
+                        // alla variabile, come nello slot
+                        className="font-condensed font-semibold border-b-2"
+                        style={{ color: SLOT_COLORS.cosa, borderColor: SLOT_COLORS.cosa }}
+                      >
+                        {o.variabile.nome}
+                      </span>
+                      {o.variabile.dopo}
+                    </>
+                  ) : (
+                    o.titolo
+                  )}
                 </span>
                 {o.sotto && <span className="block text-xs text-neutral-gray">{o.sotto}</span>}
               </span>
@@ -869,8 +946,10 @@ function FattoConParametro({ fatto, valore, onChange }: { fatto: Fatto; valore: 
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
         }}
-        className="mx-0.5 bg-graphite text-white text-center font-condensed text-2xl font-semibold border-b-2 outline-none focus:bg-neutral-gray/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
-        style={{ borderColor: SLOT_COLORS.cosa, width: `${Math.max(2, mostrato.length) + 0.9}ch` }}
+        // stesso colore della variabile nella tendina ("partito P° o
+        // peggio"): la P gialla che si è scelti è diventata questo campo
+        className="mx-0.5 bg-graphite text-center font-condensed text-2xl font-semibold border-b-2 outline-none focus:bg-neutral-gray/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+        style={{ color: SLOT_COLORS.cosa, borderColor: SLOT_COLORS.cosa, width: `${Math.max(2, mostrato.length) + 0.9}ch` }}
       />
       {dopo}
     </span>
