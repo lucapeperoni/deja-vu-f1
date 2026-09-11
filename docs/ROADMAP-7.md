@@ -32,7 +32,7 @@ l'11 settembre 2026).
 
 - [x] D0 — Progettazione (questo documento, PROGETTAZIONE-v4, mockup)  ✅ FATTO (11 set 2026)
 - [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
-- [ ] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)
+- [ ] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro) — D2.1 fatto
 - [ ] D3 — La frase a slot e il parser di testo
 - [ ] D4 — La linea dei déjà vu (D3)
 - [ ] D5 — I ritratti (small multiples) e la mappa collegata
@@ -138,9 +138,36 @@ l'intersezione delle finestre dei fatti; il denominatore è l'universo
 ristretto a chi/dove/quando e alla finestra. `scripts/verify-situazioni.ts`
 con i numeri di D1.1.
 
-- [ ] Prompt eseguito
-- [ ] verify-situazioni: tutti i numeri attesi
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] verify-situazioni: tutti i numeri attesi
+- [x] Diff letto
+
+**Esito D2.1.** Quattro moduli in `src/lib/situazioni/`: `tabelle.ts`
+(decodifica + derivate, puro), `fatti.ts` (il vocabolario: **45 fatti**, 34
+sul risultato e 11 sulla gara, ognuno con colonne, sinonimi e tre esiti
+vero/falso/non valutabile), `motore.ts` (`valuta(tabelle, situazione)` →
+n, m, unità del denominatore, finestra con la colonna che la stringe,
+occorrenze), `tabelleServer.ts` (solo `fs`). Prestazioni misurate: decodifica
+20 ms, una valutazione su tutta la tabella **0,8 ms** — il match mentre si
+digita è gratis.
+
+Regola del denominatore, decisa qui e scritta in cima a `motore.ts`: con
+chi = pilota si legge "su N gare del pilota"; senza chi, se un fatto è
+`unico` per gara (vince, pole, giro veloce) si legge "su N gare" (37 su
+1114 come in v3), altrimenti "su N risultati"; soli fatti di gara → "gare".
+Le righe in cui un fatto risponde null escono dal denominatore e si
+contano a parte (`nonValutabili`), mai come "non è successo".
+
+`scripts/verify-situazioni.ts`, tutto verde: derivate identiche alla
+pipeline (Gasly e Hamilton a Monza 2020, 356 GP di Hamilton); 37/1114;
+Monza 2/74 (1971, 2020); Hamilton 2/356 (2018, 2021); Hamilton a Monza
+0/18; Hamilton vince 105/356 e 5/18 a Monza; **regressione v3: doppietta +
+nessun cambio di leader = 30 su 544, finestra 1996 limitata da
+`cambiDiLeader`**; soste ≥3 stringe a 2011-2024 (286 gare) e con "anni
+1970" la finestra è dichiarata vuota; Gasly al comando entro il giro 28 sì,
+27 no. Una attesa corretta strada facendo: "vince al debutto" in Python
+faceva 3 perché contava Parsons alla 500 Miglia 1950; il motore esclude
+Indy (trappola 1) e risponde 2 (Farina 1950, Baghetti 1961) — giusto lui.
 
 ## D2.2 — Il reticolo dei déjà vu
 
