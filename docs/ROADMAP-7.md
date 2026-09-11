@@ -34,7 +34,7 @@ l'11 settembre 2026).
 - [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
 - [x] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)  ✅ FATTO (11 set 2026)
 - [x] D3 — La frase a slot e il parser di testo  ✅ FATTO (11 set 2026)
-- [ ] D4 — La linea dei déjà vu (D3)
+- [x] D4 — La linea dei déjà vu (D3)  ✅ FATTO (11 set 2026)
 - [ ] D5 — I ritratti (small multiples) e la mappa collegata
 - [ ] D6 — La nuova home, il nome, la scheda gara riletta, /esplora
 - [ ] D7 — Accessibilità, verifica finale, documenti d'esame
@@ -279,9 +279,27 @@ disegnata con "mai successo", brush sul tempo che aggiorna i conteggi,
 transizione dei punti tra righe quando uno slot cambia. `ResizeObserver`.
 Tooltip e click come in PROGETTAZIONE-v4 §7.3.
 
-- [ ] Prompt eseguito
-- [ ] Screenshot mostrato
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Verificata nel browser (DOM: 9 righe, 48 punti, righe vuote dichiarate)
+- [x] Diff letto
+
+**Esito D4.1.** `src/components/charts/LineaDejaVu.tsx` + `src/lib/situazioni/slug.ts`.
+Righe = `righeDaReticolo(reticolo)`: "uguale" (rossa, enfatizzata), poi
+ogni gruppo a UN allentamento nell'ordine di distanza, poi una riga sola
+"cambiano due slot" con i gruppi a due allentamenti fusi (grigio). Etichetta
+a sinistra con "n su m unità" e "· k nuovi" quando il gruppo ripete casi già
+visti più in alto. Punti con chiave stabile (riga della tabella): cambiando
+uno slot lo stesso caso migra tra le righe con una transizione di 450 ms.
+Banda tratteggiata "senza dati 1950–1995" fuori finestra; con intersezione
+vuota, una banda su tutto. Brush D3 sul tempo: i punti fuori sbiadiscono e
+ogni riga stampa "k nel periodo · n su m"; i denominatori restano quelli
+della finestra piena, per scelta dichiarata nel testo sotto la vista.
+Tooltip (`ChartTooltip`, portal): anno · nome gara, pilota, "cambia: <slot>".
+Click → `onScegli(occorrenza, riga)`; nella demo porta a `/gara/<slug>`.
+Fallback da tastiera: lista `sr-only` di bottoni, uno per caso. Provata su
+*Hamilton · vince da 10° o peggio · a Monza*: 9 righe, 48 punti, "MAI
+SUCCESSO" sulla riga uguale, tre righe "nessun caso" disegnate. I paesi
+nelle etichette del reticolo ora passano da `paeseIt` ("in Italia").
 
 # Fase D5 — Ritratti e mappa
 

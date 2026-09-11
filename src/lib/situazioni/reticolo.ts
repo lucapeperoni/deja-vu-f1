@@ -24,6 +24,7 @@
 import { fattoById } from "./fatti";
 import { valuta, type Occorrenza, type Risposta, type Situazione } from "./motore";
 import type { Tabelle } from "./tabelle";
+import { paeseIt } from "./paesi";
 
 export interface PesiAllentamento {
   chi: number;
@@ -88,7 +89,7 @@ function catene(s: Situazione, pesi: PesiAllentamento, ctx: Contesto): Allentame
       if (paese) {
         c.push({
           slot: "dove", grado: 1, peso: pesi.doveStessoPaese,
-          etichetta: `un altro circuito in ${paese}`,
+          etichetta: `un altro circuito in ${paeseIt(paese)}`,
           applica: (x) => ({ ...x, dove: { tipo: "paese", paese } }),
         });
       }

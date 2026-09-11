@@ -96,7 +96,7 @@ let g = trova("un altro pilota");
 check("un altro pilota (a Monza)", [g?.risposta.n, g?.nuove.length, g?.nuove.map((o) => o.anno)], [2, 2, [1971, 2020]]);
 g = trova("un altro circuito");
 check("un altro circuito (Hamilton)", [g?.risposta.n, g?.nuove.map((o) => o.anno)], [2, [2018, 2021]]);
-g = trova("un altro circuito in Italy");
+g = trova("un altro circuito in Italia");
 check("un altro circuito in Italia (Hamilton)", [g?.risposta.n, g?.nuove.length], [0, 0]);
 g = trova("un altro pilota e un altro circuito");
 check("chiunque ovunque: 37 di cui 33 nuove", [g?.risposta.n, g?.nuove.length], [37, 33]);

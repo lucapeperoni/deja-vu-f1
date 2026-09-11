@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import LineaDejaVu from "@/components/charts/LineaDejaVu";
+import { slugPerGara } from "@/lib/situazioni/slug";
 import Frase, { nomeBreveCircuito } from "@/components/situazioni/Frase";
 import BarraTesto from "@/components/situazioni/BarraTesto";
 import { fraseInChiaro, valuta, type Situazione } from "@/lib/situazioni/motore";
@@ -25,6 +28,8 @@ const INIZIALE: Situazione = {
 export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi }: Props) {
   const tab = useMemo(() => decodeTabelle(risultatiJson, gareJson), [risultatiJson, gareJson]);
   const [sit, setSit] = useState<Situazione>(INIZIALE);
+  const router = useRouter();
+  const slug = useMemo(() => slugPerGara(tab.gare), [tab]);
 
   const nomi = useMemo(() => {
     const chi = sit.chi;
@@ -68,6 +73,22 @@ export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi }:
           </>
         )}
       </div>
+
+      {reticolo && risposta && (
+        <div className="border-t border-graphite pt-6">
+          <h2 className="font-condensed text-lg font-bold text-white uppercase mb-3">La linea dei déjà vu</h2>
+          <LineaDejaVu
+            reticolo={reticolo}
+            finestra={risposta.finestra}
+            gare={tab.gare}
+            dizionari={dizionari}
+            onScegli={(o) => {
+              const s = slug.get(o.raceId);
+              if (s) router.push(`/gara/${s}`);
+            }}
+          />
+        </div>
+      )}
 
       {reticolo && (
         <div className="border-t border-graphite pt-6">
