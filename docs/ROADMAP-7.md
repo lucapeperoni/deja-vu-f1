@@ -11,8 +11,8 @@ l'11 settembre 2026).
   stanno in `public/data/situazioni/`, colonnari, e la pipeline che le genera
   è `data-layer/scripts/build_situazioni.py`.
 - **Il motore lavora nel browser** sulla tabella dei risultati (26.759 righe).
-  Nessuna richiesta al server per tasto premuto. Se il peso compresso delle
-  due tabelle supera 150 KB, ci si ferma e si ridiscute la codifica.
+  Nessuna richiesta al server per tasto premuto. Tetto di peso compresso:
+  150 KB, ridiscusso e portato a 200 KB in D1.1 (motivo scritto lì).
 - **Ogni fase ha i numeri attesi scritti nel codice** di uno script di
   verifica (`scripts/verify-situazioni.ts`), calcolati a mano in Python prima
   di scrivere il TypeScript. Se un numero cambia, è un bug: ci si ferma.
@@ -31,7 +31,7 @@ l'11 settembre 2026).
 ## Avanzamento
 
 - [x] D0 — Progettazione (questo documento, PROGETTAZIONE-v4, mockup)  ✅ FATTO (11 set 2026)
-- [ ] D1 — Le tabelle delle situazioni (pipeline Python) — D1.1 fatto, D1.2 da fare
+- [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
 - [ ] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)
 - [ ] D3 — La frase a slot e il parser di testo
 - [ ] D4 — La linea dei déjà vu (D3)
@@ -110,8 +110,23 @@ piloti (id, nome, cognome, anni di attività, sinonimi), team (con i nomi
 storici), circuiti (con paese e nomi comuni: "Monza", "Spa", "Silverstone"),
 fatti (id, etichetta, parametro, colonne, finestra, sinonimi per il parser).
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D1.2.** Nella stessa pipeline (`build_situazioni.py`), non in uno
+script a parte: un comando produce tutto. `tracce/<raceId>.json`: **544
+gare** (1996-2024), 2,7 MB totali ma caricate una alla volta a richiesta;
+null nei giri non completati, mai 0. `dizionari.json`: 861 piloti, 211
+team, 77 circuiti, **26,5 KB gzip**. Piloti e team ordinati per anno di
+ultima attività e poi per numero di gare: "hamilton" trova Lewis prima di
+Duncan senza euristiche nel client (era uno dei difetti visibili della
+v3). Circuiti con sinonimi scritti a mano in `SINONIMI_CIRCUITI` (Monza,
+Spa, Interlagos, COTA, Montecarlo…) più la località di Ergast.
+**Deviazione dichiarata:** il vocabolario dei *fatti* non sta nel JSON —
+i fatti sono predicati, cioè codice, e vivono nel motore TypeScript
+(D2.1) con i loro sinonimi accanto, così parser e motore leggono la
+stessa lista. Verifiche nello script: Monza 2020 ha 53 giri, Gasly è 15°
+al giro 20 e 1° al giro 28; Monza ha ospitato 74 gare.
 
 # Fase D2 — Il motore
 

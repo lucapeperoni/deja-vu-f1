@@ -11,6 +11,12 @@ paralleli, stesso schema di results-plane.json) in public/data/situazioni/:
   al comando, soste, qualifica, compagno di squadra, contatori di carriera).
 - gare.json — una riga per gara (1125): contesto di gara (classificati,
   ritiri, cambi di leader, margine, doppietta, neutralizzazioni).
+- tracce/<raceId>.json (D1.2, 1996+) — le posizioni giro per giro di tutti i
+  piloti di una gara, per i ritratti (small multiples): caricate a richiesta.
+- dizionari.json (D1.2) — piloti, team e circuiti con nomi, anni di
+  attività e sinonimi per il parser della frase (docs/PROGETTAZIONE-v4 §7.1).
+  Il vocabolario dei FATTI non sta qui: i fatti sono predicati, cioè codice,
+  e vivono nel motore TypeScript (D2.1) con i loro sinonimi accanto.
 
 Regole ereditate dalla v3 (le 5 trappole, docs/PROGETTAZIONE.md §5.6):
 - Indy 500 1950-1960 presente ma marcata (`indy`), così il motore la esclude.
@@ -85,6 +91,119 @@ def col(series: pd.Series, kind: str = "int") -> list:
         else:
             out.append(float(v))
     return out
+
+
+# Nomi con cui un telecronista chiama un circuito, quando la localita' di
+# circuits.csv non basta ("Sao Paulo" -> Interlagos, "Austin" -> COTA).
+# Scritti a mano: pochi, ispezionabili.
+SINONIMI_CIRCUITI = {
+    "interlagos": ["Interlagos", "San Paolo", "Brasile"],
+    "americas": ["COTA", "Austin", "Texas"],
+    "villeneuve": ["Montreal", "Gilles Villeneuve", "Canada"],
+    "hungaroring": ["Hungaroring", "Budapest", "Ungheria"],
+    "red_bull_ring": ["Red Bull Ring", "Spielberg", "Zeltweg", "Austria"],
+    "yas_marina": ["Yas Marina", "Abu Dhabi"],
+    "marina_bay": ["Singapore", "Marina Bay"],
+    "albert_park": ["Melbourne", "Australia"],
+    "catalunya": ["Barcellona", "Catalunya", "Montmelo", "Spagna"],
+    "rodriguez": ["Messico", "Mexico City", "Hermanos Rodriguez"],
+    "spa": ["Spa", "Spa-Francorchamps", "Belgio"],
+    "monza": ["Monza", "Italia"],
+    "imola": ["Imola", "Santerno"],
+    "nurburgring": ["Nurburgring", "Nürburgring"],
+    "hockenheimring": ["Hockenheim"],
+    "silverstone": ["Silverstone", "Gran Bretagna", "Inghilterra"],
+    "zandvoort": ["Zandvoort", "Olanda"],
+    "monaco": ["Monaco", "Montecarlo", "Monte Carlo"],
+    "suzuka": ["Suzuka", "Giappone"],
+    "shanghai": ["Shanghai", "Cina"],
+    "bahrain": ["Bahrain", "Sakhir"],
+    "jeddah": ["Jeddah", "Gedda", "Arabia"],
+    "losail": ["Losail", "Qatar"],
+    "vegas": ["Las Vegas", "Vegas"],
+    "miami": ["Miami"],
+    "baku": ["Baku", "Azerbaijan"],
+    "sochi": ["Sochi", "Russia"],
+    "portimao": ["Portimao", "Algarve", "Portogallo"],
+    "istanbul": ["Istanbul", "Turchia"],
+    "sepang": ["Sepang", "Malesia"],
+    "galvez": ["Buenos Aires", "Argentina"],
+    "kyalami": ["Kyalami", "Sudafrica"],
+    "estoril": ["Estoril"],
+    "jerez": ["Jerez"],
+    "magny_cours": ["Magny-Cours", "Magny Cours"],
+    "ricard": ["Paul Ricard", "Le Castellet"],
+    "brands_hatch": ["Brands Hatch"],
+    "watkins_glen": ["Watkins Glen"],
+    "adelaide": ["Adelaide"],
+    "mugello": ["Mugello"],
+}
+
+
+def build_tracce(laps: pd.DataFrame, out_dir: Path) -> int:
+    """Un file per gara con tempi sul giro: piloti × giri, colonnare."""
+    tracce_dir = out_dir / "tracce"
+    tracce_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for race_id, df in laps.groupby("raceId"):
+        n_giri = int(df.lap.max())
+        piloti, posizioni = [], []
+        for driver_id, d in df.sort_values("lap").groupby("driverId"):
+            by_lap = dict(zip(d.lap.tolist(), d.position.tolist()))
+            # null nei giri che il pilota non ha completato: la traccia
+            # finisce dove finisce la sua gara, non a "posizione zero".
+            piloti.append(int(driver_id))
+            posizioni.append([int(by_lap[l]) if l in by_lap else None for l in range(1, n_giri + 1)])
+        payload = {"raceId": int(race_id), "giri": n_giri, "piloti": piloti, "posizioni": posizioni}
+        (tracce_dir / f"{int(race_id)}.json").write_bytes(
+            json.dumps(payload, separators=(",", ":")).encode())
+        n += 1
+    return n
+
+
+def build_dizionari(r: pd.DataFrame, races: pd.DataFrame, circuits: pd.DataFrame, out_dir: Path) -> dict:
+    drivers = read("drivers.csv")
+    constructors = read("constructors.csv")
+    anni = r.groupby("driverId").year.agg(["min", "max", "size"])
+    piloti = []
+    for d in drivers.itertuples():
+        if d.driverId not in anni.index:
+            continue
+        a = anni.loc[d.driverId]
+        piloti.append({
+            "id": int(d.driverId), "ref": d.driverRef,
+            "nome": f"{d.forename} {d.surname}", "cognome": d.surname,
+            "codice": d.code if isinstance(d.code, str) else None,
+            "annoDa": int(a["min"]), "annoA": int(a["max"]), "gp": int(a["size"]),
+        })
+    piloti.sort(key=lambda p: (-p["annoA"], -p["gp"]))  # i piu' recenti e attivi per primi: "hamilton" = Lewis, non Duncan
+
+    anni_t = r.groupby("constructorId").year.agg(["min", "max", "size"])
+    team = []
+    for c in constructors.itertuples():
+        if c.constructorId not in anni_t.index:
+            continue
+        a = anni_t.loc[c.constructorId]
+        team.append({"id": int(c.constructorId), "ref": c.constructorRef, "nome": c.name,
+                     "annoDa": int(a["min"]), "annoA": int(a["max"]), "risultati": int(a["size"])})
+    team.sort(key=lambda t: (-t["annoA"], -t["risultati"]))
+
+    gare_per_circuito = races[races.indy == 0].groupby("circuitRef").agg(n=("raceId", "size"), da=("year", "min"), a=("year", "max"))
+    circ = []
+    for c in circuits.itertuples():
+        if c.circuitRef not in gare_per_circuito.index:
+            continue
+        g = gare_per_circuito.loc[c.circuitRef]
+        sin = list(dict.fromkeys([c.location] + SINONIMI_CIRCUITI.get(c.circuitRef, [])))
+        circ.append({"ref": c.circuitRef, "nome": c.name, "localita": c.location, "paese": c.country,
+                     "sinonimi": sin, "gare": int(g["n"]), "annoDa": int(g["da"]), "annoA": int(g["a"])})
+    circ.sort(key=lambda x: -x["gare"])
+
+    payload = {"versione": 1, "piloti": piloti, "team": team, "circuiti": circ}
+    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
+    (out_dir / "dizionari.json").write_bytes(raw)
+    print(f"dizionari.json: {len(raw)/1024:.1f} KB grezzi, {len(gzip.compress(raw, 9))/1024:.1f} KB gzip — {len(piloti)} piloti, {len(team)} team, {len(circ)} circuiti")
+    return payload
 
 
 def main() -> None:
@@ -323,6 +442,10 @@ def main() -> None:
         (OUT_DIR / name).write_bytes(raw)
         print(f"{name}: {len(raw)/1024:.1f} KB grezzi, {len(gzip.compress(raw, 9))/1024:.1f} KB gzip")
 
+    n_tracce = build_tracce(laps, OUT_DIR)
+    print(f"tracce/: {n_tracce} gare con tempi sul giro (1996-2024)")
+    diz = build_dizionari(r, races, circuits, OUT_DIR)
+
     # ------------------------------------------------------------------
     # Verifica obbligatoria (ROADMAP-7 D1.1), numeri calcolati a mano l'11 set 2026
     # ------------------------------------------------------------------
@@ -350,6 +473,20 @@ def main() -> None:
         print(f"  [{flag}] {label}: {got} (atteso {exp})")
     print(f"  Hamilton altrove: {sorted(ham.year.tolist())}  Monza: {sorted(monza.year.tolist())}")
     print(f"  Gasly Monza 2020 primo giro al comando: {int(r[(r.raceId == 1038) & (r.driverId == 842)].primoGiroAlComando.iloc[0])} (atteso 28)")
+    t = json.loads((OUT_DIR / "tracce" / "1038.json").read_text())
+    gasly = t["posizioni"][t["piloti"].index(842)]
+    checks2 = [
+        ("tracce scritte", n_tracce, len(races_with_laps)),
+        ("Monza 2020: giri", t["giri"], 53),
+        ("Monza 2020: Gasly al giro 28", gasly[27], 1),
+        ("Monza 2020: Gasly al giro 20", gasly[19], 15),
+        ("primo pilota per 'hamilton' e' Lewis", next(p["id"] for p in diz["piloti"] if p["cognome"] == "Hamilton"), 1),
+        ("Monza: gare ospitate", next(c["gare"] for c in diz["circuiti"] if c["ref"] == "monza"), 74),
+    ]
+    for label, got, exp in checks2:
+        flag = "OK " if got == exp else "ERR"
+        ok = ok and got == exp
+        print(f"  [{flag}] {label}: {got} (atteso {exp})")
     if not ok:
         raise SystemExit("Verifica fallita")
 
