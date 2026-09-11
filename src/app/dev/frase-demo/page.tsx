@@ -10,6 +10,7 @@ import path from "path";
 
 export default function FraseDemoPage() {
   const pesi = JSON.parse(fs.readFileSync(path.join(process.cwd(), "public", "data", "params.json"), "utf8")).situazioni.pesiAllentamento;
+  const circuitiGeo = JSON.parse(fs.readFileSync(path.join(process.cwd(), "public", "data", "circuits-geo.json"), "utf8"));
   return (
     <main className="bg-background min-h-screen px-6 py-10">
       <div className="max-w-5xl mx-auto">
@@ -17,7 +18,7 @@ export default function FraseDemoPage() {
         <p className="text-neutral-gray text-sm mb-8">
           Chi · Cosa · Dove · Quando. Sotto, la frase riletta dal motore e la risposta N su M con la finestra.
         </p>
-        <DemoClient risultatiJson={leggiRisultatiJson()} gareJson={leggiGareJson()} dizionari={leggiDizionariJson()} pesi={pesi} />
+        <DemoClient risultatiJson={leggiRisultatiJson()} gareJson={leggiGareJson()} dizionari={leggiDizionariJson()} pesi={pesi} circuitiGeo={circuitiGeo} />
       </div>
     </main>
   );

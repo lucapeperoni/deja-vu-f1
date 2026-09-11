@@ -27,6 +27,13 @@ interface Props {
   perCircuito: CircuitStat[];
   allCircuits: CircuitGeo[];
   isYearFiltered: boolean;
+  // Adattatore v4 (Déjà vu, roadmap D5.2): la mappa serve anche al reticolo
+  // delle situazioni, che non ha una famiglia né una finestra da catalogo.
+  // Quando sono passati, questi vincono su entry per colore e finestra;
+  // onCircuito rende i segni cliccabili (riempie lo slot "dove").
+  colore?: string;
+  finestraTesto?: string;
+  onCircuito?: (circuitRef: string) => void;
 }
 
 type Mode = "mappa" | "barre";
@@ -60,12 +67,13 @@ function formatMetric(value: number, metric: Metric, unita: CatalogEventEntry["u
   return unita === "GARA" ? `${(value * 100).toFixed(1)}%` : `${value.toFixed(2)}× per gara`;
 }
 
-export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFiltered }: Props) {
+export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFiltered, colore, finestraTesto, onCircuito }: Props) {
   const [mode, setMode] = useState<Mode>("mappa");
   const [metric, setMetric] = useState<Metric>("conteggio");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  const color = familyColor(entry.famiglia);
+  const color = colore ?? familyColor(entry.famiglia);
+  const finestra = finestraTesto ?? formatWindow(entry);
   const colorInterpolator = useMemo(() => d3.interpolateRgb(MUTED_FILL_COLOR, color), [color]);
 
   const maxOccorrenze = d3.max(perCircuito, (d) => d.occorrenze) ?? 1;
@@ -133,7 +141,7 @@ export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFilte
       {isYearFiltered && metric === "tasso" && (
         <p className="text-xs text-neutral-gray mb-4 italic">
           Filtro anni attivo: il tasso resta calcolato sulle gare ospitate nell&apos;intera finestra dell&apos;evento (
-          {formatWindow(entry)}), non nel solo intervallo selezionato — non sappiamo quante gare ha ospitato ogni
+          {finestra}), non nel solo intervallo selezionato — non sappiamo quante gare ha ospitato ogni
           circuito nel sotto-intervallo.
         </p>
       )}
@@ -148,6 +156,7 @@ export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFilte
           maxOccorrenze={maxOccorrenze}
           tooltip={tooltip}
           setTooltip={setTooltip}
+          onCircuito={onCircuito}
         />
       ) : (
         <BarChart
@@ -157,6 +166,7 @@ export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFilte
           colorScale={colorScale}
           tooltip={tooltip}
           setTooltip={setTooltip}
+          onCircuito={onCircuito}
         />
       )}
 
@@ -167,7 +177,8 @@ export default function DoveMappa({ entry, perCircuito, allCircuits, isYearFilte
             {tooltip.stat.occorrenze} volte su {tooltip.stat.gareOspitate} gare ospitate (
             {formatMetric(tooltip.stat.tasso, "tasso", entry.unita)})
           </div>
-          <div className="text-neutral-gray">Finestra: {formatWindow(entry)}</div>
+          <div className="text-neutral-gray">Finestra: {finestra}</div>
+          {onCircuito && <div className="text-neutral-gray mt-1">Clic: cerca qui →</div>}
         </ChartTooltip>
       )}
     </div>
@@ -181,6 +192,7 @@ function MapChart({
   colorScale,
   maxOccorrenze,
   setTooltip,
+  onCircuito,
 }: {
   entry: CatalogEventEntry;
   perCircuito: CircuitStat[];
@@ -190,6 +202,7 @@ function MapChart({
   maxOccorrenze: number;
   tooltip: TooltipState | null;
   setTooltip: (t: TooltipState | null) => void;
+  onCircuito?: (circuitRef: string) => void;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -255,10 +268,11 @@ function MapChart({
       .on("pointerenter", (event, d) => setTooltip({ x: event.clientX, y: event.clientY, stat: d }))
       .on("pointermove", (event, d) => setTooltip({ x: event.clientX, y: event.clientY, stat: d }))
       .on("pointerleave", () => setTooltip(null))
+      .on("click", (_e, d) => onCircuito?.(d.circuitRef))
       .transition()
       .duration(350)
       .attr("r", (d) => rScale(d.occorrenze));
-  }, [perCircuito, allCircuits, xScale, yScale, rScale, colorScale, metric, setTooltip]);
+  }, [perCircuito, allCircuits, xScale, yScale, rScale, colorScale, metric, setTooltip, onCircuito]);
 
   return (
     <svg
@@ -277,6 +291,7 @@ function BarChart({
   metric,
   colorScale,
   setTooltip,
+  onCircuito,
 }: {
   entry: CatalogEventEntry;
   perCircuito: CircuitStat[];
@@ -284,6 +299,7 @@ function BarChart({
   colorScale: d3.ScaleSequential<string>;
   tooltip: TooltipState | null;
   setTooltip: (t: TooltipState | null) => void;
+  onCircuito?: (circuitRef: string) => void;
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -323,7 +339,8 @@ function BarChart({
     merged
       .on("pointerenter", (event, d) => setTooltip({ x: event.clientX, y: event.clientY, stat: d }))
       .on("pointermove", (event, d) => setTooltip({ x: event.clientX, y: event.clientY, stat: d }))
-      .on("pointerleave", () => setTooltip(null));
+      .on("pointerleave", () => setTooltip(null))
+      .on("click", (_e, d) => onCircuito?.(d.circuitRef));
 
     merged
       .select<SVGTextElement>("text.row-label")
@@ -365,7 +382,7 @@ function BarChart({
         return (t) =>
           formatMetric(metric === "conteggio" ? Math.round(interpolate(t)) : interpolate(t), metric, entry.unita);
       });
-  }, [sorted, xScale, colorScale, metric, setTooltip, entry.unita]);
+  }, [sorted, xScale, colorScale, metric, setTooltip, entry.unita, onCircuito]);
 
   return (
     <div className="overflow-x-auto hide-scrollbar">

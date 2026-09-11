@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import LineaDejaVu from "@/components/charts/LineaDejaVu";
+import LineaDejaVu, { righeDaReticolo } from "@/components/charts/LineaDejaVu";
+import RitrattiGruppo from "@/components/charts/RitrattiGruppo";
+import DoveDejaVu from "@/components/charts/DoveDejaVu";
 import { slugPerGara } from "@/lib/situazioni/slug";
 import Frase, { nomeBreveCircuito } from "@/components/situazioni/Frase";
 import BarraTesto from "@/components/situazioni/BarraTesto";
@@ -15,6 +17,7 @@ interface Props {
   gareJson: GareJson;
   dizionari: DizionariJson;
   pesi: PesiAllentamento;
+  circuitiGeo: Record<string, { lat: number; lng: number; nome: string }>;
 }
 
 // Situazione di partenza: quella del mockup (docs/mockup-dejavu.html), così
@@ -25,7 +28,7 @@ const INIZIALE: Situazione = {
   dove: { tipo: "circuito", circuitRef: "monza" },
 };
 
-export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi }: Props) {
+export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi, circuitiGeo }: Props) {
   const tab = useMemo(() => decodeTabelle(risultatiJson, gareJson), [risultatiJson, gareJson]);
   const [sit, setSit] = useState<Situazione>(INIZIALE);
   const router = useRouter();
@@ -86,6 +89,40 @@ export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi }:
               const s = slug.get(o.raceId);
               if (s) router.push(`/gara/${s}`);
             }}
+          />
+        </div>
+      )}
+
+      {reticolo && risposta && (
+        <div className="border-t border-graphite pt-6 flex flex-col gap-8">
+          <h2 className="font-condensed text-lg font-bold text-white uppercase">I casi, uno slot alla volta</h2>
+          {righeDaReticolo(reticolo)
+            .filter((r) => r.chiave !== "due")
+            .map((r) => (
+              <section key={r.chiave}>
+                <h3 className="font-condensed text-xl font-semibold mb-3" style={{ color: r.esatto ? "#fff" : r.colore }}>
+                  <span className="text-3xl font-bold text-white mr-3 tabular-nums">{r.nuove.length}</span>
+                  {r.etichetta}
+                  <span className="text-sm text-neutral-gray ml-3">{r.gruppo ? `${r.n} su ${r.m} ${r.unita}` : ""}</span>
+                </h3>
+                <RitrattiGruppo
+                  riga={r}
+                  tabelle={tab}
+                  dizionari={dizionari}
+                  onApri={(o) => {
+                    const s = slug.get(o.raceId);
+                    if (s) router.push(`/gara/${s}`);
+                  }}
+                />
+              </section>
+            ))}
+          <h2 className="font-condensed text-lg font-bold text-white uppercase">I dove</h2>
+          <DoveDejaVu
+            righe={righeDaReticolo(reticolo)}
+            finestra={risposta.finestra}
+            dizionari={dizionari}
+            circuitiGeo={circuitiGeo}
+            onCircuito={(ref) => setSit({ ...sit, dove: { tipo: "circuito", circuitRef: ref } })}
           />
         </div>
       )}

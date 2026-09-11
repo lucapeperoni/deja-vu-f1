@@ -35,7 +35,7 @@ l'11 settembre 2026).
 - [x] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)  ✅ FATTO (11 set 2026)
 - [x] D3 — La frase a slot e il parser di testo  ✅ FATTO (11 set 2026)
 - [x] D4 — La linea dei déjà vu (D3)  ✅ FATTO (11 set 2026)
-- [ ] D5 — I ritratti (small multiples) e la mappa collegata
+- [x] D5 — I ritratti (small multiples) e la mappa collegata  ✅ FATTO (11 set 2026)
 - [ ] D6 — La nuova home, il nome, la scheda gara riletta, /esplora
 - [ ] D7 — Accessibilità, verifica finale, documenti d'esame
 
@@ -309,16 +309,39 @@ nelle etichette del reticolo ora passano da `paeseIt` ("in Italia").
 gruppo, scale condivise, dati da `tracce/<raceId>.json` a richiesta. Per gare
 pre-1996 il ritratto è griglia → arrivo (due punti e un segmento), dichiarato.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D5.1.** `src/components/charts/Ritratto.tsx` (un small multiple,
+D3: y = posizione 1-20 condivisa, x = giro normalizzato, linea a gradini +
+area, griglia a sinistra, arrivo a destra — rosso solo se è una vittoria;
+didascalia "53 giri" / "ritirato dopo N giri su M" / "prima del 1996: solo
+griglia → arrivo") e `RitrattiGruppo.tsx` (griglia di ritratti per riga
+della linea, 8 alla volta con "mostra tutti", cache delle tracce per gara
+condivisa, `datiRitratto()` costruisce titolo, pilota·team, stato da
+tabelle e dizionari). Le tracce arrivano da `/data/situazioni/tracce/<raceId>.json`
+a richiesta (verificato: 33 richieste 200 nella demo, una per gara). Due
+regole del compilatore React rispettate dopo il primo lint: niente
+`setState` sincrono in un effetto (lo stato porta la chiave gara+pilota e
+"caricamento" è derivato), niente `ref.current` durante il render (la cache
+è un `useMemo`).
 
 ## D5.2 — La mappa collegata
 
 `DoveMappa.tsx` riceve le occorrenze del reticolo; click su circuito riempie
 lo slot "dove". Tasso normalizzato per gare ospitate.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D5.2.** `DoveMappa.tsx` (v3) ha tre prop opzionali in più —
+`colore`, `finestraTesto`, `onCircuito` — che vincono su `entry` quando ci
+sono: nessuna vista v3 cambia. `src/components/charts/DoveDejaVu.tsx` è
+l'adattatore: conta le occorrenze delle righe a un allentamento (+ esatta)
+per circuito, normalizza per le gare ospitate dal dizionario, passa il
+colore dello slot "dove" e la finestra; il click su un cerchio o una barra
+chiama `onCircuito(ref)` e la demo riempie lo slot Dove. Verificato: 3
+circuiti per lo scenario del mockup (Monza, Hockenheim, Interlagos).
 
 # Fase D6 — La nuova home
 
