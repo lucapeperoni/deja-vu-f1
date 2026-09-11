@@ -96,9 +96,16 @@ type FonteMenu = (q: string, stato: StatoMenu) => Menu;
 const ANTEPRIMA = 12;
 
 // Misure della tendina, in pixel. L'altezza non è fissa: è quanto spazio c'è
-// fra lo slot e il bordo della finestra, tagliato fra questi due estremi.
-const ALTEZZA_MAX = 384;
+// fra lo slot e il bordo della finestra, tagliato fra un minimo e un massimo.
+//
+// Il massimo segue la finestra invece di essere un numero fisso: con un tetto
+// di 384 px le nove famiglie di "Cosa" (468 px in tutto) non ci stavano mai,
+// e si finiva a scorrere una finestrella dentro una pagina — il fastidio
+// segnalato. Su uno schermo normale ora ci stanno tutte in una volta; il
+// 70% serve a non coprire la frase e la risposta, che sono il contesto di
+// quello che si sta scegliendo.
 const ALTEZZA_MIN = 220;
+const altezzaMassima = () => Math.min(600, Math.round(window.innerHeight * 0.7));
 const LARGHEZZA_MIN = 416; // le 26rem del pannello
 const MARGINE = 12;
 
@@ -628,7 +635,7 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
   //   n'è abbastanza si apre verso l'alto.
   const [aDestra, setADestra] = useState(false);
   const [inAlto, setInAlto] = useState(false);
-  const [altezzaMax, setAltezzaMax] = useState(ALTEZZA_MAX);
+  const [altezzaMax, setAltezzaMax] = useState(ALTEZZA_MIN);
   useLayoutEffect(() => {
     const misura = () => {
       const slot = pannelloRef.current?.parentElement;
@@ -636,20 +643,34 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
       const r = slot.getBoundingClientRect();
       setADestra(r.left + LARGHEZZA_MIN > window.innerWidth - MARGINE);
       const sotto = window.innerHeight - r.bottom - MARGINE;
-      const sopra = r.top - MARGINE;
+      // Verso l'alto il soffitto non è il bordo della finestra ma il fondo
+      // della testata, che è `sticky z-50` e quindi passa SOPRA la tendina:
+      // senza questo, aprendosi in su la tendina infilava sotto la testata le
+      // prime voci e il campo di ricerca, che sparivano invece di scorrere.
+      const testata = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+      const sopra = r.top - Math.max(MARGINE, testata + MARGINE);
       // verso l'alto solo se sotto si starebbe davvero stretti E sopra si sta
       // meglio: aprire in su è meno naturale, non va fatto per pochi pixel
       const su = sotto < ALTEZZA_MIN && sopra > sotto;
       setInAlto(su);
-      setAltezzaMax(Math.max(ALTEZZA_MIN, Math.min(ALTEZZA_MAX, su ? sopra : sotto)));
+      setAltezzaMax(Math.max(ALTEZZA_MIN, Math.min(altezzaMassima(), su ? sopra : sotto)));
     };
     misura();
     window.addEventListener("resize", misura);
     // scorrendo la pagina lo slot si muove e lo spazio libero cambia
     window.addEventListener("scroll", misura, true);
+    // E la pagina si muove anche da sola sotto la tendina: la risposta qui
+    // sotto cambia altezza a ogni modifica della frase, i font arrivano dopo
+    // il primo disegno, le viste si montano. Misurare solo all'apertura
+    // lasciava la tendina con un'altezza calcolata su un layout che non c'è
+    // più — ed è il caso peggiore, perché la tendina di "Cosa" si apre da
+    // sola appena la frase è vuota, cioè proprio mentre la pagina si assesta.
+    const osservatore = new ResizeObserver(misura);
+    osservatore.observe(document.documentElement);
     return () => {
       window.removeEventListener("resize", misura);
       window.removeEventListener("scroll", misura, true);
+      osservatore.disconnect();
     };
   }, []);
 
@@ -730,7 +751,7 @@ function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
         autoComplete="off"
         className="shrink-0 w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
       />
-      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="min-h-0 flex-1 overflow-y-auto">
         {lista.length === 0 && <li className="px-3 py-2 text-sm text-neutral-gray">Niente con questo nome.</li>}
         {lista.map((o, k) => (
           <Fragment key={o.chiave}>

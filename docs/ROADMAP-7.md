@@ -41,7 +41,7 @@ l'11 settembre 2026).
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
 D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
-D7.4).
+D7.4, D7.5).
 **Roadmap chiusa l'11 settembre 2026.**
 
 ---
@@ -555,3 +555,41 @@ l'alto e resta dentro lo schermo; con lo slot in alto resta sotto e si ferma a
 8 px dal bordo; espandendo "mostra tutti gli 861 piloti" le 874 voci scorrono
 dentro la lista e non sotto la pagina. `npx tsc`, `npm run lint`, `npm run
 build`: puliti.
+
+
+## D7.5 — La tendina smette di stare stretta  ✅ FATTO (11 set 2026)
+
+Luca, con lo screenshot della tendina di "Cosa" aperta sulla frase vuota:
+"sta ancora bloccato lì ed è molto scomodo". L'altezza adattiva di D7.4 non
+bastava, per tre motivi che si sommavano — e il caso peggiore è proprio
+quello dello screenshot, perché con la frase vuota la tendina di "Cosa" si
+apre da sola, cioè mentre la pagina si sta ancora assestando.
+
+1. **Il tetto di 384 px era arbitrario e sempre troppo basso.** Le nove
+   famiglie sono 468 px in tutto: non ci stavano *mai*, e per leggerne nove si
+   scorreva una finestrella dentro una pagina. Ora il massimo segue la
+   finestra — `min(600, 70% dell'altezza)` — e su uno schermo normale le nove
+   famiglie si vedono tutte in una volta, senza scorrere niente. Il 70% serve
+   a non coprire la frase e la risposta, che sono il contesto di quello che si
+   sta scegliendo.
+2. **La misura si prendeva una volta sola, all'apertura.** Ma la pagina si
+   muove da sola sotto la tendina: la risposta qui sotto cambia altezza a ogni
+   modifica della frase, i font arrivano dopo il primo disegno, le viste si
+   montano. Un `ResizeObserver` sul documento rimisura quando il layout
+   cambia, oltre ai listener di `resize` e `scroll` già presenti.
+3. **Aprendosi verso l'alto finiva sotto la testata**, che è `sticky z-50` e
+   quindi passa sopra la tendina: le prime voci e il campo di ricerca
+   sparivano invece di scorrere (è la cima tagliata nello screenshot). Il
+   soffitto ora non è il bordo della finestra ma il fondo della testata,
+   misurato dal DOM.
+
+Tolto anche `overscroll-contain` dalla lista, aggiunto in D7.4: quando la
+lista ci sta tutta e non ha niente da scorrere, bloccava comunque lo scroll
+della pagina, e la rotellina sopra la tendina sembrava non fare niente —
+l'opposto dell'effetto voluto.
+
+Provato sul caso segnalato (frase vuota, tendina aperta da sola): a 1400×1050
+tutte e nove le famiglie sono visibili insieme e il pannello si ferma a 33 px
+dal fondo; a 1280×700 si apre verso l'alto partendo **sotto** la testata, con
+il campo di ricerca visibile, e scorre solo quel che avanza. `npx tsc`,
+`npm run lint`, `npm run build`, `verify-parser`: puliti.
