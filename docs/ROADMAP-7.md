@@ -33,7 +33,7 @@ l'11 settembre 2026).
 - [x] D0 — Progettazione (questo documento, PROGETTAZIONE-v4, mockup)  ✅ FATTO (11 set 2026)
 - [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
 - [x] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)  ✅ FATTO (11 set 2026)
-- [ ] D3 — La frase a slot e il parser di testo — D3.1 fatto
+- [x] D3 — La frase a slot e il parser di testo  ✅ FATTO (11 set 2026)
 - [ ] D4 — La linea dei déjà vu (D3)
 - [ ] D5 — I ritratti (small multiples) e la mappa collegata
 - [ ] D6 — La nuova home, il nome, la scheda gara riletta, /esplora
@@ -247,8 +247,27 @@ almeno 20 frasi scritte nel file di test (es. "hamilton vince monza dalla
 decima", "leclerc podio da p5 a spa 2019", "verstappen ritiro giro 1"). La
 barra riempie gli slot e mostra cosa non ha capito, senza indovinare.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D3.2.** `src/lib/situazioni/parser.ts` (`analizza(testo, dizionari)`
+→ situazione, letture per slot, `nonCapito`), quattro passate a dizionario:
+nomi (piloti per cognome/nome/codice, team, circuiti per sinonimo, paesi in
+italiano, ere), epoche (anno, "anni 70"/"anni settanta"), fatti per sinonimo
+(i più lunghi prima), numeri (cifre, "p10", "10°", ordinali in lettere)
+assegnati al fatto parametrico vicino — anche con riempitivi in mezzo ("al
+comando entro il giro 28") — oppure trasformati in "partito P" / "arriva P"
+dalla parola che li precede ("dalla decima", "quinto"), con "o peggio" / "o
+meglio" che scelgono la variante. `src/components/situazioni/BarraTesto.tsx`
+riempie la frase a slot e stampa "Ho letto: pilota … · fatto … · circuito
+…" e "Non ho capito: …". `scripts/verify-parser.ts`: **22 frasi**, tutte
+passano. Tre cose imparate dalle frasi sbagliate, non a tavolino: "in
+italia" è un paese, non il sinonimo di Monza (i nomi di paese non valgono
+come sinonimi di circuito nel testo libero); "o peggio" non è un sinonimo
+di "arriva P o peggio" ma una coda del numero; "ritiro" + "al primo giro"
+è un fatto solo (il generico cade davanti allo specifico). `ERE` è passata
+in `src/lib/situazioni/ere.ts` perché la legge anche il parser fuori dal
+browser.
 
 # Fase D4 — La linea dei déjà vu
 

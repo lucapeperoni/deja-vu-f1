@@ -86,13 +86,13 @@ export const FATTI: Fatto[] = [
   {
     id: "arriva_o_meglio", unita: "risultato", colonne: ["arrivo", "statoCat"],
     parametro: { nome: "P", tipo: "posizione", default: 5, min: 1, max: 30 , allenta: "su" },
-    etichetta: (p) => `arriva ${pos(p)} o meglio`, sinonimi: ["o meglio", "almeno", "top"],
+    etichetta: (p) => `arriva ${pos(p)} o meglio`, sinonimi: ["arriva o meglio", "nei primi", "top"],
     testRisultato: (r, i, p) => r.arrivo[i] !== null && r.arrivo[i]! <= p,
   },
   {
     id: "arriva_o_peggio", unita: "risultato", colonne: ["arrivo", "statoCat"],
     parametro: { nome: "P", tipo: "posizione", default: 10, min: 1, max: 30 , allenta: "giu" },
-    etichetta: (p) => `arriva ${pos(p)} o peggio`, sinonimi: ["o peggio", "oltre"],
+    etichetta: (p) => `arriva ${pos(p)} o peggio`, sinonimi: ["arriva o peggio", "fuori dai primi"],
     // un ritirato è "peggio" di qualunque posizione: regge
     testRisultato: (r, i, p) => (r.arrivo[i] !== null ? r.arrivo[i]! >= p : HA_PRESO_IL_VIA.has(r.statoCat[i]) ? true : null),
   },
@@ -295,7 +295,7 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "nessun_cambio_leader", unita: "gara", colonne: ["cambiDiLeader"],
-    etichetta: () => "nessun cambio al comando", sinonimi: ["nessun cambio", "mai sorpasso in testa", "leader unico", "dominio"],
+    etichetta: () => "nessun cambio al comando", sinonimi: ["nessun cambio al comando", "nessun cambio di leader", "nessun cambio", "leader unico", "sempre in testa"],
     testGara: (g, gi) => (g.cambiDiLeader[gi] === null ? null : g.cambiDiLeader[gi] === 0),
   },
   {

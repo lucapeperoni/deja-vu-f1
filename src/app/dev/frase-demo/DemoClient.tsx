@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Frase, { nomeBreveCircuito } from "@/components/situazioni/Frase";
+import BarraTesto from "@/components/situazioni/BarraTesto";
 import { fraseInChiaro, valuta, type Situazione } from "@/lib/situazioni/motore";
 import { costruisciReticolo, etichettaGruppo, type PesiAllentamento } from "@/lib/situazioni/reticolo";
 import { decodeTabelle, type DizionariJson, type GareJson, type RisultatiJson } from "@/lib/situazioni/tabelle";
@@ -44,10 +45,11 @@ export default function DemoClient({ risultatiJson, gareJson, dizionari, pesi }:
 
   return (
     <div className="flex flex-col gap-8">
+      <BarraTesto dizionari={dizionari} onChange={(s) => setSit(s)} />
       <Frase dizionari={dizionari} value={sit} onChange={setSit} />
 
       <div className="border-t border-graphite pt-6" data-testid="risposta">
-        {!risposta && <p className="text-neutral-gray text-sm">Scegli almeno un fatto in "Cosa".</p>}
+        {!risposta && <p className="text-neutral-gray text-sm">Scegli almeno un fatto in &ldquo;Cosa&rdquo;.</p>}
         {risposta && (
           <>
             <p className="text-white text-lg">{fraseInChiaro(sit, nomi)}</p>

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // L'ambiente virtuale Python (data-layer/venv) porta dentro file .js di
+    // terze parti (matplotlib) che non sono codice del progetto.
+    "data-layer/venv/**",
   ]),
 ]);
 
