@@ -47,6 +47,12 @@ interface TooltipState {
 
 const WIDTH = 1200;
 const HEIGHT = 460;
+// Le terre emerse sotto i circuiti: un fondo, non un dato. Riempimento
+// appena più chiaro dello sfondo e contorno poco sopra, così i continenti si
+// riconoscono ma non competono con i cerchi, che sono la misura.
+const TERRE_FILL = "#16191d";
+const TERRE_STROKE = "#2b3036";
+const TERRE_URL = "/data/world-land.json";
 const MAP_MARGIN = { top: 16, right: 16, bottom: 16, left: 16 };
 const BAR_ROW_HEIGHT = 26;
 const BAR_MARGIN = { top: 8, right: 60, bottom: 8, left: 220 };
@@ -206,31 +212,69 @@ function MapChart({
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const lngExtent = useMemo(
-    () => (d3.extent(allCircuits, (d) => d.lng) as [number, number]) ?? [-180, 180],
-    [allCircuits]
-  );
-  const latExtent = useMemo(
-    () => (d3.extent(allCircuits, (d) => d.lat) as [number, number]) ?? [-60, 70],
-    [allCircuits]
-  );
+  // Una proiezione vera al posto di due scale lineari indipendenti su
+  // longitudine e latitudine. Servivano finché la mappa era solo una nuvola
+  // di punti; ora che sotto ci sono i continenti, terre e circuiti devono
+  // stare nello stesso sistema di coordinate, altrimenti i cerchi cadono in
+  // mare. Equirettangolare (lat/lng lineari) perché è la stessa geometria di
+  // prima — nessun punto si sposta rispetto ai vicini — ma con il rapporto
+  // fra i due assi rispettato. `fitExtent` sui circuiti tiene l'inquadratura
+  // su dove si corre: il mondo intero lascerebbe mezza mappa vuota.
+  const proiezione = useMemo(() => {
+    const punti = { type: "MultiPoint" as const, coordinates: allCircuits.map((c) => [c.lng, c.lat]) };
+    return d3
+      .geoEquirectangular()
+      .fitExtent(
+        [
+          [MAP_MARGIN.left, MAP_MARGIN.top],
+          [WIDTH - MAP_MARGIN.right, HEIGHT - MAP_MARGIN.bottom],
+        ],
+        punti
+      );
+  }, [allCircuits]);
+  const xScale = useMemo(() => (lng: number, lat: number) => proiezione([lng, lat])?.[0] ?? 0, [proiezione]);
+  const yScale = useMemo(() => (lng: number, lat: number) => proiezione([lng, lat])?.[1] ?? 0, [proiezione]);
 
-  const xScale = useMemo(
-    () => d3.scaleLinear().domain(lngExtent).nice().range([MAP_MARGIN.left, WIDTH - MAP_MARGIN.right]),
-    [lngExtent]
-  );
-  const yScale = useMemo(
-    () => d3.scaleLinear().domain(latExtent).nice().range([HEIGHT - MAP_MARGIN.bottom, MAP_MARGIN.top]),
-    [latExtent]
-  );
+  // Le terre si caricano una volta sola e sono un contorno statico: se il
+  // file non arriva, la mappa resta quella di prima invece di sparire.
+  const [terre, setTerre] = useState<d3.GeoPermissibleObjects | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch(TERRE_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((g) => {
+        if (vivo) setTerre(g);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const rScale = useMemo(() => d3.scaleSqrt().domain([0, maxOccorrenze || 1]).range([3, 16]), [maxOccorrenze]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    for (const cls of ["background-group", "points-group"]) {
+    for (const cls of ["land-group", "background-group", "points-group"]) {
       if (svg.select(`.${cls}`).empty()) svg.append("g").attr("class", cls);
     }
   }, []);
+
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+    const path = d3.geoPath(proiezione);
+    svg
+      .select<SVGGElement>(".land-group")
+      .selectAll<SVGPathElement, d3.GeoPermissibleObjects>("path.terre")
+      .data(terre ? [terre] : [])
+      .join("path")
+      .attr("class", "terre")
+      .attr("d", (d) => path(d))
+      .attr("fill", TERRE_FILL)
+      .attr("stroke", TERRE_STROKE)
+      .attr("stroke-width", 0.6)
+      // il contorno non deve rubare i puntamenti ai cerchi
+      .attr("pointer-events", "none");
+  }, [terre, proiezione]);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -241,8 +285,8 @@ function MapChart({
       .data(allCircuits, (d) => d.circuitRef)
       .join("circle")
       .attr("class", "bg-circuit")
-      .attr("cx", (d) => xScale(d.lng))
-      .attr("cy", (d) => yScale(d.lat))
+      .attr("cx", (d) => xScale(d.lng, d.lat))
+      .attr("cy", (d) => yScale(d.lng, d.lat))
       .attr("r", 2)
       .attr("fill", TEXT_MUTED_COLOR)
       .attr("opacity", 0.25);
@@ -259,8 +303,8 @@ function MapChart({
         (update) => update,
         (exit) => exit.transition().duration(200).attr("r", 0).remove()
       )
-      .attr("cx", (d) => xScale(d.lng as number))
-      .attr("cy", (d) => yScale(d.lat as number))
+      .attr("cx", (d) => xScale(d.lng as number, d.lat as number))
+      .attr("cy", (d) => yScale(d.lng as number, d.lat as number))
       .attr("fill", (d) => colorScale(metricValue(d, metric)))
       .attr("stroke", HIGHLIGHT_COLOR)
       .attr("stroke-width", 0.75)

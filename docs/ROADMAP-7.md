@@ -41,7 +41,7 @@ l'11 settembre 2026).
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
 D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
-D7.4, D7.5).
+D7.4, D7.5, D7.6).
 **Roadmap chiusa l'11 settembre 2026.**
 
 ---
@@ -593,3 +593,48 @@ tutte e nove le famiglie sono visibili insieme e il pannello si ferma a 33 px
 dal fondo; a 1280×700 si apre verso l'alto partendo **sotto** la testata, con
 il campo di ricerca visibile, e scorre solo quel che avanza. `npx tsc`,
 `npm run lint`, `npm run build`, `verify-parser`: puliti.
+
+
+## D7.6 — I ritratti si aprono davvero, e la mappa ha il mondo  ✅ FATTO (11 set 2026)
+
+Due segnalazioni di Luca, con screenshot della griglia "8 uguale" di Leclerc.
+
+**1. "Clicco su una gara di quelle in basso e non si apre la pagina della
+gara."** Il codice c'era e nei test funzionava: ogni ritratto era un
+`<button>` con `router.push("/gara/<slug>")`. Il punto è *quando*: un
+`onClick` di React vale solo dopo l'idratazione, e questa pagina è pesante —
+decodifica le tabelle (26 759 righe), calcola il reticolo, monta una
+quarantina di grafici D3. Chi clicca appena vede la griglia clicca su un
+bottone ancora inerte, e non succede niente: esattamente quello che
+descriveva. Ora il ritratto è un `<a href>` (`next/link`): funziona **prima**
+che React sia pronto, si apre in una scheda nuova con cmd/ctrl+clic, il
+browser mostra la destinazione in basso a sinistra e il puntatore diventa una
+mano (`cursor-pointer`, che su `<button>` mancava). `DejaVu` espone
+`hrefGara(o)` e tiene `apriGara` solo per la linea dei déjà vu, che è un SVG
+e un href non lo può avere. Verificati tutti e 16 gli indirizzi della griglia:
+i file `public/data/facts/<slug>.json` esistono per tutti, nessun 404.
+
+**2. "La mappa non funziona": non si vede il mondo.** Vero, e non era un
+guasto: la mappa non ha mai avuto una geografia sotto. I circuiti erano messi
+con due `scaleLinear` indipendenti su longitudine e latitudine — una
+proiezione equirettangolare improvvisata e con le proporzioni sbagliate — e
+il risultato era una nuvola di bolle sospese nel nero. Ora c'è il contorno
+delle terre emerse, e i circuiti stanno sulla terraferma:
+
+- `scripts/build-world.ts` (`npm run build:world`) genera
+  `public/data/world-land.json` da `world-atlas` (Natural Earth 1:110m),
+  coordinate tagliate a due decimali: **75 kB**. `world-atlas` e
+  `topojson-client` restano in devDependencies — nel sito arriva solo il JSON;
+- `DoveMappa` usa `d3.geoEquirectangular().fitExtent(...)` sui circuiti:
+  stessa geometria di prima (nessun punto si sposta rispetto ai vicini), ma
+  con il rapporto fra gli assi rispettato e, soprattutto, con terre e cerchi
+  nello stesso sistema di coordinate — senza, i cerchi cadrebbero in mare.
+  L'inquadratura resta sui circuiti: il mondo intero lascerebbe mezza mappa
+  vuota;
+- le terre sono un fondo, non un dato: riempimento appena più chiaro dello
+  sfondo, contorno poco sopra, `pointer-events: none` per non rubare i
+  puntamenti ai cerchi. Se il file non arriva, la mappa resta quella di prima.
+
+Provato su entrambe le pagine che usano la mappa (la home v4 e la vista 4 del
+catalogo, `/eventi/vittoria_da_griglia`). `npx tsc`, `npm run lint`, `npm run
+build`, `verify-situazioni` e `verify-parser`: puliti.

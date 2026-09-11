@@ -18,6 +18,8 @@ interface Props {
   tabelle: Tabelle;
   dizionari: DizionariJson;
   onApri?: (o: Occorrenza) => void;
+  // indirizzo della scheda gara per l'occorrenza: rende il ritratto un link
+  hrefGara?: (o: Occorrenza) => string | undefined;
   // quanti mostrare prima del bottone "mostra tutti"
   limite?: number;
 }
@@ -60,7 +62,7 @@ export function datiRitratto(o: Occorrenza, tab: Tabelle, diz: DizionariJson, co
   };
 }
 
-export default function RitrattiGruppo({ riga, tabelle, dizionari, onApri, limite = 8 }: Props) {
+export default function RitrattiGruppo({ riga, tabelle, dizionari, onApri, hrefGara, limite = 8 }: Props) {
   const [tutti, setTutti] = useState(false);
   const cache = useMemo(() => new Map<number, Promise<Traccia | null>>(), []);
   const occ = useMemo(() => [...riga.nuove].sort((a, b) => b.anno - a.anno), [riga]);
@@ -74,7 +76,17 @@ export default function RitrattiGruppo({ riga, tabelle, dizionari, onApri, limit
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
         {mostrate.map((o) => {
           const d = datiRitratto(o, tabelle, dizionari, riga.colore);
-          return <Ritratto key={`${o.raceId}-${o.driverId ?? "g"}`} dati={d} cache={cache} onClick={onApri ? () => onApri(o) : undefined} />;
+          const href = hrefGara?.(o);
+          return (
+            <Ritratto
+              key={`${o.raceId}-${o.driverId ?? "g"}`}
+              dati={d}
+              cache={cache}
+              href={href}
+              // il gestore resta solo come ripiego quando non c'è un href
+              onClick={!href && onApri ? () => onApri(o) : undefined}
+            />
+          );
         })}
       </div>
       {occ.length > limite && (

@@ -101,12 +101,23 @@ export default function DejaVu({ risultatiJson, gareJson, dizionari, pesi, circu
   );
   const righe = useMemo(() => (reticolo ? righeDaReticolo(reticolo) : []), [reticolo]);
 
-  const apriGara = useCallback(
+  // L'indirizzo della scheda gara di un'occorrenza. Serve in due forme: come
+  // href per i ritratti (link veri, cliccabili anche prima che la pagina sia
+  // idratata) e come salto per la linea dei déjà vu, che è un SVG e un href
+  // non lo può avere.
+  const hrefGara = useCallback(
     (o: Occorrenza) => {
       const s = slug.get(o.raceId);
-      if (s) router.push(`/gara/${s}`);
+      return s ? `/gara/${s}` : undefined;
     },
-    [slug, router]
+    [slug]
+  );
+  const apriGara = useCallback(
+    (o: Occorrenza) => {
+      const h = hrefGara(o);
+      if (h) router.push(h);
+    },
+    [hrefGara, router]
   );
 
   const frase = risposta ? fraseInChiaro(sit, nomi) : "";
@@ -211,7 +222,7 @@ export default function DejaVu({ risultatiJson, gareJson, dizionari, pesi, circu
                     </span>
                   )}
                 </h3>
-                <RitrattiGruppo riga={r} tabelle={tab} dizionari={dizionari} onApri={apriGara} />
+                <RitrattiGruppo riga={r} tabelle={tab} dizionari={dizionari} hrefGara={hrefGara} />
               </section>
             ))}
           </section>

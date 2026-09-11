@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
+import Link from "next/link";
 import { STORY_ACCENT_COLOR, TEXT_MUTED_COLOR } from "@/lib/colors";
 
 export interface DatiRitratto {
@@ -36,6 +37,14 @@ export interface DatiRitratto {
 
 interface Props {
   dati: DatiRitratto;
+  // Dove porta il ritratto: la scheda di quella gara. È un href e non un
+  // gestore di click perché un <a> funziona anche PRIMA che React abbia
+  // idratato la pagina — e questa pagina è pesante (tabelle, reticolo,
+  // decine di grafici D3): chi clicca appena vede la griglia, con un
+  // <button> non otteneva niente. In più si apre in una scheda nuova con
+  // cmd/ctrl+clic, il browser mostra la destinazione in basso e il
+  // puntatore diventa una mano.
+  href?: string;
   onClick?: () => void;
   // cache condivisa delle tracce per gara, per non riscaricare lo stesso file
   cache?: Map<number, Promise<Traccia | null>>;
@@ -63,7 +72,7 @@ export function caricaTraccia(raceId: number, cache?: Map<number, Promise<Tracci
   return p;
 }
 
-export default function Ritratto({ dati, onClick, cache }: Props) {
+export default function Ritratto({ dati, href, onClick, cache }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   // Lo stato porta la chiave (gara+pilota) a cui si riferisce: se non
   // combacia con quella corrente, si sta ancora caricando. Nessun setState
@@ -202,14 +211,11 @@ export default function Ritratto({ dati, onClick, cache }: Props) {
     nota.text(giriFatti < n ? `ritirato dopo ${giriFatti} giri su ${n}` : `${n} giri`);
   }, [posizioni, dati, y]);
 
-  const Tag = onClick ? "button" : "div";
-  return (
-    <Tag
-      type={onClick ? "button" : undefined}
-      onClick={onClick}
-      className="text-left bg-panel border border-graphite border-l-[3px] px-3 py-2.5 flex flex-col gap-1 w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-white hover:border-neutral-gray transition-colors"
-      style={{ borderLeftColor: dati.colore }}
-    >
+  const classi =
+    "text-left bg-panel border border-graphite border-l-[3px] px-3 py-2.5 flex flex-col gap-1 w-full no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white hover:border-neutral-gray transition-colors" +
+    (href || onClick ? " cursor-pointer" : "");
+  const dentro = (
+    <>
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-condensed text-lg font-bold text-white leading-tight">{dati.titolo}</span>
         {dati.giriGara !== null && <span className="text-[11px] text-neutral-gray">{dati.giriGara} giri</span>}
@@ -222,6 +228,26 @@ export default function Ritratto({ dati, onClick, cache }: Props) {
         </span>
         <span>{dati.statoTesto}</span>
       </div>
-    </Tag>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={classi} style={{ borderLeftColor: dati.colore }}>
+        {dentro}
+      </Link>
+    );
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={classi} style={{ borderLeftColor: dati.colore }}>
+        {dentro}
+      </button>
+    );
+  }
+  return (
+    <div className={classi} style={{ borderLeftColor: dati.colore }}>
+      {dentro}
+    </div>
   );
 }
