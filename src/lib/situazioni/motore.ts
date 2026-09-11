@@ -259,8 +259,13 @@ export function fraseInChiaro(s: Situazione, nomi: { pilota?: string; team?: str
     return f.etichetta(ps[0]);
   });
   const chi = s.chi ? (s.chi.tipo === "pilota" ? nomi.pilota ?? "il pilota" : nomi.team ?? "il team") : "un pilota";
+  // I complementi ("partito 10° o peggio", "con 2 soste", "al debutto") si
+  // attaccano al verbo senza "e"; i verbi ("vince", "si ritira") si legano
+  // con "e".
+  const complemento = (t: string) => /^(partito|parte |al |con |senza|in |dalla|prima sosta|guida|a punti)/.test(t) && !/^parte dalla/.test(t);
+  const cosa = fatti.reduce((acc, t, k) => (k === 0 ? t : complemento(t) ? `${acc} ${t}` : `${acc} e ${t}`), "");
   const dove = s.dove ? (s.dove.tipo === "circuito" ? ` a ${nomi.circuito ?? s.dove.circuitRef}` : ` in ${s.dove.paese}`) : "";
   const q = s.quando;
   const quando = !q ? "" : q.tipo === "anno" ? ` nel ${q.anno}` : q.tipo === "decennio" ? ` negli anni ${q.annoDa}` : ` tra il ${q.annoDa} e il ${q.annoA}`;
-  return `${chi} ${fatti.join(" e ")}${dove}${quando}`;
+  return `${chi} ${cosa}${dove}${quando}`;
 }

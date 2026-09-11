@@ -299,3 +299,32 @@ export function familyLabel(famiglia: string): string {
 export const FAMILY_LEGEND: { key: EventFamily; label: string; color: string }[] = (
   Object.keys(FAMILY_COLORS) as EventFamily[]
 ).map((key) => ({ key, label: FAMILY_LABELS[key], color: FAMILY_COLORS[key] }));
+
+// Colori degli SLOT della frase (Déjà vu v4, docs/PROGETTAZIONE-v4.md §9):
+// nella v4 la variabile nominale che conta è "quale slot cambia" tra la
+// situazione chiesta e il caso simile. Lo stesso colore sta sullo slot
+// nella frase, sulla riga nella linea dei déjà vu, sul bordo del ritratto:
+// il colore lega la differenza al suo slot in tutte le viste. Tinte dalla
+// palette Tol "muted" già validata per daltonismo in FAMILY_COLORS;
+// "cosa" non riusa l'oliva #999933 (troppo scuro su fondo #0B0C10, contrasto
+// 4.2:1 con il testo) ma una variante più chiara. Il rosso di brand
+// (STORY_ACCENT_COLOR) resta con un solo significato: la risposta esatta.
+export type Slot = "chi" | "cosa" | "dove" | "quando";
+
+export const SLOT_COLORS: Record<Slot, string> = {
+  chi: "#44AA99", // verde acqua
+  cosa: "#B8B04A", // oliva chiaro
+  dove: "#88CCEE", // ciano
+  quando: "#CC6677", // rosa antico
+};
+
+export const SLOT_LABELS: Record<Slot, string> = {
+  chi: "Chi",
+  cosa: "Cosa",
+  dove: "Dove",
+  quando: "Quando",
+};
+
+export function slotColor(slot: string): string {
+  return SLOT_COLORS[slot as Slot] ?? DEFAULT_LINE_COLOR;
+}

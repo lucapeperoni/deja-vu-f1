@@ -33,7 +33,7 @@ l'11 settembre 2026).
 - [x] D0 — Progettazione (questo documento, PROGETTAZIONE-v4, mockup)  ✅ FATTO (11 set 2026)
 - [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
 - [x] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)  ✅ FATTO (11 set 2026)
-- [ ] D3 — La frase a slot e il parser di testo
+- [ ] D3 — La frase a slot e il parser di testo — D3.1 fatto
 - [ ] D4 — La linea dei déjà vu (D3)
 - [ ] D5 — I ritratti (small multiples) e la mappa collegata
 - [ ] D6 — La nuova home, il nome, la scheda gara riletta, /esplora
@@ -219,8 +219,26 @@ completamento per slot, parametro numerico digitabile, tastiera completa.
 Il colore dello slot è quello di `src/lib/colors.ts` → `SLOT_COLORS`.
 Demo isolata in `src/app/dev/frase-demo/`.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D3.1.** `src/components/situazioni/Frase.tsx` (client, controllato:
+`value`/`onChange`), `SLOT_COLORS`/`SLOT_LABELS` in `src/lib/colors.ts`,
+`src/lib/situazioni/paesi.ts` (i 35 paesi Ergast in italiano). Quattro slot
+con bordo superiore del colore dello slot; Chi/Dove/Quando a scelta
+singola con tendina (input + listbox, frecce/invio/esc, aria-activedescendant);
+Cosa a più fatti, ognuno con il parametro modificabile in linea dentro
+l'etichetta ("partito [10]° o peggio"). Le ere regolamentari sono dichiarate
+in `ERE` (ibrida 2014-24, V8 2006-13, V10 1989-2005, turbo 1977-88, 3 litri
+1966-76, primi anni 1950-65). Dopo "Chi" si apre da solo "Cosa", dopo "Cosa"
+si apre "Dove": il flusso segue la frase. Demo in `/dev/frase-demo`, che
+apre già sulla situazione del mockup e mostra frase riletta, N su M,
+finestra e i gruppi del reticolo. Provato nel browser: "Dove" → "spa" →
+invio ⇒ "Lewis Hamilton vince partito 10° o peggio a Spa · Mai su 18 gare
+del pilota". Tre difetti corretti al primo sguardo: nome breve del circuito
+(era "a Italia": ora è la località Ergast, "Monza"), spazio in "Mai su", e
+la frase in chiaro lega i complementi senza "e" ("vince partito 10° o
+peggio", non "vince e partito").
 
 ## D3.2 — Il parser di testo libero
 
