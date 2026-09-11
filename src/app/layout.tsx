@@ -15,9 +15,9 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Box, box? — Quando conviene fermarsi in Formula 1",
+  title: "Déjà vu — l'hai già visto? 75 stagioni di Formula 1",
   description:
-    "Il pilota X doveva fermarsi ai box durante quella Safety Car? Ricostruiamo ~800 decisioni reali delle stagioni 2023-2024, opzioni quantificate e verdetto, per rispondere.",
+    "Descrivi quello che hai appena visto in gara — chi, cosa, dove, quando — e scopri se è già successo, quante volte su quante, e quali casi gli somigliano cambiando un solo slot. 1950-2024, ogni numero con la sua finestra.",
 };
 
 export default function RootLayout({

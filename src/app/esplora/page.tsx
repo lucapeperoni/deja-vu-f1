@@ -1,4 +1,5 @@
 import fs from "fs";
+import Link from "next/link";
 import path from "path";
 import HomeCatalogView from "@/components/HomeCatalogView";
 import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
@@ -83,6 +84,11 @@ export default async function EsploraIlCatalogo() {
             rarità reale, non un&apos;impressione: un evento valido su 285 gare e uno valido su 1125 non si
             confrontano allo stesso modo, e la finestra di copertura di ciascuno è disegnata accanto al suo nome,
             sempre visibile.
+          </p>
+          <p className="text-sm text-neutral-gray">
+            Per chiedere &ldquo;è già successo?&rdquo; su una situazione precisa usa la{" "}
+            <Link href="/" className="text-racing-red hover:text-white underline">frase a slot in home</Link>; il vecchio{" "}
+            <Link href="/scenari" className="text-racing-red hover:text-white underline">compositore a chip</Link> resta disponibile.
           </p>
         </div>
       </section>

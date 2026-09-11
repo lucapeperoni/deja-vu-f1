@@ -34,13 +34,13 @@ export default function DoveDejaVu({ righe, finestra, dizionari, circuitiGeo, on
     }
     return [...conteggio.entries()].map(([ref, n]) => {
       const c = dizionari.circuiti.find((x) => x.ref === ref);
-      const geo = circuitiGeo[ref];
+      const geo = circuitiGeo?.[ref];
       const ospitate = c?.gare ?? 0;
       return { circuitRef: ref, nome: c?.nome ?? ref, occorrenze: n, gareOspitate: ospitate, tasso: ospitate ? n / ospitate : 0, lat: geo?.lat ?? null, lng: geo?.lng ?? null };
     });
   }, [righe, dizionari, circuitiGeo]);
 
-  const allCircuits = useMemo<CircuitGeo[]>(() => Object.entries(circuitiGeo).map(([circuitRef, g]) => ({ circuitRef, lat: g.lat, lng: g.lng })), [circuitiGeo]);
+  const allCircuits = useMemo<CircuitGeo[]>(() => Object.entries(circuitiGeo ?? {}).map(([circuitRef, g]) => ({ circuitRef, lat: g.lat, lng: g.lng })), [circuitiGeo]);
 
   // DoveMappa vuole una entry di catalogo: qui serve solo per l'unità della
   // percentuale (GARA → "%"); colore e finestra passano dall'adattatore.
@@ -51,6 +51,7 @@ export default function DoveDejaVu({ righe, finestra, dizionari, circuitiGeo, on
 
   if (perCircuito.length === 0) return <p className="text-sm text-neutral-gray italic">Nessun circuito: non è successo da nessuna parte.</p>;
   return (
+    <div data-geo={Object.keys(circuitiGeo ?? {}).length} data-circuiti={perCircuito.length}>
     <DoveMappa
       entry={entryFinta}
       perCircuito={perCircuito}
@@ -60,5 +61,6 @@ export default function DoveDejaVu({ righe, finestra, dizionari, circuitiGeo, on
       finestraTesto={finestra.vuota ? "vuota" : `${finestra.annoDa}–${finestra.annoA}`}
       onCircuito={onCircuito}
     />
+    </div>
   );
 }

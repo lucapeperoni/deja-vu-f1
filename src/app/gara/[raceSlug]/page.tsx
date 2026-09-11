@@ -11,6 +11,8 @@ import {
   type CatalogEventEntry,
 } from "@/lib/eventCatalog";
 import { familyColor, familyLabel } from "@/lib/colors";
+import { situazioneDaEventoV3 } from "@/lib/situazioni/daEventoV3";
+import { situazioneToParams } from "@/lib/situazioni/url";
 
 // Vista 6 della specifica (docs/PROGETTAZIONE.md, sezione 7 e 5.4): "la
 // scheda gara". Si sceglie una gara tra le 1125 e il sistema mostra i suoi
@@ -143,6 +145,10 @@ export default async function GaraPage({ params }: { params: Promise<{ raceSlug:
               const paramQuery = Object.keys(fatto.parametri)[0]
                 ? `?${Object.keys(fatto.parametri)[0]}=${fatto.parametri[Object.keys(fatto.parametri)[0]]}`
                 : "";
+              // v4 (Déjà vu, roadmap D6.1): il fatto come situazione già
+              // compilata, con "dove" = questo circuito.
+              const situazione = situazioneDaEventoV3(fatto.eventId, fatto.parametri, facts.circuitRef);
+              const linkDejaVu = situazione ? `/?${situazioneToParams(situazione).toString()}` : null;
               return (
                 <div key={`${fatto.eventId}-${i}`} className="bg-panel border border-graphite p-5 flex gap-4">
                   <div className="text-2xl font-condensed font-bold text-neutral-gray w-8 shrink-0">{i + 1}</div>
@@ -180,12 +186,16 @@ export default async function GaraPage({ params }: { params: Promise<{ raceSlug:
                         Rarità {(fatto.rarita * 100).toFixed(1)}% — dettagli non trovati nel catalogo corrente
                       </div>
                     )}
-                    <Link
-                      href={`/eventi/${fatto.eventId}${paramQuery}`}
-                      className="inline-block mt-2 text-racing-red text-sm hover:underline"
-                    >
-                      Apri nel compositore →
-                    </Link>
+                    <div className="flex flex-wrap gap-x-5 mt-2 text-sm">
+                      {linkDejaVu && (
+                        <Link href={linkDejaVu} className="text-racing-red hover:underline">
+                          È già successo qui? Chiedi a Déjà vu →
+                        </Link>
+                      )}
+                      <Link href={`/eventi/${fatto.eventId}${paramQuery}`} className="text-neutral-gray hover:text-white hover:underline">
+                        Apri nel compositore v3
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

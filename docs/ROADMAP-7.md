@@ -36,7 +36,7 @@ l'11 settembre 2026).
 - [x] D3 — La frase a slot e il parser di testo  ✅ FATTO (11 set 2026)
 - [x] D4 — La linea dei déjà vu (D3)  ✅ FATTO (11 set 2026)
 - [x] D5 — I ritratti (small multiples) e la mappa collegata  ✅ FATTO (11 set 2026)
-- [ ] D6 — La nuova home, il nome, la scheda gara riletta, /esplora
+- [x] D6 — La nuova home, il nome, la scheda gara riletta, /esplora  ✅ FATTO (11 set 2026)
 - [ ] D7 — Accessibilità, verifica finale, documenti d'esame
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
@@ -353,8 +353,30 @@ Titolo del sito "Déjà vu", metadati e testata aggiornati (via "Box, box?",
 situazione cliccabile. /esplora invariato. Il compositore v3 (`/eventi/...`)
 resta raggiungibile da /esplora.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D6.1.** `src/app/page.tsx` (server: legge tabelle, dizionari, pesi,
+circuits-geo) + `src/components/situazioni/DejaVu.tsx` (client: barra →
+frase → risposta → linea → ritratti per riga → mappa, un solo stato). La
+situazione vive nell'URL in chiaro (`src/lib/situazioni/url.ts`:
+`?chi=p1&cosa=vince,parte_o_peggio:10&dove=c:monza`), letta dopo il
+montaggio e aggiornata con `replaceState`; indietro/avanti funzionano.
+La vecchia home (compositore a chip v3) è spostata **tale e quale** in
+`/scenari`, linkata da `/esplora`. Testata: "Déjà vu · l'hai già visto?",
+menu Chiedi / Gare / Esplora / Metodo (via "Race Dynamics", "Race Anatomy",
+"Box, box?"); metadati aggiornati. Scheda gara: ogni fatto notevole porta
+"È già successo qui? Chiedi a Déjà vu →" con la situazione compilata da
+`src/lib/situazioni/daEventoV3.ts` (22 eventi v3 mappati, gli altri senza
+link, dichiarato nel file); il link al compositore v3 resta.
+
+Un bug trovato in prova e non a tavolino: con `useSearchParams` dentro
+`Suspense` gli effetti D3 del **primo montaggio** non partivano (linea
+senza righe, ritratti senza tracce, mappa vuota; tutto tornava vivo al
+primo cambio di stato). Sostituito con la lettura di `window.location`
+in un effetto dopo il montaggio: niente Suspense, tutto disegnato al primo
+colpo (verificato: 9 righe, 48 punti, 12 ritratti con traccia, 3 circuiti;
+e da URL `?cosa=vince,parte_o_peggio:10&dove=c:monza` → 2 su 74).
 
 # Fase D7 — Chiusura
 
