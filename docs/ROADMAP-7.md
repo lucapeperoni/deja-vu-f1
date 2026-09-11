@@ -40,7 +40,8 @@ l'11 settembre 2026).
 - [x] D7 — Accessibilità, verifica finale, documenti d'esame  ✅ FATTO (11 set 2026)
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
-D5.2 → D6.1 → D7.1. **Roadmap chiusa l'11 settembre 2026.**
+D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3).
+**Roadmap chiusa l'11 settembre 2026.**
 
 ---
 
@@ -460,3 +461,52 @@ schermo mentre "Chi" resta a sinistra; svuota-slot, togli-fatto e "+ e…"
 aggiornano i conteggi (Hamilton a Monza: 18 gare, 5 vittorie, 14 gare da
 quando ci sono i dati sulle soste). `npm run lint`, `npx tsc`, `npm run
 build`, `verify-situazioni` e `verify-parser`: tutti puliti.
+
+
+## D7.3 — Tendine complete, a gruppi  ✅ FATTO (11 set 2026)
+
+Segnalazione di Luca: "quando apro il menu a tendina non si vedono tutte le
+scelte, probabilmente perché sono troppe, però sarebbe interessante che il
+telecronista possa vederle tutte". Vero e più grave di quanto sembrasse: il
+tetto `MAX_OPZIONI = 12` valeva per **tutti e quattro** gli slot, e sotto ci
+sono 48 fatti, 77 circuiti + 35 paesi, 75 stagioni + 8 decenni + 6 ere, 861
+piloti + 211 team. Il caso grave è "Cosa": è il vocabolario del prodotto, e
+chi non indovinava la parola non poteva sapere che esistesse "si ritira al
+via" o "batte il compagno".
+
+**Le famiglie diventano un dato.** I commenti di sezione di `fatti.ts`
+(`// ---- ritiri ----`) erano già la classificazione giusta: sono diventati
+il campo `gruppo` dei 48 fatti e l'elenco `GRUPPI_FATTI`, in ordine di
+telecronaca — come finisce, come parte, se non finisce, e poi il resto.
+
+**Una tendina sola, tre tipi di riga.** `Opzione` ora può essere una scelta
+(`applica`), una discesa in una famiglia (`entra`) o un "mostra tutti"
+(`espandi`); la navigazione da tastiera resta una sola — freccia e Invio,
+senza dover sapere su che tipo di riga si è. Le righe portano l'etichetta del
+gruppo e la tendina ci disegna sopra un'intestazione `sticky`, che resta in
+alto mentre si scorre: si sa sempre in che parte dell'elenco si è finiti.
+
+**Slot per slot.** *Cosa*: due passaggi, le nove famiglie con sommario e
+conteggio, poi i fatti dentro la famiglia (con "←", Esc e Backspace a campo
+vuoto per risalire); appena si scrive i due livelli spariscono e la ricerca è
+piatta su tutti i 48 fatti, etichettati per famiglia — così si impara dove
+stanno le cose. *Dove*: tutti i 77 circuiti (in ordine di gare ospitate:
+Monza, Monaco, Silverstone) e tutti i 35 paesi. *Quando*: 6 ere, 8 decenni,
+75 stagioni. *Chi*: gli unici elenchi che non si scorrono (861 + 211), quindi
+anteprima di 12 e una riga "mostra tutti gli 861 piloti" che riapre l'elenco
+**in ordine alfabetico** — espanso si cerca un nome, non si guarda chi ha
+corso di più. Espandendo, l'evidenza torna in cima al gruppo appena aperto:
+l'indice di prima punterebbe a un nome a caso, visto che l'ordine cambia. La
+lista nuova si ricalcola nel gestore invece che in un effetto (`setState`
+dentro un effetto = render a cascata, ed è anche un errore di lint).
+
+Tolto il tetto di 12 ovunque tranne che nell'anteprima di "Chi"; lista
+cresciuta da `max-h-72` a `max-h-[22rem]`.
+
+Provato nel browser: "Cosa" apre le nove famiglie con il conteggio aggiornato
+ai fatti già scelti, entra ed esce con clic, Invio, Esc e Backspace; cercando
+"ritir" escono i fatti di due famiglie diverse con le intestazioni giuste;
+"Dove" mostra 112 voci sotto Circuiti/Paesi, "Quando" 89 sotto
+Ere/Decenni/Stagioni; "mostra tutti gli 861 piloti" porta la lista a 874 voci
+in ordine alfabetico (Abate, Abecassis, Acheson). `npx tsc`, `npx eslint` e
+`npm run build`: puliti.

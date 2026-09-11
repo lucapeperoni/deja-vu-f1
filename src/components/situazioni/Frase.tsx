@@ -16,9 +16,9 @@
 // valuta niente — la valutazione è del motore (motore.ts), chiamata dalla
 // pagina.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SLOT_COLORS, SLOT_LABELS, type Slot } from "@/lib/colors";
-import { FATTI, fattoById, type Fatto } from "@/lib/situazioni/fatti";
+import { FATTI, GRUPPI_FATTI, fattoById, type Fatto, type GruppoFatto } from "@/lib/situazioni/fatti";
 import type { Chi, Dove, FattoScelto, Quando, Situazione } from "@/lib/situazioni/motore";
 import { paeseIt } from "@/lib/situazioni/paesi";
 import type { DizionariJson } from "@/lib/situazioni/tabelle";
@@ -49,14 +49,48 @@ export function punteggio(testo: string, q: string): number | null {
   return t.includes(q) ? 2 : null;
 }
 
+// Una riga della tendina. Tre tipi, distinti da quale campo è presente:
+// `applica` = una scelta vera; `entra` = si scende in una famiglia di fatti;
+// `espandi` = "mostra tutti", che allunga un gruppo invece di chiudere la
+// tendina. Le tre stanno nella stessa lista perché la navigazione da
+// tastiera è una sola: freccia giù e invio, senza sapere su cosa si è.
 interface Opzione {
   chiave: string;
   titolo: string;
+  // riga in piccolo sotto il titolo (le famiglie di "Cosa" dicono così cosa
+  // contengono senza doverci entrare)
+  sotto?: string;
   dettaglio?: string;
-  applica: (s: Situazione) => Situazione;
+  // intestazione del gruppo sotto cui va mostrata; righe consecutive con la
+  // stessa etichetta stanno sotto la stessa intestazione
+  gruppo?: string;
+  applica?: (s: Situazione) => Situazione;
+  entra?: GruppoFatto;
+  espandi?: string;
 }
 
-const MAX_OPZIONI = 12;
+// Una riga che porta davvero a una scelta (le righe di navigazione, `entra`
+// e `espandi`, la tendina se le gestisce da sola e non escono mai).
+type Scelta = Opzione & { applica: (s: Situazione) => Situazione };
+
+// Un menu: le righe più il contesto del livello in cui ci si trova.
+interface Menu {
+  righe: Opzione[];
+  // intestazione del pannello quando si è dentro un sottolivello
+  titolo?: string;
+  segnaposto?: string;
+}
+
+interface StatoMenu {
+  dentro: GruppoFatto | null;
+  espansi: string[];
+}
+
+type FonteMenu = (q: string, stato: StatoMenu) => Menu;
+
+// Quante voci mostrare a colpo d'occhio nei gruppi troppo lunghi da
+// scorrere (piloti e team): sotto c'è sempre una riga "mostra tutti".
+const ANTEPRIMA = 12;
 
 export default function Frase({ dizionari, value, onChange, apriSlot = null }: FraseProps) {
   const [aperto, setAperto] = useState<Slot | null>(apriSlot);
@@ -91,7 +125,7 @@ export default function Frase({ dizionari, value, onChange, apriSlot = null }: F
         vuoto="chiunque"
         suggerimento="pilota o team"
         onSvuota={value.chi ? () => onChange({ ...value, chi: undefined }) : undefined}
-        opzioni={(q) => opzioniChi(dizionari, q)}
+        fonte={(q, stato) => opzioniChi(dizionari, q, stato)}
         // Scelto "chi", si apre da solo "Cosa" SOLO se non c'è ancora un
         // fatto: senza un fatto la frase non ha risposta, quindi è un
         // seguito ovvio. Negli altri casi la tendina si chiude e basta —
@@ -124,7 +158,7 @@ export default function Frase({ dizionari, value, onChange, apriSlot = null }: F
         vuoto="ovunque"
         suggerimento="circuito o paese"
         onSvuota={value.dove ? () => onChange({ ...value, dove: undefined }) : undefined}
-        opzioni={(q) => opzioniDove(dizionari, q)}
+        fonte={(q) => opzioniDove(dizionari, q)}
         onScegli={(o) => {
           onChange(o.applica(value));
           setAperto(null);
@@ -140,7 +174,7 @@ export default function Frase({ dizionari, value, onChange, apriSlot = null }: F
         vuoto="sempre"
         suggerimento="anno, decennio o era"
         onSvuota={value.quando ? () => onChange({ ...value, quando: undefined }) : undefined}
-        opzioni={(q) => opzioniQuando(q)}
+        fonte={(q) => opzioniQuando(q)}
         onScegli={(o) => {
           onChange(o.applica(value));
           setAperto(null);
@@ -178,102 +212,198 @@ export function etichettaFatto(c: FattoScelto): string {
 // Opzioni per slot
 // ---------------------------------------------------------------------------
 
+// Ordina per rango (miglior corrispondenza prima) e butta via i non
+// corrispondenti. Nessun tetto: la tendina scorre, e una scelta che non si
+// vede è una scelta che non esiste.
 function ordina<T extends { rango: number | null; o: Opzione }>(xs: T[]): Opzione[] {
   return xs
     .filter((x): x is T & { rango: number } => x.rango !== null)
     .sort((a, b) => a.rango - b.rango)
-    .slice(0, MAX_OPZIONI)
     .map((x) => x.o);
 }
 
-function opzioniChi(d: DizionariJson, q: string): Opzione[] {
-  const nq = normalizza(q.trim());
-  // I dizionari sono già ordinati per anno di ultima attività e numero di
-  // gare: a parità di rango, "hamilton" dà Lewis prima di Duncan.
-  const piloti = d.piloti.map((p) => ({
-    rango: punteggio(`${p.nome} ${p.codice ?? ""}`, nq),
-    o: {
-      chiave: `p${p.id}`,
-      titolo: p.nome,
-      dettaglio: `pilota · ${p.gp} GP, ${p.annoDa}–${p.annoA}`,
-      applica: (s: Situazione): Situazione => ({ ...s, chi: { tipo: "pilota", driverId: p.id } satisfies Chi }),
-    },
-  }));
-  const team = d.team.map((t) => ({
-    rango: punteggio(t.nome, nq),
-    o: {
-      chiave: `t${t.id}`,
-      titolo: t.nome,
-      dettaglio: `team · ${t.annoDa}–${t.annoA}`,
-      applica: (s: Situazione): Situazione => ({ ...s, chi: { tipo: "team", constructorId: t.id } satisfies Chi }),
-    },
-  }));
-  // a campo vuoto: i piloti recenti; con testo: piloti e team insieme
-  if (nq === "") return piloti.slice(0, MAX_OPZIONI).map((x) => x.o);
-  return ordina([...piloti, ...team]);
+// Un gruppo lungo si mostra accorciato con in fondo una riga "mostra tutti";
+// una volta espanso resta espanso finché la tendina è aperta.
+function conAnteprima(righe: Opzione[], chiaveGruppo: string, espansi: string[], tutti: string): Opzione[] {
+  if (espansi.includes(chiaveGruppo) || righe.length <= ANTEPRIMA + 1) return righe;
+  const gruppo = righe[0]?.gruppo;
+  return [
+    ...righe.slice(0, ANTEPRIMA),
+    { chiave: `piu-${chiaveGruppo}`, titolo: tutti.replace("N", String(righe.length)), gruppo, espandi: chiaveGruppo },
+  ];
 }
 
-function opzioniDove(d: DizionariJson, q: string): Opzione[] {
+function opzioniChi(d: DizionariJson, q: string, { espansi }: StatoMenu): Menu {
   const nq = normalizza(q.trim());
+  // I dizionari sono già ordinati per anno di ultima attività e numero di
+  // gare: a parità di rango, "hamilton" dà Lewis prima di Duncan. Espanso,
+  // invece, l'elenco va in ordine alfabetico: si scorre per cercare un nome,
+  // non per vedere chi ha corso di più.
+  const rigaPilota = (p: DizionariJson["piloti"][number]) => ({
+    chiave: `p${p.id}`,
+    titolo: p.nome,
+    gruppo: "Piloti",
+    dettaglio: `${p.gp} GP, ${p.annoDa}–${p.annoA}`,
+    applica: (s: Situazione): Situazione => ({ ...s, chi: { tipo: "pilota", driverId: p.id } satisfies Chi }),
+  });
+  const rigaTeam = (t: DizionariJson["team"][number]) => ({
+    chiave: `t${t.id}`,
+    titolo: t.nome,
+    gruppo: "Team",
+    dettaglio: `${t.annoDa}–${t.annoA}`,
+    applica: (s: Situazione): Situazione => ({ ...s, chi: { tipo: "team", constructorId: t.id } satisfies Chi }),
+  });
+
+  if (nq === "") {
+    const piloti = espansi.includes("piloti")
+      ? [...d.piloti].sort((a, b) => a.cognome.localeCompare(b.cognome, "it")).map(rigaPilota)
+      : d.piloti.map(rigaPilota);
+    const team = espansi.includes("team")
+      ? [...d.team].sort((a, b) => a.nome.localeCompare(b.nome, "it")).map(rigaTeam)
+      : d.team.map(rigaTeam);
+    return {
+      righe: [
+        ...conAnteprima(piloti, "piloti", espansi, "Mostra tutti gli N piloti"),
+        ...conAnteprima(team, "team", espansi, "Mostra tutti gli N team"),
+      ],
+      segnaposto: "cerca un pilota o un team…",
+    };
+  }
+
+  const piloti = ordina(d.piloti.map((p) => ({ rango: punteggio(`${p.nome} ${p.codice ?? ""}`, nq), o: rigaPilota(p) })));
+  const team = ordina(d.team.map((t) => ({ rango: punteggio(t.nome, nq), o: rigaTeam(t) })));
+  return {
+    righe: [
+      ...conAnteprima(piloti, "piloti", espansi, "Mostra tutti gli N piloti trovati"),
+      ...conAnteprima(team, "team", espansi, "Mostra tutti gli N team trovati"),
+    ],
+    segnaposto: "cerca un pilota o un team…",
+  };
+}
+
+function opzioniDove(d: DizionariJson, q: string): Menu {
+  const nq = normalizza(q.trim());
+  // 77 circuiti e 35 paesi si scorrono tutti: niente tetto, solo due
+  // intestazioni. A campo vuoto i circuiti restano in ordine di quante gare
+  // hanno ospitato (Monza, Monaco, Silverstone in cima), che è l'ordine in
+  // cui un telecronista se li aspetta.
   const circuiti = d.circuiti.map((c) => ({
     rango: punteggio(`${c.sinonimi.join(" ")} ${c.nome} ${paeseIt(c.paese)}`, nq),
     o: {
       chiave: `c${c.ref}`,
       titolo: c.nome,
+      gruppo: "Circuiti",
       dettaglio: `${c.localita}, ${paeseIt(c.paese)} · ${c.gare} gare, ${c.annoDa}–${c.annoA}`,
       applica: (s: Situazione): Situazione => ({ ...s, dove: { tipo: "circuito", circuitRef: c.ref } satisfies Dove }),
     },
   }));
-  const paesi = Array.from(new Set(d.circuiti.map((c) => c.paese))).map((p) => ({
-    rango: punteggio(paeseIt(p), nq),
-    o: {
-      chiave: `n${p}`,
-      titolo: paeseIt(p),
-      dettaglio: `paese · ${d.circuiti.filter((c) => c.paese === p).length} circuiti`,
-      applica: (s: Situazione): Situazione => ({ ...s, dove: { tipo: "paese", paese: p } satisfies Dove }),
-    },
-  }));
-  if (nq === "") return circuiti.slice(0, MAX_OPZIONI).map((x) => x.o);
-  return ordina([...circuiti, ...paesi]);
+  const paesi = Array.from(new Set(d.circuiti.map((c) => c.paese)))
+    .sort((a, b) => paeseIt(a).localeCompare(paeseIt(b), "it"))
+    .map((p) => ({
+      rango: punteggio(paeseIt(p), nq),
+      o: {
+        chiave: `n${p}`,
+        titolo: paeseIt(p),
+        gruppo: "Paesi",
+        dettaglio: `${d.circuiti.filter((c) => c.paese === p).length} circuiti`,
+        applica: (s: Situazione): Situazione => ({ ...s, dove: { tipo: "paese", paese: p } satisfies Dove }),
+      },
+    }));
+  return { righe: [...ordina(circuiti), ...ordina(paesi)], segnaposto: "cerca un circuito o un paese…" };
 }
 
-function opzioniQuando(q: string): Opzione[] {
+function opzioniQuando(q: string): Menu {
   const nq = normalizza(q.trim());
-  const anni: { rango: number | null; o: Opzione }[] = [];
-  for (let a = 2024; a >= 1950; a--) {
-    anni.push({
-      rango: punteggio(String(a), nq),
-      o: { chiave: `a${a}`, titolo: String(a), dettaglio: "stagione", applica: (s) => ({ ...s, quando: { tipo: "anno", anno: a } }) },
-    });
-  }
-  const decenni: { rango: number | null; o: Opzione }[] = [];
-  for (let d = 2020; d >= 1950; d -= 10) {
-    decenni.push({
-      rango: punteggio(`anni ${d} ${d}`, nq),
-      o: { chiave: `d${d}`, titolo: `Anni ${d}`, dettaglio: `${d}–${Math.min(d + 9, 2024)}`, applica: (s) => ({ ...s, quando: { tipo: "decennio", annoDa: d } }) },
-    });
-  }
   const ere = ERE.map((e) => ({
     rango: punteggio(`${e.etichetta} ${e.annoDa}`, nq),
     o: {
       chiave: `e${e.annoDa}`,
       titolo: e.etichetta,
+      gruppo: "Ere",
       dettaglio: `${e.annoDa}–${e.annoA}`,
       applica: (s: Situazione): Situazione => ({ ...s, quando: { tipo: "era", annoDa: e.annoDa, annoA: e.annoA } }),
     },
   }));
-  if (nq === "") return [...ere.slice(0, 3), ...decenni.slice(0, 4), ...anni.slice(0, 5)].map((x) => x.o);
-  return ordina([...anni, ...decenni, ...ere]);
+  const decenni: { rango: number | null; o: Opzione }[] = [];
+  for (let d = 2020; d >= 1950; d -= 10) {
+    decenni.push({
+      rango: punteggio(`anni ${d} ${d}`, nq),
+      o: {
+        chiave: `d${d}`,
+        titolo: `Anni ${d}`,
+        gruppo: "Decenni",
+        dettaglio: `${d}–${Math.min(d + 9, 2024)}`,
+        applica: (s: Situazione): Situazione => ({ ...s, quando: { tipo: "decennio", annoDa: d } }),
+      },
+    });
+  }
+  // tutte e 75 le stagioni, dalla più recente: sono l'elenco più lungo dello
+  // slot ma scorrerle è immediato, e chi cerca un anno preciso lo digita
+  const anni: { rango: number | null; o: Opzione }[] = [];
+  for (let a = 2024; a >= 1950; a--) {
+    anni.push({
+      rango: punteggio(String(a), nq),
+      o: {
+        chiave: `a${a}`,
+        titolo: String(a),
+        gruppo: "Stagioni",
+        applica: (s: Situazione): Situazione => ({ ...s, quando: { tipo: "anno", anno: a } }),
+      },
+    });
+  }
+  return { righe: [...ordina(ere), ...ordina(decenni), ...ordina(anni)], segnaposto: "anno, decennio o era…" };
 }
 
-function opzioniFatti(q: string, giaScelti: string[]): { fatto: Fatto; rango: number }[] {
+// Lo slot "Cosa" ha 48 fatti: la tendina si apre sulle nove famiglie e
+// scende dentro quella scelta. Appena si scrive, però, i due livelli
+// spariscono e si cerca in tutto il vocabolario: chi sa già la parola non
+// deve indovinare in che famiglia sta.
+function opzioniCosa(q: string, giaScelti: string[], { dentro }: StatoMenu): Menu {
   const nq = normalizza(q.trim());
-  return FATTI.filter((f) => !giaScelti.includes(f.id))
-    .map((f) => ({ fatto: f, rango: punteggio(`${f.etichetta(f.parametro?.default ?? 0)} ${f.sinonimi.join(" ")}`, nq) }))
-    .filter((x): x is { fatto: Fatto; rango: number } => x.rango !== null)
-    .sort((a, b) => a.rango - b.rango)
-    .slice(0, MAX_OPZIONI);
+  const libero = (f: Fatto) => !giaScelti.includes(f.id);
+  const etichettaGruppo = (g: GruppoFatto) => GRUPPI_FATTI.find((x) => x.id === g)!.etichetta;
+  const riga = (f: Fatto): Opzione => ({
+    chiave: f.id,
+    titolo: f.etichetta(f.parametro?.default ?? 0),
+    gruppo: etichettaGruppo(f.gruppo),
+    dettaglio: f.unita === "gara" ? "sulla gara" : f.parametro ? `parametro ${f.parametro.nome}` : undefined,
+    applica: (s: Situazione): Situazione => ({ ...s, cosa: [...s.cosa, { id: f.id, parametro: f.parametro?.default }] }),
+  });
+
+  if (nq !== "") {
+    const trovati = ordina(
+      FATTI.filter(libero).map((f) => ({ rango: punteggio(`${f.etichetta(f.parametro?.default ?? 0)} ${f.sinonimi.join(" ")}`, nq), o: riga(f) }))
+    );
+    // in ricerca le righe si ordinano per corrispondenza, ma restano
+    // etichettate con la famiglia: si impara dove stanno le cose
+    return { righe: trovati, titolo: dentro ? "Cerca in tutti i fatti" : undefined, segnaposto: SEGNAPOSTO_COSA };
+  }
+
+  if (dentro) {
+    const g = GRUPPI_FATTI.find((x) => x.id === dentro)!;
+    // dentro una famiglia il nome sta già nell'intestazione del pannello:
+    // ripeterlo anche come intestazione di gruppo sarebbe due volte la
+    // stessa parola a due righe di distanza
+    const righe = FATTI.filter((f) => f.gruppo === dentro && libero(f)).map((f) => ({ ...riga(f), gruppo: undefined }));
+    return { righe, titolo: g.etichetta, segnaposto: SEGNAPOSTO_COSA };
+  }
+
+  return {
+    righe: GRUPPI_FATTI.map((g) => {
+      const n = FATTI.filter((f) => f.gruppo === g.id && libero(f)).length;
+      return {
+        chiave: `g${g.id}`,
+        titolo: g.etichetta,
+        sotto: g.sommario,
+        dettaglio: `${n} ${n === 1 ? "fatto" : "fatti"}`,
+        entra: g.id,
+      } satisfies Opzione;
+    }).filter((o) => !o.dettaglio.startsWith("0 ")),
+    segnaposto: SEGNAPOSTO_COSA,
+  };
 }
+
+const SEGNAPOSTO_COSA = "vince, podio, ritiro, pole, soste…";
 
 // ---------------------------------------------------------------------------
 // Chiusura della tendina: clic fuori, fuoco che se ne va, Esc
@@ -328,11 +458,11 @@ interface SlotBoxProps {
   vuoto: string;
   suggerimento: string;
   onSvuota?: () => void;
-  opzioni: (q: string) => Opzione[];
-  onScegli: (o: Opzione) => void;
+  fonte: FonteMenu;
+  onScegli: (o: Scelta) => void;
 }
 
-function SlotBox({ slot, aperto, onApri, onChiudi, testo, vuoto, suggerimento, onSvuota, opzioni, onScegli }: SlotBoxProps) {
+function SlotBox({ slot, aperto, onApri, onChiudi, testo, vuoto, suggerimento, onSvuota, fonte, onScegli }: SlotBoxProps) {
   const colore = SLOT_COLORS[slot];
   const bottoneRef = useRef<HTMLButtonElement | null>(null);
   const contenitore = useChiudiFuori<HTMLDivElement>(aperto, onChiudi);
@@ -382,28 +512,67 @@ function SlotBox({ slot, aperto, onApri, onChiudi, testo, vuoto, suggerimento, o
           ×
         </button>
       )}
-      {aperto && <Tendina slot={slot} opzioni={opzioni} onScegli={onScegli} onChiudi={chiudiEFocus} />}
+      {aperto && <Tendina slot={slot} fonte={fonte} onScegli={onScegli} onChiudi={chiudiEFocus} />}
     </div>
   );
 }
 
 interface TendinaProps {
   slot: Slot;
-  opzioni: (q: string) => Opzione[];
-  onScegli: (o: Opzione) => void;
+  fonte: FonteMenu;
+  onScegli: (o: Scelta) => void;
   onChiudi: () => void;
-  segnaposto?: string;
 }
 
-function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }: TendinaProps) {
+function Tendina({ slot, fonte, onScegli, onChiudi }: TendinaProps) {
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
+  // Due stati di navigazione dentro la tendina, che muoiono con lei: in
+  // quale famiglia si è scesi ("Cosa") e quali gruppi sono stati allungati
+  // con "mostra tutti" ("Chi").
+  const [dentro, setDentro] = useState<GruppoFatto | null>(null);
+  const [espansi, setEspansi] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listaRef = useRef<HTMLUListElement>(null);
   const pannelloRef = useRef<HTMLDivElement>(null);
-  const lista = useMemo(() => opzioni(q), [opzioni, q]);
+  const menu = useMemo(() => fonte(q, { dentro, espansi }), [fonte, q, dentro, espansi]);
+  const lista = menu.righe;
   const i = Math.min(idx, Math.max(0, lista.length - 1));
   useEffect(() => inputRef.current?.focus(), []);
+
+  // Risalire di un livello: dalla famiglia all'elenco delle famiglie. È la
+  // stessa cosa che fanno il bottone "←", Esc e il Backspace a campo vuoto,
+  // perché un menu a due passaggi senza un'uscita ovvia è una trappola.
+  const risali = useCallback(() => {
+    setDentro(null);
+    setQ("");
+    setIdx(0);
+    inputRef.current?.focus();
+  }, []);
+
+  function scegli(o: Opzione) {
+    if (o.entra) {
+      setDentro(o.entra);
+      setQ("");
+      setIdx(0);
+      inputRef.current?.focus();
+      return;
+    }
+    if (o.espandi) {
+      const espansiDopo = espansi.includes(o.espandi) ? espansi : [...espansi, o.espandi];
+      setEspansi(espansiDopo);
+      // Espandendo, il gruppo non si allunga in fondo: si riordina in
+      // alfabetico, quindi l'indice di prima punterebbe a un nome a caso in
+      // mezzo all'elenco. L'evidenza va in cima al gruppo appena aperto: la
+      // lista nuova si ricalcola qui invece di aspettare il render, così non
+      // serve un effetto che rincorra l'indice.
+      const k = fonte(q, { dentro, espansi: espansiDopo }).righe.findIndex((r) => r.gruppo === o.gruppo);
+      setIdx(Math.max(0, k));
+      inputRef.current?.focus();
+      return;
+    }
+    if (o.applica) onScegli(o as Scelta);
+  }
 
   // L'ultimo slot della frase ("Quando") sta a destra: una tendina larga
   // 26rem ancorata a sinistra gli uscirebbe dallo schermo. Si misura dopo
@@ -424,7 +593,8 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
   }, []);
 
   // L'opzione evidenziata deve restare visibile anche quando si scende con
-  // le frecce oltre il bordo della lista (max-h-72, fino a 12 voci).
+  // le frecce oltre il bordo della lista (ora la lista può essere lunga
+  // quanto tutto il vocabolario).
   useEffect(() => {
     listaRef.current?.querySelector('[data-attivo="1"]')?.scrollIntoView({ block: "nearest" });
   }, [i, lista]);
@@ -445,12 +615,18 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
     } else if (e.key === "Enter") {
       if (lista[i]) {
         e.preventDefault();
-        onScegli(lista[i]);
+        scegli(lista[i]);
       }
+    } else if (e.key === "Backspace" && q === "" && dentro) {
+      // campo di ricerca già vuoto: il Backspace non ha niente da cancellare
+      // e vale come "torna indietro"
+      e.preventDefault();
+      risali();
     } else if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
-      onChiudi();
+      if (dentro) risali();
+      else onChiudi();
     }
   }
 
@@ -459,6 +635,22 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
       ref={pannelloRef}
       className={`absolute ${aDestra ? "right-0" : "left-0"} top-full mt-1 z-40 w-[min(26rem,90vw)] bg-panel border border-graphite shadow-xl`}
     >
+      {menu.titolo && (
+        <div className="flex items-center gap-2 px-2 py-1.5 border-b border-graphite">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              risali();
+            }}
+            className="px-1.5 text-neutral-gray hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            aria-label="Torna alle famiglie"
+          >
+            ←
+          </button>
+          <span className="font-condensed text-xs tracking-[0.14em] uppercase text-neutral-gray">{menu.titolo}</span>
+        </div>
+      )}
       <input
         ref={inputRef}
         value={q}
@@ -467,7 +659,7 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
           setIdx(0);
         }}
         onKeyDown={onKeyDown}
-        placeholder={segnaposto}
+        placeholder={menu.segnaposto ?? "cerca…"}
         aria-label={`Cerca in ${SLOT_LABELS[slot]}`}
         role="combobox"
         aria-expanded="true"
@@ -476,25 +668,45 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
         autoComplete="off"
         className="w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
       />
-      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="max-h-72 overflow-y-auto">
+      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="max-h-[22rem] overflow-y-auto">
         {lista.length === 0 && <li className="px-3 py-2 text-sm text-neutral-gray">Niente con questo nome.</li>}
         {lista.map((o, k) => (
-          <li
-            key={o.chiave}
-            id={`opz-${slot}-${k}`}
-            role="option"
-            aria-selected={k === i}
-            data-attivo={k === i ? "1" : undefined}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onScegli(o);
-            }}
-            onMouseEnter={() => setIdx(k)}
-            className={`px-3 py-1.5 cursor-pointer flex items-baseline justify-between gap-3 ${k === i ? "bg-graphite" : ""}`}
-          >
-            <span className="text-sm text-white">{o.titolo}</span>
-            {o.dettaglio && <span className="text-xs text-neutral-gray text-right shrink-0">{o.dettaglio}</span>}
-          </li>
+          <Fragment key={o.chiave}>
+            {/* Intestazione di gruppo: compare quando cambia il gruppo della
+                riga. Resta appiccicata in alto mentre si scorre, così si sa
+                sempre in che parte dell'elenco si è finiti. `presentation`
+                perché non è una voce scegliibile del listbox. */}
+            {o.gruppo && o.gruppo !== lista[k - 1]?.gruppo && (
+              <li
+                role="presentation"
+                className="sticky top-0 z-10 bg-panel px-3 pt-2 pb-1 font-condensed text-xs tracking-[0.14em] uppercase text-neutral-gray border-b border-graphite"
+              >
+                {o.gruppo}
+              </li>
+            )}
+            <li
+              id={`opz-${slot}-${k}`}
+              role="option"
+              aria-selected={k === i}
+              data-attivo={k === i ? "1" : undefined}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                scegli(o);
+              }}
+              onMouseEnter={() => setIdx(k)}
+              className={`px-3 py-1.5 cursor-pointer flex items-baseline justify-between gap-3 ${k === i ? "bg-graphite" : ""}`}
+            >
+              <span className="min-w-0">
+                <span className={`text-sm ${o.espandi ? "text-neutral-gray" : "text-white"}`}>
+                  {o.espandi && "↓ "}
+                  {o.titolo}
+                </span>
+                {o.sotto && <span className="block text-xs text-neutral-gray">{o.sotto}</span>}
+              </span>
+              {o.dettaglio && <span className="text-xs text-neutral-gray text-right shrink-0">{o.dettaglio}</span>}
+              {o.entra && <span className="text-neutral-gray shrink-0">›</span>}
+            </li>
+          </Fragment>
         ))}
       </ul>
     </div>
@@ -523,16 +735,8 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
     onChiudi();
     bottoneRef.current?.focus();
   }, [onChiudi]);
-  const opzioni = useMemo(
-    () => (q: string): Opzione[] =>
-      opzioniFatti(q, scelti.map((c) => c.id)).map(({ fatto }) => ({
-        chiave: fatto.id,
-        titolo: fatto.etichetta(fatto.parametro?.default ?? 0),
-        dettaglio: fatto.unita === "gara" ? "fatto sulla gara" : fatto.parametro ? `parametro ${fatto.parametro.nome}` : undefined,
-        applica: (s: Situazione): Situazione => ({ ...s, cosa: [...s.cosa, { id: fatto.id, parametro: fatto.parametro?.default }] }),
-      })),
-    [scelti]
-  );
+  const idScelti = useMemo(() => scelti.map((c) => c.id), [scelti]);
+  const fonte = useMemo<FonteMenu>(() => (q, stato) => opzioniCosa(q, idScelti, stato), [idScelti]);
 
   function cambiaParametro(k: number, v: number) {
     onChange({ ...value, cosa: value.cosa.map((c, j) => (j === k ? { ...c, parametro: v } : c)) });
@@ -594,8 +798,7 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
       {aperto && (
         <Tendina
           slot="cosa"
-          opzioni={opzioni}
-          segnaposto="vince, podio, ritiro, pole, soste…"
+          fonte={fonte}
           onScegli={(o) => {
             onChange(o.applica(value));
             onScelto();

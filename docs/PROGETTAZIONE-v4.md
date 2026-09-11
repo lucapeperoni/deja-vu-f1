@@ -190,7 +190,16 @@ modo in cui il telecronista pensa il fatto, e rileggerla è il controllo che ha
 chiesto la cosa giusta.
 **Come:** HTML/CSS (nessuna scala, nessun asse: non è una vista D3). Ogni slot
 apre un menu con completamento; il parametro numerico si digita nello slot
-("10° o peggio"). Sopra, **una barra di testo libero** che riempie gli slot con
+("10° o peggio"). Il menu mostra **tutte** le scelte, non le prime dodici:
+intestazioni di gruppo appiccicate in alto mentre si scorre (Circuiti/Paesi,
+Ere/Decenni/Stagioni, Piloti/Team, con "mostra tutti" per gli elenchi da
+centinaia di nomi). Lo slot "Cosa" fa eccezione con **due passaggi**: 48 fatti
+in una lista sola non si leggono, quindi il menu si apre sulle nove famiglie
+("Come finisce", "Se non finisce", "Soste"…) e scende dentro quella scelta —
+ma appena si scrive i due livelli spariscono e si cerca in tutto il
+vocabolario, perché chi sa già la parola non deve indovinare la famiglia. Il
+principio di partenza ("in diretta non c'è tempo per tre livelli di menu")
+regge: il cammino più lungo resta di due clic, e chi digita ne fa zero. Sopra, **una barra di testo libero** che riempie gli slot con
 un parser deterministico a dizionari (cognomi, circuiti, verbi, ordinali:
 "hamilton vince monza dalla decima" → i quattro slot). Nessun modello, nessun
 LLM: le regole sono leggibili in un file. L'utente vede gli slot riempirsi e
