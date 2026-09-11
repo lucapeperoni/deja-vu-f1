@@ -403,3 +403,60 @@ casi simili", PROGETTAZIONE-v4 §3.1 e §4 allineati alle decisioni prese in
 D2.2 e D2.1. Restano da fare, fuori roadmap: pagina "Gare" come elenco
 (oggi il menu porta a /gara/2024-monza); i fatti su Q1/Q2 (servono le
 colonne q1/q2/q3 in pipeline).
+
+## D7.2 — Rifinitura della frase a slot  ✅ FATTO (11 set 2026)
+
+Segnalazione di Luca sulla sezione dei quattro slot: "se clicco fuori dalla
+lista una volta premuto un bottone non si chiude la lista". Rilette tutte le
+funzioni della sezione, non solo quella: **sei difetti trovati e corretti**,
+tutti in `src/components/situazioni/Frase.tsx`.
+
+1. **La tendina non si chiudeva cliccando fuori.** Nuovo hook
+   `useChiudiFuori`: `pointerdown` in fase di cattura sul documento, con il
+   ref sul contenitore che include ANCHE il bottone che apre. Senza quel
+   dettaglio si cade nella trappola classica: il clic sul bottone chiude "da
+   fuori" e il click subito dopo riapre, e il menu non si chiude mai.
+   `pointerdown` e non `click` perché le opzioni si scelgono con `mousedown`
+   + preventDefault (per non perdere il fuoco dall'input di ricerca).
+2. **Il fuoco non tornava indietro.** Chiudendo con Esc o scegliendo con
+   Invio, il fuoco finiva sul `<body>`: ora torna al bottone dello slot.
+   Aggiunta anche la chiusura quando il Tab porta il fuoco fuori dallo slot
+   (`onBlur` sul contenitore, con controllo su `relatedTarget`).
+3. **Le frecce uscivano dalla parte visibile della lista.** Con 12 voci in
+   `max-h-72` l'opzione evidenziata spariva sotto il bordo: aggiunto
+   `scrollIntoView({block:"nearest"})` e i tasti Home/Fine.
+4. **La tendina dell'ultimo slot usciva dallo schermo.** "Quando" sta a
+   destra e la tendina è larga 26rem: ora si misura dopo il primo disegno e
+   si ancora a destra se sborderebbe (con listener di resize, e controllo sul
+   bordo opposto per non rimbalzare).
+5. **Il campo numerico.** Tre difetti in uno: (a) cancellarlo lo rimandava
+   di colpo al minimo, perché `Number("")` è 0 — ora c'è una bozza di testo e
+   il valore si taglia ai limiti solo all'uscita dal campo; (b) la rotellina
+   sopra il campo a fuoco cambiava il parametro mentre si scorreva la pagina
+   — ora il campo perde il fuoco; (c) la larghezza era fissa a 3.2ch e
+   tagliava i valori a tre cifre (`gp_numero` arriva a 420) — ora segue la
+   lunghezza.
+6. **Tre etichette senza cifra.** Verificato sui 45 fatti: `soste` a 0 →
+   "senza fermarsi", `ritiro_entro_giro` a 0 → "si ritira al via",
+   `almeno_n_neutralizzazioni` a 1 → "con almeno una Safety Car o VSC". Lì
+   `testo.indexOf(numero)` non trovava nulla e il campo finiva appiccicato in
+   fondo alla frase, come un refuso (è il caso nello screenshot di Luca). Ora
+   in quei casi il campo si stacca dopo il nome del parametro in piccolo
+   maiuscoletto, così si legge come un comando.
+
+**Cambiata anche una scelta di progetto, non un bug.** L'apertura automatica
+del menu successivo dopo ogni scelta (documentata in D3.1: "il flusso segue
+la frase") faceva comparire la tendina "Dove" da sola ogni volta che si
+aggiungeva un fatto, coprendo la risposta appena cambiata. Ora: scelto "Chi"
+si apre "Cosa" **solo se non c'è ancora un fatto** (senza un fatto la frase
+non ha risposta, quindi è un seguito ovvio); scelto un fatto, la tendina si
+chiude e basta.
+
+Provato nel browser funzione per funzione: clic fuori chiude; il bottone
+resta un interruttore (apri/chiudi/riapri); Esc chiude e riporta il fuoco;
+Tab fuori chiude; frecce, Home e Fine tengono l'opzione visibile; Invio e
+clic scelgono e chiudono; "Quando" si ancora a destra e resta dentro lo
+schermo mentre "Chi" resta a sinistra; svuota-slot, togli-fatto e "+ e…"
+aggiornano i conteggi (Hamilton a Monza: 18 gare, 5 vittorie, 14 gare da
+quando ci sono i dati sulle soste). `npm run lint`, `npx tsc`, `npm run
+build`, `verify-situazioni` e `verify-parser`: tutti puliti.

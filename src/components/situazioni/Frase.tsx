@@ -16,7 +16,7 @@
 // valuta niente — la valutazione è del motore (motore.ts), chiamata dalla
 // pagina.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SLOT_COLORS, SLOT_LABELS, type Slot } from "@/lib/colors";
 import { FATTI, fattoById, type Fatto } from "@/lib/situazioni/fatti";
 import type { Chi, Dove, FattoScelto, Quando, Situazione } from "@/lib/situazioni/motore";
@@ -92,9 +92,14 @@ export default function Frase({ dizionari, value, onChange, apriSlot = null }: F
         suggerimento="pilota o team"
         onSvuota={value.chi ? () => onChange({ ...value, chi: undefined }) : undefined}
         opzioni={(q) => opzioniChi(dizionari, q)}
+        // Scelto "chi", si apre da solo "Cosa" SOLO se non c'è ancora un
+        // fatto: senza un fatto la frase non ha risposta, quindi è un
+        // seguito ovvio. Negli altri casi la tendina si chiude e basta —
+        // un menu che si apre da sé quando non serve è la cosa che rendeva
+        // fastidiosa questa sezione.
         onScegli={(o) => {
           onChange(o.applica(value));
-          setAperto("cosa");
+          setAperto(value.cosa.length === 0 ? "cosa" : null);
         }}
       />
 
@@ -104,7 +109,10 @@ export default function Frase({ dizionari, value, onChange, apriSlot = null }: F
         onChiudi={() => setAperto(null)}
         value={value}
         onChange={onChange}
-        onScelto={() => setAperto(value.dove ? null : "dove")}
+        // Scelto un fatto la tendina si chiude, invece di saltare a "Dove":
+        // aprire "Dove" da solo copriva la risposta appena cambiata, e chi
+        // voleva un secondo fatto se lo trovava addosso.
+        onScelto={() => setAperto(null)}
       />
 
       <SlotBox
@@ -268,6 +276,46 @@ function opzioniFatti(q: string, giaScelti: string[]): { fatto: Fatto; rango: nu
 }
 
 // ---------------------------------------------------------------------------
+// Chiusura della tendina: clic fuori, fuoco che se ne va, Esc
+// ---------------------------------------------------------------------------
+
+// Restituisce il ref da mettere sul contenitore dello slot (bottone che apre
+// + tendina). Finché la tendina è aperta, un `pointerdown` fuori da quel
+// contenitore la chiude.
+//
+// Perché `pointerdown` in fase di CATTURA e non `click`: le opzioni della
+// tendina si scelgono con `mousedown` + preventDefault (per non perdere il
+// fuoco dall'input di ricerca), quindi un handler su `click` arriverebbe
+// dopo la scelta e in ritardo. E perché il contenitore include il bottone
+// che apre: senza, un clic sul bottone mentre la tendina è aperta la
+// chiuderebbe da "fuori" e il click subito dopo la riaprirebbe — il classico
+// menu che non si chiude mai.
+function useChiudiFuori<T extends HTMLElement>(aperto: boolean, onChiudi: () => void) {
+  const ref = useRef<T | null>(null);
+  // La callback arriva come arrow function nuova a ogni render del padre:
+  // tenuta in un ref, l'effetto del listener non si riaggancia a ogni
+  // render. Il ref si aggiorna in un effetto, non durante il render (il
+  // compilatore React lo vieta, e a ragione: in render non è ancora detto
+  // che quel valore sia quello che finirà sullo schermo).
+  const cb = useRef(onChiudi);
+  useEffect(() => {
+    cb.current = onChiudi;
+  });
+
+  useEffect(() => {
+    if (!aperto) return;
+    const fuori = (e: PointerEvent) => {
+      const el = ref.current;
+      if (el && !el.contains(e.target as Node)) cb.current();
+    };
+    document.addEventListener("pointerdown", fuori, true);
+    return () => document.removeEventListener("pointerdown", fuori, true);
+  }, [aperto]);
+
+  return ref;
+}
+
+// ---------------------------------------------------------------------------
 // SlotBox: uno slot a scelta singola (chi, dove, quando)
 // ---------------------------------------------------------------------------
 
@@ -286,9 +334,29 @@ interface SlotBoxProps {
 
 function SlotBox({ slot, aperto, onApri, onChiudi, testo, vuoto, suggerimento, onSvuota, opzioni, onScegli }: SlotBoxProps) {
   const colore = SLOT_COLORS[slot];
+  const bottoneRef = useRef<HTMLButtonElement | null>(null);
+  const contenitore = useChiudiFuori<HTMLDivElement>(aperto, onChiudi);
+
+  // Chiusura da tastiera (Esc, o scelta fatta con Invio): il fuoco torna al
+  // bottone che ha aperto la tendina, altrimenti finirebbe sul <body> e chi
+  // naviga da tastiera perderebbe il posto nella frase.
+  const chiudiEFocus = useCallback(() => {
+    onChiudi();
+    bottoneRef.current?.focus();
+  }, [onChiudi]);
+
   return (
-    <div className="relative min-w-[170px] flex-1 basis-[170px]">
+    <div
+      ref={contenitore}
+      className="relative min-w-[170px] flex-1 basis-[170px]"
+      // Tab che porta il fuoco fuori dallo slot: la tendina si chiude, come
+      // farebbe un clic fuori. relatedTarget null = fuoco perso del tutto.
+      onBlur={(e) => {
+        if (aperto && !e.currentTarget.contains(e.relatedTarget as Node | null)) onChiudi();
+      }}
+    >
       <button
+        ref={bottoneRef}
         type="button"
         onClick={onApri}
         aria-expanded={aperto}
@@ -314,7 +382,7 @@ function SlotBox({ slot, aperto, onApri, onChiudi, testo, vuoto, suggerimento, o
           ×
         </button>
       )}
-      {aperto && <Tendina slot={slot} opzioni={opzioni} onScegli={onScegli} onChiudi={onChiudi} />}
+      {aperto && <Tendina slot={slot} opzioni={opzioni} onScegli={onScegli} onChiudi={chiudiEFocus} />}
     </div>
   );
 }
@@ -331,17 +399,49 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listaRef = useRef<HTMLUListElement>(null);
+  const pannelloRef = useRef<HTMLDivElement>(null);
   const lista = useMemo(() => opzioni(q), [opzioni, q]);
   const i = Math.min(idx, Math.max(0, lista.length - 1));
   useEffect(() => inputRef.current?.focus(), []);
 
+  // L'ultimo slot della frase ("Quando") sta a destra: una tendina larga
+  // 26rem ancorata a sinistra gli uscirebbe dallo schermo. Si misura dopo
+  // il primo disegno e, se sborda, si ancora a destra.
+  const [aDestra, setADestra] = useState(false);
+  useLayoutEffect(() => {
+    const misura = () => {
+      const el = pannelloRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // Con la tendina già ancorata a destra si controlla il bordo opposto,
+      // per non rimbalzare avanti e indietro a ogni misura.
+      setADestra((prima) => (prima ? r.left < 8 ? false : true : r.right > window.innerWidth - 8));
+    };
+    misura();
+    window.addEventListener("resize", misura);
+    return () => window.removeEventListener("resize", misura);
+  }, []);
+
+  // L'opzione evidenziata deve restare visibile anche quando si scende con
+  // le frecce oltre il bordo della lista (max-h-72, fino a 12 voci).
+  useEffect(() => {
+    listaRef.current?.querySelector('[data-attivo="1"]')?.scrollIntoView({ block: "nearest" });
+  }, [i, lista]);
+
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setIdx((k) => (lista.length ? (k + 1) % lista.length : 0));
+      setIdx((k) => (lista.length ? (Math.min(k, lista.length - 1) + 1) % lista.length : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setIdx((k) => (lista.length ? (k - 1 + lista.length) % lista.length : 0));
+      setIdx((k) => (lista.length ? (Math.min(k, lista.length - 1) - 1 + lista.length) % lista.length : 0));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setIdx(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setIdx(Math.max(0, lista.length - 1));
     } else if (e.key === "Enter") {
       if (lista[i]) {
         e.preventDefault();
@@ -349,12 +449,16 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       onChiudi();
     }
   }
 
   return (
-    <div className="absolute left-0 top-full mt-1 z-40 w-[min(26rem,90vw)] bg-panel border border-graphite shadow-xl">
+    <div
+      ref={pannelloRef}
+      className={`absolute ${aDestra ? "right-0" : "left-0"} top-full mt-1 z-40 w-[min(26rem,90vw)] bg-panel border border-graphite shadow-xl`}
+    >
       <input
         ref={inputRef}
         value={q}
@@ -372,7 +476,7 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
         autoComplete="off"
         className="w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
       />
-      <ul id={`tendina-${slot}`} role="listbox" className="max-h-72 overflow-y-auto">
+      <ul ref={listaRef} id={`tendina-${slot}`} role="listbox" aria-label={SLOT_LABELS[slot]} className="max-h-72 overflow-y-auto">
         {lista.length === 0 && <li className="px-3 py-2 text-sm text-neutral-gray">Niente con questo nome.</li>}
         {lista.map((o, k) => (
           <li
@@ -380,6 +484,7 @@ function Tendina({ slot, opzioni, onScegli, onChiudi, segnaposto = "cerca…" }:
             id={`opz-${slot}-${k}`}
             role="option"
             aria-selected={k === i}
+            data-attivo={k === i ? "1" : undefined}
             onMouseDown={(e) => {
               e.preventDefault();
               onScegli(o);
@@ -412,6 +517,12 @@ interface SlotCosaProps {
 function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotCosaProps) {
   const colore = SLOT_COLORS.cosa;
   const scelti = value.cosa;
+  const bottoneRef = useRef<HTMLButtonElement | null>(null);
+  const contenitore = useChiudiFuori<HTMLDivElement>(aperto, onChiudi);
+  const chiudiEFocus = useCallback(() => {
+    onChiudi();
+    bottoneRef.current?.focus();
+  }, [onChiudi]);
   const opzioni = useMemo(
     () => (q: string): Opzione[] =>
       opzioniFatti(q, scelti.map((c) => c.id)).map(({ fatto }) => ({
@@ -431,7 +542,13 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
   }
 
   return (
-    <div className="relative flex-[2] basis-[300px] min-w-[260px]">
+    <div
+      ref={contenitore}
+      className="relative flex-[2] basis-[300px] min-w-[260px]"
+      onBlur={(e) => {
+        if (aperto && !e.currentTarget.contains(e.relatedTarget as Node | null)) onChiudi();
+      }}
+    >
       <div
         className="h-full flex flex-col gap-1 px-3.5 py-2.5 bg-panel border border-graphite border-t-[3px]"
         style={{ borderTopColor: colore }}
@@ -462,6 +579,7 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
             );
           })}
           <button
+            ref={bottoneRef}
             type="button"
             onClick={onApri}
             aria-expanded={aperto}
@@ -482,7 +600,7 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
             onChange(o.applica(value));
             onScelto();
           }}
-          onChiudi={onChiudi}
+          onChiudi={chiudiEFocus}
         />
       )}
     </div>
@@ -491,29 +609,65 @@ function SlotCosa({ aperto, onApri, onChiudi, value, onChange, onScelto }: SlotC
 
 // L'etichetta di un fatto parametrico, con il numero modificabile in
 // linea: "partito [10]° o peggio".
+//
+// Tre etichette del catalogo NON contengono la cifra, perché a quel valore
+// il numero si dice a parole (verificato sui 45 fatti: `soste` a 0 →
+// "senza fermarsi", `ritiro_entro_giro` a 0 → "si ritira al via",
+// `almeno_n_neutralizzazioni` a 1 → "con almeno una Safety Car o VSC").
+// Lì il campo non può stare "dentro" la frase: finiva appiccicato in fondo
+// e sembrava un errore. In quel caso il campo si mostra staccato, dopo il
+// nome del parametro in piccolo, così si legge come un comando e non come
+// un refuso.
 function FattoConParametro({ fatto, valore, onChange }: { fatto: Fatto; valore: number; onChange: (v: number) => void }) {
   const spec = fatto.parametro!;
   const testo = fatto.etichetta(valore);
   const num = String(valore);
   const at = testo.indexOf(num);
-  const prima = at >= 0 ? testo.slice(0, at) : testo;
-  const dopo = at >= 0 ? testo.slice(at + num.length) : "";
+  const inLinea = at >= 0;
+  const prima = inLinea ? testo.slice(0, at) : testo;
+  const dopo = inLinea ? testo.slice(at + num.length) : "";
+
+  // Bozza di testo mentre si digita: senza, cancellare il campo lo
+  // rimandava di colpo al minimo (Number("") è 0, che viene poi alzato a
+  // `min`) e diventava impossibile svuotarlo per riscrivere due cifre.
+  // Il valore esce solo quando è un numero dentro i limiti; all'uscita dal
+  // campo la bozza si scarta e torna il valore vero.
+  const [bozza, setBozza] = useState<string | null>(null);
+  const mostrato = bozza ?? num;
+
   return (
     <span className="inline-flex items-baseline">
       {prima}
+      {!inLinea && <span className="ml-1.5 mr-0.5 text-xs font-medium uppercase tracking-wider text-neutral-gray">{spec.nome}</span>}
       <input
         type="number"
-        value={valore}
+        value={mostrato}
         min={spec.min}
         max={spec.max}
         step={spec.tipo === "secondi" ? 0.5 : 1}
+        inputMode="decimal"
         aria-label={`${spec.nome} di ${fatto.etichetta(spec.default)}`}
         onChange={(e) => {
-          const v = Number(e.target.value);
-          if (!Number.isNaN(v)) onChange(Math.min(spec.max, Math.max(spec.min, v)));
+          const testoDigitato = e.target.value;
+          setBozza(testoDigitato);
+          const v = Number(testoDigitato);
+          if (testoDigitato !== "" && !Number.isNaN(v) && v >= spec.min && v <= spec.max) onChange(v);
         }}
-        className="w-[3.2ch] mx-0.5 bg-graphite text-white text-center font-condensed text-2xl font-semibold border-b-2 outline-none focus:bg-neutral-gray/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
-        style={{ borderColor: SLOT_COLORS.cosa }}
+        onBlur={() => {
+          const v = Number(bozza);
+          if (bozza !== null && bozza !== "" && !Number.isNaN(v)) onChange(Math.min(spec.max, Math.max(spec.min, v)));
+          setBozza(null);
+        }}
+        // La rotellina sopra un campo numerico a fuoco ne cambia il valore:
+        // scorrendo la pagina si sarebbe cambiata la domanda senza volerlo.
+        onWheel={(e) => e.currentTarget.blur()}
+        // Frecce su/giù restano al campo (incremento), ma Invio e Esc non
+        // devono restare intrappolati qui.
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+        }}
+        className="mx-0.5 bg-graphite text-white text-center font-condensed text-2xl font-semibold border-b-2 outline-none focus:bg-neutral-gray/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+        style={{ borderColor: SLOT_COLORS.cosa, width: `${Math.max(2, mostrato.length) + 0.9}ch` }}
       />
       {dopo}
     </span>
