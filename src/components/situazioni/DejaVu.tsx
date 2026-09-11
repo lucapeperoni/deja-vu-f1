@@ -158,7 +158,11 @@ export default function DejaVu({ risultatiJson, gareJson, dizionari, pesi, circu
               <p className="text-white">{fraseCap}: {risposta.n === 0 ? "mai successo." : risposta.n === 1 ? "è successo una volta." : `è successo ${risposta.n} volte.`}</p>
               {vicini > 0 && (
                 <p className="text-neutral-gray mt-2">
-                  Ma ci sono <b className="text-white font-medium">{vicini} casi</b> a un solo slot di distanza. Sotto, in ordine: ogni riga è uno slot che cambia.
+                  Ma {vicini === 1 ? (
+                    <>c&apos;è <b className="text-white font-medium">1 caso</b></>
+                  ) : (
+                    <>ci sono <b className="text-white font-medium">{vicini} casi</b></>
+                  )} a un solo slot di distanza. Sotto, in ordine: ogni riga è uno slot che cambia.
                 </p>
               )}
               {vicini === 0 && risposta.n === 0 && <p className="text-neutral-gray mt-2">Nemmeno allentando uno slot: è una situazione davvero senza precedenti nei dati.</p>}
