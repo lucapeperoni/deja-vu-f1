@@ -1,0 +1,273 @@
+<title>Déjà vu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0B0C10; --panel:#14161C; --line:#23262E; --line-strong:#343845;
+    --text:#ECEDEF; --muted:#8A8F9C; --faint:#5A5F6B;
+    --red:#E10600;
+    --chi:#44AA99; --dove:#88CCEE; --quando:#CC6677; --cosa:#B8B04A;
+    --display:"Barlow Condensed",ui-sans-serif,system-ui,sans-serif;
+    --body:"Inter",ui-sans-serif,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px 80px}
+  a{color:inherit}
+  .eyebrow{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+  .tab{font-variant-numeric:tabular-nums}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:22px 0;border-bottom:1px solid var(--line)}
+  .brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .brand h1{white-space:nowrap}
+  .brand h1{font-size:34px;font-weight:800;letter-spacing:-.01em}
+  .brand span{color:var(--muted);font-size:14px}
+  nav{display:flex;gap:26px;font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  nav b{color:var(--text);font-weight:600}
+
+  /* ---- la frase ---- */
+  .ask{padding:44px 0 26px}
+  .free{display:flex;align-items:center;gap:12px;border:1px solid var(--line-strong);background:var(--panel);padding:12px 16px;font-size:16px}
+  .free .k{font-family:var(--display);font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+  .free .q{flex:1;color:var(--text)}
+  .free .q i{font-style:normal;border-bottom:2px solid;padding-bottom:1px}
+  .free .cur{width:2px;height:20px;background:var(--text);animation:blink 1s steps(2) infinite}
+  @keyframes blink{to{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.free .cur{animation:none}}
+  .parsed{font-size:13px;color:var(--muted);margin:8px 0 22px}
+
+  .frase{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+  .slot{display:flex;flex-direction:column;gap:6px;min-width:150px;padding:10px 14px 12px;border:1px solid var(--line);border-top:3px solid var(--c);background:var(--panel)}
+  .slot .lab{font-family:var(--display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+  .slot .val{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.05}
+  .slot .val small{font-size:15px;font-weight:500;color:var(--muted);margin-left:6px}
+  .slot.empty .val{color:var(--faint);font-weight:500}
+  .slot .hint{font-size:12px;color:var(--muted)}
+  .slot.cosa{flex:1.4}
+  .slot.cosa .val .p{border-bottom:1px dashed var(--muted)}
+  .conj{align-self:center;color:var(--faint);font-family:var(--display);font-size:20px}
+
+  /* ---- la risposta ---- */
+  .answer{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:34px 0 30px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);align-items:end}
+  .big{font-family:var(--display);font-weight:800;font-size:96px;line-height:.9;color:var(--red);letter-spacing:-.01em}
+  .big small{display:block;font-size:22px;font-weight:600;color:var(--text);letter-spacing:0;margin-top:10px}
+  .win{font-size:14px;color:var(--muted);margin-top:14px;max-width:46ch}
+  .win b{color:var(--text);font-weight:500}
+  .readback{font-size:17px;line-height:1.55;max-width:44ch}
+  .readback .s{border-bottom:2px solid;padding-bottom:1px}
+  .readback p{margin:0 0 12px}
+  .readback .note{font-size:14px;color:var(--muted)}
+
+  /* ---- la linea ---- */
+  section{padding:38px 0 0}
+  .sec-head{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .sec-head h2{font-size:26px;font-weight:700}
+  .sec-head .eyebrow{font-size:12px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .chart{width:100%;overflow-x:auto}
+  svg text{font-family:var(--body);font-size:12px;fill:var(--muted)}
+  svg .rowlab{font-family:var(--display);font-size:15px;font-weight:600;fill:var(--text)}
+  svg .rowcnt{font-family:var(--display);font-size:22px;font-weight:700;fill:var(--text)}
+  svg .never{font-family:var(--display);font-size:15px;font-weight:600;fill:var(--red);letter-spacing:.06em}
+  .chart-note{font-size:13px;color:var(--muted);margin-top:8px}
+
+  /* ---- i gruppi e i ritratti ---- */
+  .group{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+  .group-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
+  .group-head .n{font-family:var(--display);font-size:34px;font-weight:800;min-width:44px;text-align:right}
+  .group-head h3{font-size:22px;font-weight:600}
+  .group-head h3 em{font-style:normal;color:var(--c);}
+  .group-head .why{font-size:13px;color:var(--muted)}
+  .ritratti{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .rit{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c);padding:12px 14px 10px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+  .rit:hover,.rit:focus-visible{border-color:var(--line-strong);outline:none}
+  .rit:focus-visible{box-shadow:0 0 0 2px var(--text)}
+  .rit .t{display:flex;justify-content:space-between;align-items:baseline}
+  .rit .t b{font-family:var(--display);font-size:20px;font-weight:700}
+  .rit .t span{font-size:12px;color:var(--muted)}
+  .rit .who{font-size:13px;color:var(--text)}
+  .rit .who span{color:var(--muted)}
+  .rit svg{width:100%;height:78px;display:block}
+  .rit .gm{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+  .rit .gm b{color:var(--text);font-weight:500}
+  .rit.plain{border-left-color:var(--muted)}
+
+  /* ---- dove ---- */
+  .dove{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .bars{display:flex;flex-direction:column;gap:7px;font-size:13px}
+  .bar{display:grid;grid-template-columns:150px 1fr 26px;align-items:center;gap:10px}
+  .bar .b{height:12px;background:var(--dove);opacity:.85}
+  .bar.me .b{background:var(--red);opacity:1}
+  .bar .c{text-align:right;color:var(--muted)}
+  .dove p{font-size:14px;color:var(--muted);max-width:44ch;margin:0}
+  .dove p b{color:var(--text);font-weight:500}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  @media (max-width:760px){.answer,.dove{grid-template-columns:1fr}.big{font-size:72px}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Déjà vu</h1><span>l'hai già visto? · 75 stagioni di Formula 1</span></div>
+    <nav><b>Chiedi</b><span>Gare</span><span>Esplora</span><span>Metodo</span></nav>
+  </header>
+
+  <!-- LA FRASE -->
+  <div class="ask">
+    <div class="free">
+      <span class="k">Scrivi</span>
+      <span class="q"><i style="border-color:var(--chi)">hamilton</i> <i style="border-color:var(--cosa)">vince</i> <i style="border-color:var(--dove)">monza</i> <i style="border-color:var(--cosa)">dalla decima</i></span>
+      <span class="cur"></span>
+    </div>
+    <div class="parsed">Ho letto: pilota <b style="color:var(--chi)">Hamilton</b> · fatto <b style="color:var(--cosa)">vince, partito 10° o peggio</b> · circuito <b style="color:var(--dove)">Monza</b>. Nessuna epoca: cerco in tutte le stagioni. Correggi uno slot qui sotto se ho capito male.</div>
+
+    <div class="frase">
+      <div class="slot" style="--c:var(--chi)"><div class="lab">Chi</div><div class="val">Lewis Hamilton</div><div class="hint">pilota · 356 GP, 2007–2024</div></div>
+      <div class="slot cosa" style="--c:var(--cosa)"><div class="lab">Cosa</div><div class="val">vince <small>partito</small> <span class="p">10° o peggio</span></div><div class="hint">2 fatti sul risultato · griglia, arrivo · 1950–2024</div></div>
+      <div class="slot" style="--c:var(--dove)"><div class="lab">Dove</div><div class="val">a Monza</div><div class="hint">74 gare ospitate</div></div>
+      <div class="slot empty" style="--c:var(--quando)"><div class="lab">Quando</div><div class="val">sempre</div><div class="hint">anno, decennio o era</div></div>
+    </div>
+  </div>
+
+  <!-- LA RISPOSTA -->
+  <div class="answer">
+    <div>
+      <div class="big">Mai<small>0 volte su 18 gare</small></div>
+      <div class="win">Finestra: <b>1950–2024</b>, tutti i campi coperti. Le 18 gare sono quelle di Hamilton a Monza; è partito 10° o peggio in <b>3</b> di queste (2008, 2013, 2022) e ha chiuso 7°, 9° e 5°.</div>
+    </div>
+    <div class="readback">
+      <p><span class="s" style="border-color:var(--chi)">Hamilton</span> non ha mai <span class="s" style="border-color:var(--cosa)">vinto partendo dalla decima piazza o peggio</span> <span class="s" style="border-color:var(--dove)">a Monza</span>.</p>
+      <p class="note">Ma è già successo <b style="color:var(--text)">2 volte ad altri</b> a Monza, e <b style="color:var(--text)">2 volte a lui</b> su altri circuiti. Sotto, i casi in ordine di distanza: ogni riga è uno slot che cambia.</p>
+    </div>
+  </div>
+
+  <!-- LA LINEA DEI DÉJÀ VU -->
+  <section>
+    <div class="sec-head">
+      <div><div class="eyebrow">Vista 1 · quando, e quanto è lontano</div><h2>La linea dei déjà vu</h2></div>
+      <div class="legend"><span><i style="background:var(--red)"></i>uguale</span><span><i style="background:var(--chi)"></i>cambia chi</span><span><i style="background:var(--dove)"></i>cambia dove</span><span><i style="background:var(--muted)"></i>cambiano due slot</span></div>
+    </div>
+    <div class="chart"><svg id="linea" viewBox="0 0 1044 300" width="100%" role="img" aria-label="Linea del tempo 1950-2024 con quattro righe: uguale (0 casi), altro pilota a Monza (2), Hamilton altrove (2), chiunque ovunque (33)"></svg></div>
+    <div class="chart-note">Un punto = una gara. La posizione verticale è la distanza dalla situazione chiesta; il colore è lo slot che cambia. Trascina sul tempo per restringere la finestra: i conteggi si aggiornano e la finestra resta scritta accanto al numero.</div>
+  </section>
+
+  <!-- I GRUPPI -->
+  <section>
+    <div class="sec-head"><div><div class="eyebrow">Vista 2 · come è successo</div><h2>I casi, uno slot alla volta</h2></div></div>
+
+    <div class="group" style="--c:var(--dove)">
+      <div class="group-head"><div class="n tab">2</div><h3>Stesso fatto, <em>altro pilota</em>, a Monza</h3><div class="why">slot che cambia: chi · su 74 gare a Monza</div></div>
+      <div class="ritratti">
+        <div class="rit" tabindex="0" style="--c:var(--chi)"><div class="t"><b>Monza 2020</b><span>53 giri · tempi sul giro</span></div><div class="who">Pierre Gasly <span>· AlphaTauri</span></div><svg data-trace="gasly2020"></svg><div class="gm"><span>griglia <b>10°</b></span><span>al comando dal giro 28</span><span>arrivo <b>1°</b></span></div></div>
+        <div class="rit plain" tabindex="0" style="--c:var(--chi)"><div class="t"><b>Monza 1971</b><span>55 giri · nessun tempo sul giro</span></div><div class="who">Peter Gethin <span>· BRM</span></div><svg data-trace="segment" data-from="11" data-to="1"></svg><div class="gm"><span>griglia <b>11°</b></span><span>prima del 1996: solo griglia → arrivo</span><span>arrivo <b>1°</b></span></div></div>
+      </div>
+    </div>
+
+    <div class="group" style="--c:var(--chi)">
+      <div class="group-head"><div class="n tab">2</div><h3>Hamilton, stesso fatto, <em>altro circuito</em></h3><div class="why">slot che cambia: dove · su 356 GP di Hamilton</div></div>
+      <div class="ritratti">
+        <div class="rit" tabindex="0" style="--c:var(--dove)"><div class="t"><b>Hockenheim 2018</b><span>67 giri</span></div><div class="who">Lewis Hamilton <span>· Mercedes</span></div><svg data-trace="ham2018"></svg><div class="gm"><span>griglia <b>14°</b></span><span>al comando dal giro 53</span><span>arrivo <b>1°</b></span></div></div>
+        <div class="rit" tabindex="0" style="--c:var(--dove)"><div class="t"><b>Interlagos 2021</b><span>71 giri</span></div><div class="who">Lewis Hamilton <span>· Mercedes</span></div><svg data-trace="ham2021"></svg><div class="gm"><span>griglia <b>10°</b></span><span>al comando dal giro 40</span><span>arrivo <b>1°</b></span></div></div>
+      </div>
+    </div>
+
+    <div class="group" style="--c:var(--muted)">
+      <div class="group-head"><div class="n tab">33</div><h3>Chiunque, ovunque: <em>cambiano due slot</em></h3><div class="why">chi e dove · 37 casi su 1114 gare (3,3%), meno i 4 già mostrati</div></div>
+      <div class="chart-note">Spa 4 · Buenos Aires 3 · Hungaroring 3 · Zandvoort, Hockenheim, Interlagos, Kyalami 2 · … Verstappen 3, Watson 3, Räikkönen 2, Alonso 2, McLaren 2. Apri il gruppo per i 33 ritratti.</div>
+    </div>
+  </section>
+
+  <!-- DOVE -->
+  <section>
+    <div class="sec-head"><div><div class="eyebrow">Vista 3 · dove</div><h2>I circuiti in cui è capitato</h2></div></div>
+    <div class="dove">
+      <div class="bars" aria-label="Casi per circuito">
+        <div class="bar"><span>Spa-Francorchamps</span><div class="b" style="width:100%"></div><span class="c tab">4</span></div>
+        <div class="bar"><span>Buenos Aires</span><div class="b" style="width:75%"></div><span class="c tab">3</span></div>
+        <div class="bar"><span>Hungaroring</span><div class="b" style="width:75%"></div><span class="c tab">3</span></div>
+        <div class="bar me"><span>Monza</span><div class="b" style="width:50%"></div><span class="c tab">2</span></div>
+        <div class="bar"><span>Zandvoort</span><div class="b" style="width:50%"></div><span class="c tab">2</span></div>
+        <div class="bar"><span>Hockenheim</span><div class="b" style="width:50%"></div><span class="c tab">2</span></div>
+        <div class="bar"><span>Interlagos</span><div class="b" style="width:50%"></div><span class="c tab">2</span></div>
+        <div class="bar"><span>Kyalami</span><div class="b" style="width:50%"></div><span class="c tab">2</span></div>
+      </div>
+      <p>Nel sito questa è la <b>mappa dei circuiti</b> già costruita in v3, con il tasso <b>normalizzato per gare ospitate</b> (Monza ne ha 74, Buenos Aires 20: tre casi lì pesano più di due a Monza). Il click su un circuito riempie lo slot <b style="color:var(--dove)">Dove</b> e la frase si riscrive. Qui, nel mockup, solo i conteggi grezzi.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Mockup dell'11 settembre 2026 · tutti i numeri sono calcolati dai CSV Ergast (results, races, lap_times), nessuno è inventato.</span>
+    <span>Colore = lo slot che cambia · rosso = solo la risposta esatta · ogni numero porta la sua finestra.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var css = getComputedStyle(document.documentElement);
+  var C = {red:css.getPropertyValue('--red').trim(), chi:css.getPropertyValue('--chi').trim(), dove:css.getPropertyValue('--dove').trim(), muted:css.getPropertyValue('--muted').trim(), line:css.getPropertyValue('--line').trim(), strong:css.getPropertyValue('--line-strong').trim()};
+  var NS='http://www.w3.org/2000/svg';
+  function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;}
+
+  /* ---- linea dei déjà vu ---- */
+  var svg=document.getElementById('linea');
+  var L=250, R=1030, T=24;
+  var x=function(y){return L+(y-1950)/(2024-1950)*(R-L);};
+  // anni e colore dei 37 casi reali: chi=altro pilota a Monza, dove=Hamilton altrove, both=resto
+  var rows=[
+    {lab:'Uguale',sub:'Hamilton · Monza',cnt:0,color:C.red,years:[]},
+    {lab:'Altro pilota, a Monza',sub:'cambia chi',cnt:2,color:C.chi,years:[1971,2020]},
+    {lab:'Hamilton, altro circuito',sub:'cambia dove',cnt:2,color:C.dove,years:[2018,2021]},
+    {lab:'Chiunque, ovunque',sub:'cambiano chi e dove',cnt:33,color:C.muted,years:[1959,1960,1961,1962,1973,1974,1975,1975,1977,1977,1978,1981,1982,1982,1983,1983,1985,1989,1990,1995,1996,1999,2000,2003,2004,2005,2006,2008,2012,2017,2022,2022,2024]}
+  ];
+  var rowH=56, y0=T+40;
+  // assi/griglia decenni
+  for(var d=1950; d<=2020; d+=10){ el('line',{x1:x(d),x2:x(d),y1:T+30,y2:y0+rows.length*rowH-14,stroke:C.line}); var t=el('text',{x:x(d),y:T+22,'text-anchor':'middle'}); t.textContent=d; }
+  var t24=el('text',{x:x(2024),y:T+22,'text-anchor':'end'}); t24.textContent='2024';
+  rows.forEach(function(r,i){
+    var y=y0+i*rowH+rowH/2;
+    el('line',{x1:L,x2:R,y1:y,y2:y,stroke:i===0?C.strong:C.line});
+    var lab=el('text',{x:12,y:y-6,'class':'rowlab'}); lab.textContent=r.lab;
+    var sub=el('text',{x:12,y:y+12}); sub.textContent=r.sub;
+    var cnt=el('text',{x:L-16,y:y+8,'text-anchor':'end','class':'rowcnt'}); cnt.textContent=r.cnt;
+    if(r.cnt===0){ var nv=el('text',{x:L+16,y:y-8,'class':'never'}); nv.textContent='MAI SUCCESSO'; el('rect',{x:L,y:y-1,width:R-L,height:2,fill:C.red,opacity:.35}); }
+    // stack di punti nello stesso anno
+    var seen={};
+    r.years.forEach(function(yr){ seen[yr]=(seen[yr]||0)+1; var k=seen[yr]-1;
+      el('circle',{cx:x(yr),cy:y-k*9,r:i===3?4:6,fill:r.color,stroke:'#0B0C10','stroke-width':1.5,'class':'dot'});
+    });
+  });
+  // finestra (banda piena: tutto coperto)
+  var yb=y0+rows.length*rowH-6;
+  el('rect',{x:L,y:yb,width:R-L,height:4,fill:C.strong});
+  var ft=el('text',{x:L,y:yb+18}); ft.textContent='Finestra di copertura: 1950–2024 (griglia e arrivo). Nessuna banda grigia: i fatti chiesti sono coperti su tutte le stagioni.';
+
+  /* ---- ritratti: posizione giro per giro (dati reali da lap_times.csv) ---- */
+  var traces={
+    gasly2020:[10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,15,14,9,3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    ham2018:[13,12,11,10,10,9,9,8,7,7,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,3,3,3,3,3,3,3,3,3,3,3,3,4,5,5,5,5,4,4,4,4,4,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    ham2021:[6,6,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,3,6,4,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  };
+  document.querySelectorAll('svg[data-trace]').forEach(function(s){
+    var W=250,H=78,pl=22,pr=8,pt=6,pb=14; s.setAttribute('viewBox','0 0 '+W+' '+H);
+    var col=getComputedStyle(s.parentNode).getPropertyValue('--c').trim();
+    var yy=function(p){return pt+(p-1)/(20-1)*(H-pt-pb);};
+    function mk(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);s.appendChild(e);return e;}
+    [1,10,20].forEach(function(p){ mk('line',{x1:pl,x2:W-pr,y1:yy(p),y2:yy(p),stroke:C.line}); var t=mk('text',{x:pl-4,y:yy(p)+4,'text-anchor':'end'}); t.textContent='P'+p; });
+    var key=s.getAttribute('data-trace');
+    if(key==='segment'){
+      var a=+s.getAttribute('data-from'), b=+s.getAttribute('data-to');
+      mk('line',{x1:pl,x2:W-pr,y1:yy(a),y2:yy(b),stroke:col,'stroke-width':2,'stroke-dasharray':'4 4'});
+      mk('circle',{cx:pl,cy:yy(a),r:4,fill:col}); mk('circle',{cx:W-pr,cy:yy(b),r:4,fill:col});
+      return;
+    }
+    var tr=traces[key], n=tr.length;
+    var xx=function(i){return pl+i/(n-1)*(W-pl-pr);};
+    var dpath='M'+tr.map(function(p,i){return xx(i).toFixed(1)+' '+yy(p).toFixed(1);}).join('L');
+    mk('path',{d:dpath+'L'+xx(n-1).toFixed(1)+' '+yy(20)+'L'+xx(0).toFixed(1)+' '+yy(20)+'Z',fill:col,opacity:.12});
+    mk('path',{d:dpath,fill:'none',stroke:col,'stroke-width':2,'stroke-linejoin':'round'});
+    mk('circle',{cx:xx(0),cy:yy(tr[0]),r:3.5,fill:col});
+    mk('circle',{cx:xx(n-1),cy:yy(tr[n-1]),r:4,fill:C.red});
+  });
+})();
+</script>
