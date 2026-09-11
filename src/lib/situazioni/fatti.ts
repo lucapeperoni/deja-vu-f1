@@ -26,6 +26,11 @@ export interface ParametroSpec {
   default: number;
   min: number;
   max: number;
+  // In che direzione il parametro si ALLENTA nel reticolo dei déjà vu
+  // (reticolo.ts): "giu" = una soglia "P o peggio / almeno N" regge per
+  // più righe se P scende; "su" = "P o meglio / entro il giro L" se sale;
+  // "intorno" = un valore esatto ("arriva 5°") si allarga a 4°-6°.
+  allenta: "giu" | "su" | "intorno";
 }
 
 export type Esito = boolean | null;
@@ -74,19 +79,19 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "arriva", unita: "risultato", colonne: ["arrivo", "statoCat"],
-    parametro: { nome: "P", tipo: "posizione", default: 2, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 2, min: 1, max: 30 , allenta: "intorno" },
     etichetta: (p) => `arriva ${pos(p)}`, sinonimi: ["arriva", "arrivato", "finisce", "chiude", "classificato"],
     testRisultato: (r, i, p) => r.arrivo[i] === p,
   },
   {
     id: "arriva_o_meglio", unita: "risultato", colonne: ["arrivo", "statoCat"],
-    parametro: { nome: "P", tipo: "posizione", default: 5, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 5, min: 1, max: 30 , allenta: "su" },
     etichetta: (p) => `arriva ${pos(p)} o meglio`, sinonimi: ["o meglio", "almeno", "top"],
     testRisultato: (r, i, p) => r.arrivo[i] !== null && r.arrivo[i]! <= p,
   },
   {
     id: "arriva_o_peggio", unita: "risultato", colonne: ["arrivo", "statoCat"],
-    parametro: { nome: "P", tipo: "posizione", default: 10, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 10, min: 1, max: 30 , allenta: "giu" },
     etichetta: (p) => `arriva ${pos(p)} o peggio`, sinonimi: ["o peggio", "oltre"],
     // un ritirato è "peggio" di qualunque posizione: regge
     testRisultato: (r, i, p) => (r.arrivo[i] !== null ? r.arrivo[i]! >= p : HA_PRESO_IL_VIA.has(r.statoCat[i]) ? true : null),
@@ -94,19 +99,19 @@ export const FATTI: Fatto[] = [
   // ---- griglia ----------------------------------------------------------
   {
     id: "parte", unita: "risultato", colonne: ["griglia"],
-    parametro: { nome: "P", tipo: "posizione", default: 5, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 5, min: 1, max: 30 , allenta: "intorno" },
     etichetta: (p) => `partito ${pos(p)}`, sinonimi: ["parte", "partito", "partendo", "dalla", "dal", "griglia", "casella"],
     testRisultato: (r, i, p) => (griglia(r, i) === null ? null : griglia(r, i) === p),
   },
   {
     id: "parte_o_meglio", unita: "risultato", colonne: ["griglia"],
-    parametro: { nome: "P", tipo: "posizione", default: 3, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 3, min: 1, max: 30 , allenta: "su" },
     etichetta: (p) => `partito ${pos(p)} o meglio`, sinonimi: ["partito o meglio", "prime file"],
     testRisultato: (r, i, p) => (griglia(r, i) === null ? null : griglia(r, i)! <= p),
   },
   {
     id: "parte_o_peggio", unita: "risultato", colonne: ["griglia"],
-    parametro: { nome: "P", tipo: "posizione", default: 10, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 10, min: 1, max: 30 , allenta: "giu" },
     etichetta: (p) => `partito ${pos(p)} o peggio`, sinonimi: ["partito o peggio", "dal fondo", "dalle retrovie", "rimonta"],
     testRisultato: (r, i, p) => (griglia(r, i) !== null ? griglia(r, i)! >= p : r.pitLane[i] === 1 ? true : null),
   },
@@ -127,13 +132,13 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "guadagna_posizioni", unita: "risultato", colonne: ["griglia", "arrivo"],
-    parametro: { nome: "N", tipo: "numero", default: 5, min: 1, max: 30 },
+    parametro: { nome: "N", tipo: "numero", default: 5, min: 1, max: 30 , allenta: "giu" },
     etichetta: (p) => `guadagna almeno ${p} posizioni`, sinonimi: ["guadagna", "recupera", "rimonta di", "posizioni guadagnate"],
     testRisultato: (r, i, p) => (griglia(r, i) === null || r.arrivo[i] === null ? null : griglia(r, i)! - r.arrivo[i]! >= p),
   },
   {
     id: "perde_posizioni", unita: "risultato", colonne: ["griglia", "arrivo"],
-    parametro: { nome: "N", tipo: "numero", default: 5, min: 1, max: 30 },
+    parametro: { nome: "N", tipo: "numero", default: 5, min: 1, max: 30 , allenta: "giu" },
     etichetta: (p) => `perde almeno ${p} posizioni`, sinonimi: ["perde", "perse", "posizioni perse", "crolla"],
     testRisultato: (r, i, p) => (griglia(r, i) === null || r.arrivo[i] === null ? null : r.arrivo[i]! - griglia(r, i)! >= p),
   },
@@ -155,7 +160,7 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "ritiro_entro_giro", unita: "risultato", colonne: ["statoCat", "giri"],
-    parametro: { nome: "L", tipo: "giro", default: 1, min: 0, max: 80 },
+    parametro: { nome: "L", tipo: "giro", default: 1, min: 0, max: 80 , allenta: "su" },
     etichetta: (p) => (p === 0 ? "si ritira al via" : `si ritira entro il giro ${p}`),
     sinonimi: ["ritiro al giro", "al primo giro", "al via", "subito fuori"],
     testRisultato: (r, i, p) => {
@@ -177,7 +182,7 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "qualifica_o_peggio", unita: "risultato", colonne: ["posQualifica"],
-    parametro: { nome: "P", tipo: "posizione", default: 15, min: 1, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 15, min: 1, max: 30 , allenta: "giu" },
     etichetta: (p) => `in qualifica ${pos(p)} o peggio`, sinonimi: ["qualifica", "qualificato", "in qualifica"],
     testRisultato: (r, i, p) => (r.posQualifica[i] === null ? null : r.posQualifica[i]! >= p),
   },
@@ -220,26 +225,26 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "gp_numero", unita: "risultato", colonne: ["gpInCarriera"],
-    parametro: { nome: "N", tipo: "numero", default: 100, min: 1, max: 420 },
+    parametro: { nome: "N", tipo: "numero", default: 100, min: 1, max: 420 , allenta: "intorno" },
     etichetta: (p) => `al ${p}° GP in carriera`, sinonimi: ["gp numero", "gara numero", "gp in carriera"],
     testRisultato: (r, i, p) => r.gpInCarriera[i] === p,
   },
   // ---- in pista (tempi sul giro, 1996+) --------------------------------
   {
     id: "guadagna_al_via", unita: "risultato", colonne: ["griglia", "posDopoGiro1"],
-    parametro: { nome: "N", tipo: "numero", default: 3, min: 1, max: 20 },
+    parametro: { nome: "N", tipo: "numero", default: 3, min: 1, max: 20 , allenta: "giu" },
     etichetta: (p) => `guadagna almeno ${p} posizioni al via`, sinonimi: ["al via", "alla partenza", "primo giro", "scatto"],
     testRisultato: (r, i, p) => (griglia(r, i) === null || r.posDopoGiro1[i] === null ? null : griglia(r, i)! - r.posDopoGiro1[i]! >= p),
   },
   {
     id: "al_comando_al_giro", unita: "risultato", colonne: ["primoGiroAlComando", "giriAlComando"],
-    parametro: { nome: "L", tipo: "giro", default: 1, min: 1, max: 80 },
+    parametro: { nome: "L", tipo: "giro", default: 1, min: 1, max: 80 , allenta: "su" },
     etichetta: (p) => `al comando entro il giro ${p}`, sinonimi: ["al comando", "in testa", "leader", "prende la testa"],
     testRisultato: (r, i, p) => (r.giriAlComando[i] === null ? null : r.primoGiroAlComando[i] !== null && r.primoGiroAlComando[i]! <= p),
   },
   {
     id: "guida_almeno_giri", unita: "risultato", colonne: ["giriAlComando"],
-    parametro: { nome: "N", tipo: "numero", default: 10, min: 1, max: 80 },
+    parametro: { nome: "N", tipo: "numero", default: 10, min: 1, max: 80 , allenta: "giu" },
     etichetta: (p) => `guida almeno ${p} giri`, sinonimi: ["giri al comando", "guida", "in testa per"],
     testRisultato: (r, i, p) => (r.giriAlComando[i] === null ? null : r.giriAlComando[i]! >= p),
   },
@@ -254,26 +259,26 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "risale_da", unita: "risultato", colonne: ["posPeggiore", "arrivo"],
-    parametro: { nome: "P", tipo: "posizione", default: 15, min: 2, max: 30 },
+    parametro: { nome: "P", tipo: "posizione", default: 15, min: 2, max: 30 , allenta: "giu" },
     etichetta: (p) => `risale dalla ${pos(p)} posizione o peggio fino al podio`, sinonimi: ["risale", "dal fondo al podio", "dall'ultimo posto"],
     testRisultato: (r, i, p) => (r.posPeggiore[i] === null || r.arrivo[i] === null ? null : r.posPeggiore[i]! >= p && r.arrivo[i]! <= 3),
   },
   // ---- soste (2011+) ----------------------------------------------------
   {
     id: "soste", unita: "risultato", colonne: ["soste"],
-    parametro: { nome: "N", tipo: "numero", default: 3, min: 0, max: 8 },
+    parametro: { nome: "N", tipo: "numero", default: 3, min: 0, max: 8 , allenta: "intorno" },
     etichetta: (p) => (p === 0 ? "senza fermarsi" : `con ${p} soste`), sinonimi: ["soste", "pit stop", "si ferma", "fermate", "senza fermarsi"],
     testRisultato: (r, i, p) => (r.soste[i] === null ? null : r.soste[i] === p),
   },
   {
     id: "soste_almeno", unita: "risultato", colonne: ["soste"],
-    parametro: { nome: "N", tipo: "numero", default: 3, min: 1, max: 8 },
+    parametro: { nome: "N", tipo: "numero", default: 3, min: 1, max: 8 , allenta: "giu" },
     etichetta: (p) => `con almeno ${p} soste`, sinonimi: ["almeno soste", "più soste"],
     testRisultato: (r, i, p) => (r.soste[i] === null ? null : r.soste[i]! >= p),
   },
   {
     id: "sosta_entro_giro", unita: "risultato", colonne: ["giroPrimaSosta", "soste"],
-    parametro: { nome: "L", tipo: "giro", default: 5, min: 1, max: 80 },
+    parametro: { nome: "L", tipo: "giro", default: 5, min: 1, max: 80 , allenta: "su" },
     etichetta: (p) => `prima sosta entro il giro ${p}`, sinonimi: ["prima sosta", "si ferma subito", "sosta anticipata", "undercut"],
     testRisultato: (r, i, p) => (r.soste[i] === null ? null : r.giroPrimaSosta[i] !== null && r.giroPrimaSosta[i]! <= p),
   },
@@ -295,7 +300,7 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "almeno_n_leader", unita: "gara", colonne: ["leaderDiversi"],
-    parametro: { nome: "N", tipo: "numero", default: 4, min: 2, max: 12 },
+    parametro: { nome: "N", tipo: "numero", default: 4, min: 2, max: 12 , allenta: "giu" },
     etichetta: (p) => `almeno ${p} piloti diversi al comando`, sinonimi: ["leader diversi", "piloti al comando", "gara pazza"],
     testGara: (g, gi, p) => (g.leaderDiversi[gi] === null ? null : g.leaderDiversi[gi]! >= p),
   },
@@ -306,7 +311,7 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "meno_di_n_classificati", unita: "gara", colonne: ["classificati"],
-    parametro: { nome: "N", tipo: "numero", default: 10, min: 1, max: 26 },
+    parametro: { nome: "N", tipo: "numero", default: 10, min: 1, max: 26 , allenta: "su" },
     etichetta: (p) => `meno di ${p} classificati`, sinonimi: ["classificati", "pochi al traguardo", "ecatombe"],
     testGara: (g, gi, p) => g.classificati[gi] < p,
   },
@@ -317,25 +322,25 @@ export const FATTI: Fatto[] = [
   },
   {
     id: "almeno_n_ritiri", unita: "gara", colonne: ["ritiri"],
-    parametro: { nome: "N", tipo: "numero", default: 8, min: 1, max: 26 },
+    parametro: { nome: "N", tipo: "numero", default: 8, min: 1, max: 26 , allenta: "giu" },
     etichetta: (p) => `almeno ${p} ritiri`, sinonimi: ["ritiri", "tanti ritiri"],
     testGara: (g, gi, p) => g.ritiri[gi] >= p,
   },
   {
     id: "margine_sotto", unita: "gara", colonne: ["margineMs"],
-    parametro: { nome: "S", tipo: "secondi", default: 1, min: 0, max: 60 },
+    parametro: { nome: "S", tipo: "secondi", default: 1, min: 0, max: 60 , allenta: "su" },
     etichetta: (p) => `vinta con meno di ${p} s di margine`, sinonimi: ["margine", "volata", "fotofinish", "per un soffio", "distacco"],
     testGara: (g, gi, p) => (g.margineMs[gi] === null ? null : g.margineMs[gi]! < p * 1000),
   },
   {
     id: "margine_sopra", unita: "gara", colonne: ["margineMs"],
-    parametro: { nome: "S", tipo: "secondi", default: 60, min: 0, max: 600 },
+    parametro: { nome: "S", tipo: "secondi", default: 60, min: 0, max: 600 , allenta: "giu" },
     etichetta: (p) => `vinta con più di ${p} s di margine`, sinonimi: ["margine ampio", "dominio", "in solitaria"],
     testGara: (g, gi, p) => (g.margineMs[gi] === null ? null : g.margineMs[gi]! > p * 1000),
   },
   {
     id: "almeno_n_neutralizzazioni", unita: "gara", colonne: ["neutralizzazioni"],
-    parametro: { nome: "N", tipo: "numero", default: 1, min: 1, max: 6 },
+    parametro: { nome: "N", tipo: "numero", default: 1, min: 1, max: 6 , allenta: "giu" },
     etichetta: (p) => (p === 1 ? "con almeno una Safety Car o VSC" : `con almeno ${p} neutralizzazioni`),
     sinonimi: ["safety car", "sc", "vsc", "neutralizzazione", "bandiera gialla"],
     testGara: (g, gi, p) => (g.neutralizzazioni[gi] === null ? null : g.neutralizzazioni[gi]! >= p),

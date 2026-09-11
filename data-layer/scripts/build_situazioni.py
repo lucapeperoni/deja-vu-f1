@@ -442,6 +442,18 @@ def main() -> None:
         (OUT_DIR / name).write_bytes(raw)
         print(f"{name}: {len(raw)/1024:.1f} KB grezzi, {len(gzip.compress(raw, 9))/1024:.1f} KB gzip")
 
+    # params.json: i pesi del reticolo (D2.2) restano dichiarati li', accanto
+    # a quelli della notevolezza v3; qui si garantisce solo che esistano dopo
+    # una rigenerazione, senza toccare le altre chiavi.
+    params_path = OUT_DIR.parent / "params.json"
+    params = json.loads(params_path.read_text())
+    params.setdefault("situazioni", {}).setdefault("pesiAllentamento", {
+        "descrizione": "Pesi degli allentamenti del reticolo dei déjà vu (Déjà vu v4, docs/PROGETTAZIONE-v4.md §3.1, src/lib/situazioni/reticolo.ts). La distanza di un gruppo dalla situazione chiesta e' la somma dei pesi degli slot allentati, per grado. Nessun modello: un conteggio pesato, con i pesi qui, in ordine di specificita' — allentare 'chi' (un pilota tra ~860) pesa piu' di allentare 'quando' (un decennio).",
+        "chi": 1.0, "dove": 0.8, "doveStessoPaese": 0.4, "quando": 0.5, "quandoStessoDecennio": 0.25,
+        "cosaParametro": 0.6, "cosaFatto": 0.9, "gradoMassimo": 2,
+    })
+    params_path.write_text(json.dumps(params, ensure_ascii=False, indent=2) + "\n")
+
     n_tracce = build_tracce(laps, OUT_DIR)
     print(f"tracce/: {n_tracce} gare con tempi sul giro (1996-2024)")
     diz = build_dizionari(r, races, circuits, OUT_DIR)

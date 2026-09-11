@@ -32,7 +32,7 @@ l'11 settembre 2026).
 
 - [x] D0 — Progettazione (questo documento, PROGETTAZIONE-v4, mockup)  ✅ FATTO (11 set 2026)
 - [x] D1 — Le tabelle delle situazioni (pipeline Python)  ✅ FATTO (11 set 2026)
-- [ ] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro) — D2.1 fatto
+- [x] D2 — Il motore: fatti, slot, finestra, reticolo (TypeScript puro)  ✅ FATTO (11 set 2026)
 - [ ] D3 — La frase a slot e il parser di testo
 - [ ] D4 — La linea dei déjà vu (D3)
 - [ ] D5 — I ritratti (small multiples) e la mappa collegata
@@ -178,8 +178,37 @@ compare nel gruppo più vicino in cui regge, una volta sola. Numeri attesi per
 *Hamilton · vince da 10° o peggio · a Monza*: uguale **0**; altro pilota a
 Monza **2**; Hamilton altrove **2**; chiunque ovunque **37**.
 
-- [ ] Prompt eseguito
-- [ ] Diff letto
+- [x] Prompt eseguito (11 set 2026)
+- [x] Diff letto
+
+**Esito D2.2.** `src/lib/situazioni/reticolo.ts`: `costruisciReticolo(tab,
+situazione, pesi, ctx)` → gruppo esatto + gruppi a distanza crescente, ogni
+occorrenza una volta sola nel gruppo più vicino (`nuove`). Pesi in
+`params.json → situazioni.pesiAllentamento` (chi 1, dove 0.8, stesso paese
+0.4, quando 0.5, stesso decennio 0.25, parametro 0.6 per grado, togliere
+un fatto 0.9); la pipeline li scrive se mancano. Ogni fatto parametrico
+dichiara la DIREZIONE in cui il parametro si allenta (`allenta`: giu / su /
+intorno) e il motore accetta `tolleranza` sul fatto scelto.
+
+Due regole decise leggendo il primo output, non a tavolino:
+1. il tetto non è sulla somma dei gradi ma sul **numero di slot toccati**
+   (2): con il tetto sui gradi, "chiunque ovunque" (chi + "un altro
+   circuito", grado 2 dopo "stesso paese") non veniva generato;
+2. **togliere un fatto si fa solo da solo** (`soloDaSolo`): combinato con
+   altro produceva gruppi senza significato ("senza vince + un altro
+   pilota" = 1017 righe, cioè tutti quelli partiti da 10° o peggio a
+   Monza) e, con due rimozioni, una situazione senza fatti.
+
+Verifica (`verify-situazioni.ts`, tutta verde) su *Hamilton · vince da 10°
+o peggio · a Monza*: esatto 0/18; un altro pilota **2/74** (1971, 2020); un
+altro circuito **2/356** (2018, 2021); un altro circuito in Italia 0/23;
+chiunque ovunque **37/1114 di cui 33 nuove**; da 9° o peggio 0; ordine per
+distanza crescente; zero occorrenze ripetute. 15 gruppi in **14 ms**.
+Deviazione da PROGETTAZIONE-v4 §3.1: l'allentamento "chi = pilota → lo
+stesso team" non c'è (un pilota cambia team nel tempo, "stesso team"
+sarebbe ambiguo): chi → chiunque, un grado solo. Da aggiornare in §3.1 a
+fine roadmap. Nota per D3/D6: i paesi in `gare.paese` sono in inglese
+("Italy"): serve una traduzione in chiaro nella UI.
 
 # Fase D3 — La frase
 

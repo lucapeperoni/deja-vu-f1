@@ -61,5 +61,18 @@
         "descrizione": "Il sistema di punteggio è cambiato più volte dal 1950: i confronti in punti sono validi solo dentro la stessa era, o vanno normalizzati, mai confrontati grezzi tra epoche diverse."
       }
     }
+  },
+  "situazioni": {
+    "pesiAllentamento": {
+      "descrizione": "Pesi degli allentamenti del reticolo dei déjà vu (Déjà vu v4, docs/PROGETTAZIONE-v4.md §3.1, src/lib/situazioni/reticolo.ts). La distanza di un gruppo dalla situazione chiesta e' la somma dei pesi degli slot allentati, per grado. Nessun modello: un conteggio pesato, con i pesi qui, in ordine di specificita' — allentare 'chi' (un pilota tra ~860) pesa piu' di allentare 'quando' (un decennio). gradoMassimo = quanti slot si possono allentare insieme (2: uno alla volta, poi a coppie).",
+      "chi": 1.0,
+      "dove": 0.8,
+      "doveStessoPaese": 0.4,
+      "quando": 0.5,
+      "quandoStessoDecennio": 0.25,
+      "cosaParametro": 0.6,
+      "cosaFatto": 0.9,
+      "gradoMassimo": 2
+    }
   }
 }

@@ -24,6 +24,11 @@ import type { Tabelle } from "./tabelle";
 export interface FattoScelto {
   id: string;
   parametro?: number;
+  // Tolleranza sul parametro, usata dal reticolo (reticolo.ts): il fatto
+  // si valuta con il parametro allentato di `tolleranza` passi nella
+  // direzione dichiarata dal fatto (`parametro.allenta`). Con "intorno" il
+  // fatto regge se regge per UN valore qualsiasi in [P-t, P+t].
+  tolleranza?: number;
 }
 
 export type Chi = { tipo: "pilota"; driverId: number } | { tipo: "team"; constructorId: number };
@@ -104,7 +109,7 @@ export function finestraDi(tab: Tabelle, fatti: Fatto[], quando?: Quando): Fines
 
 export function valuta(tab: Tabelle, s: Situazione): Risposta {
   const fatti = s.cosa.map((c) => fattoById(c.id));
-  const params = s.cosa.map((c, k) => c.parametro ?? fatti[k].parametro?.default ?? 0);
+  const params = s.cosa.map((c, k) => parametriCandidati(fatti[k], c));
   const fattiRisultato = fatti.map((f, k) => [f, params[k]] as const).filter(([f]) => f.unita === "risultato");
   const fattiGara = fatti.map((f, k) => [f, params[k]] as const).filter(([f]) => f.unita === "gara");
   const unita: "risultato" | "gara" = fattiRisultato.length > 0 ? "risultato" : "gara";
@@ -124,8 +129,8 @@ export function valuta(tab: Tabelle, s: Situazione): Risposta {
   // esito dei fatti sulla gara, calcolato una volta per gara
   const esitoGara = (gi: number): boolean | null => {
     let ok = true;
-    for (const [f, p] of fattiGara) {
-      const e = f.testGara!(g, gi, p);
+    for (const [f, ps] of fattiGara) {
+      const e = testOr(ps, (p) => f.testGara!(g, gi, p));
       if (e === null) return null;
       if (!e) ok = false;
     }
@@ -176,8 +181,8 @@ export function valuta(tab: Tabelle, s: Situazione): Risposta {
       }
       let ok = eg;
       let valutabile = true;
-      for (const [f, p] of fattiRisultato) {
-        const e = f.testRisultato!(r, i, p);
+      for (const [f, ps] of fattiRisultato) {
+        const e = testOr(ps, (p) => f.testRisultato!(r, i, p));
         if (e === null) {
           valutabile = false;
           break;
@@ -200,6 +205,34 @@ export function valuta(tab: Tabelle, s: Situazione): Risposta {
   return { situazione: s, unita, n, m, unitaDenominatore: ud, finestra, occorrenze, nonValutabili };
 }
 
+// I valori del parametro con cui valutare un fatto: uno solo di norma; con
+// una tolleranza, quello allentato (giu/su) o l'intervallo (intorno).
+export function parametriCandidati(f: Fatto, c: FattoScelto): number[] {
+  const spec = f.parametro;
+  if (!spec) return [0];
+  const p = c.parametro ?? spec.default;
+  const t = c.tolleranza ?? 0;
+  if (t === 0) return [p];
+  const clamp = (v: number) => Math.min(spec.max, Math.max(spec.min, v));
+  if (spec.allenta === "giu") return [clamp(p - t)];
+  if (spec.allenta === "su") return [clamp(p + t)];
+  const out: number[] = [];
+  for (let v = clamp(p - t); v <= clamp(p + t); v++) out.push(v);
+  return out;
+}
+
+// OR a tre valori: vero se un candidato regge; null se nessuno regge e
+// almeno uno non è valutabile; falso altrimenti.
+function testOr(ps: number[], test: (p: number) => boolean | null): boolean | null {
+  let nullo = false;
+  for (const p of ps) {
+    const e = test(p);
+    if (e === true) return true;
+    if (e === null) nullo = true;
+  }
+  return nullo ? null : false;
+}
+
 function unitaDenominatore(s: Situazione, fatti: Fatto[], unita: "risultato" | "gara"): UnitaDenominatore {
   if (unita === "gara") return "gare";
   if (s.chi?.tipo === "pilota") return "gare del pilota";
@@ -219,7 +252,12 @@ function presente(tab: Tabelle, gi: number, chi: Chi): boolean {
 // La frase in chiaro, riletta dal motore: è quello che il telecronista
 // controlla prima di dirlo in onda (PROGETTAZIONE-v4 §7.2).
 export function fraseInChiaro(s: Situazione, nomi: { pilota?: string; team?: string; circuito?: string }): string {
-  const fatti = s.cosa.map((c) => fattoById(c.id).etichetta(c.parametro ?? fattoById(c.id).parametro?.default ?? 0));
+  const fatti = s.cosa.map((c) => {
+    const f = fattoById(c.id);
+    const ps = parametriCandidati(f, c);
+    if (ps.length > 1) return f.etichetta(ps[0]).replace(/\d+°/, `${ps[0]}°-${ps[ps.length - 1]}°`);
+    return f.etichetta(ps[0]);
+  });
   const chi = s.chi ? (s.chi.tipo === "pilota" ? nomi.pilota ?? "il pilota" : nomi.team ?? "il team") : "un pilota";
   const dove = s.dove ? (s.dove.tipo === "circuito" ? ` a ${nomi.circuito ?? s.dove.circuitRef}` : ` in ${s.dove.paese}`) : "";
   const q = s.quando;
