@@ -41,7 +41,7 @@ l'11 settembre 2026).
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
 D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
-D7.4, D7.5, D7.6).
+D7.4, D7.5, D7.6, D7.7).
 **Roadmap chiusa l'11 settembre 2026.**
 
 ---
@@ -638,3 +638,65 @@ delle terre emerse, e i circuiti stanno sulla terraferma:
 Provato su entrambe le pagine che usano la mappa (la home v4 e la vista 4 del
 catalogo, `/eventi/vittoria_da_griglia`). `npx tsc`, `npm run lint`, `npm run
 build`, `verify-situazioni` e `verify-parser`: puliti.
+
+
+## D7.7 — La scheda gara racconta la gara  ✅ FATTO (11 set 2026)
+
+Luca, aprendo Indianapolis 2007 dalla griglia dei ritratti: «mi esce questa
+schermata di merda; vorrei che aprendo quella schermata mi dicesse tutte le
+informazioni utili riguardo a quella singola gara». Aveva ragione: la pagina
+mostrava i "fatti notevoli" del catalogo v3 — *Margine di vittoria sotto N
+secondi (N=2), 183 volte su 1088 risultati pilota×gara*, con i parametri in
+vista e il link "Apri nel compositore v3" — cioè **statistiche globali**, in
+un linguaggio bocciato nel pivot, e **non una parola sulla gara**: non c'era
+scritto nemmeno chi avesse vinto. Sopra, l'elenco delle 25 gare più recenti
+occupava mezza schermata e spingeva in fondo il (poco) contenuto.
+
+**Nessun dato nuovo è stato generato per i risultati**: `gare.json` e
+`risultati.json` delle situazioni coprono tutte le 1125 gare dal 1950 con
+griglia, arrivo, stato, giri, distacchi, soste, punti e le derivate di
+carriera. Mancava solo il *pezzo* che estrae una gara sola:
+`src/lib/situazioni/schedaGara.ts` (puro, senza `fs` né React) con
+`costruisciScheda`, i formati di margine e distacco e i "momenti".
+
+La pagina, ora, dall'alto: testata (circuito, località, paese, data, prova,
+giri, al via, classificati, ritiri) con accanto "Cambia gara" ridotto a una
+**riga compatta** che apre una tendina; il **podio** con team, casella di
+partenza e distacco, più pole, giro veloce ed eventuale doppietta; **la gara
+in numeri** (margine, ritiri, piloti al comando, cambi al comando, soste medie,
+safety car); **la gara giro per giro** (`GiroPerGiro`, D3, le tracce delle 544
+gare dal 1996, podio in evidenza e nomi all'estremità delle linee, con
+anti-collisione); **griglia → arrivo** (`GrigliaArrivoGara`, slopegraph SVG
+scritto da React: vale per tutte e 1125 le gare, anche quelle senza tracce);
+**l'ordine d'arrivo** completo con posizioni guadagnate e perse; **"quel
+giorno, per la prima volta"** (debutti, prime vittorie, primi podi, prime
+pole, dalle colonne derivate — a Indianapolis 2007 è il debutto di Vettel);
+e **"l'hai già visto?"**, che trasforma la gara in domande già scritte negli
+slot della home ("Max Verstappen vince a Melbourne: quante volte?"). Resta il
+link al capitolo neutralizzazioni per le 46 gare che ce l'hanno.
+
+**Le cause di ritiro in italiano.** La colonna `statoCat` distingue quattro
+categorie (classificato, non partito, guasto, incidente): basta per contare i
+fatti, non per raccontare una gara. La causa precisa è in Ergast
+(`data/raw/status.csv`): `scripts/build-status.ts` (`npm run build:status`) la
+traduce e la spedisce in `public/data/situazioni/status.json` — 139 stati, 133
+in italiano, e restano in inglese 9 righe su 26 759 (ERS, CV joint…), meglio
+di una traduzione inventata.
+
+**Due dettagli trovati provando, non a tavolino.** (1) Il margine di vittoria
+si scriveva "1,500 s" mentre il distacco del secondo, due righe sotto, diceva
+"+1,5 s": stesso distacco, due precisioni diverse, sembra un refuso. Ora i
+millesimi si usano solo sotto il secondo, dove sono la notizia. (2) A Monza
+1950 Serafini e Ascari sono **entrambi secondi** (negli anni Cinquanta la
+vettura si condivideva): il podio mostrava due schede "2° POSTO" identiche.
+Ora le posizioni si raggruppano e la scheda dice "Dorino Serafini e Alberto
+Ascari", con la spiegazione in una riga.
+
+Provato su Indianapolis 2007 (il caso segnalato), Monza 1950 (niente tracce,
+niente soste, posizione condivisa) e Melbourne 2023 (tracce, soste, safety
+car, capitolo neutralizzazioni), più il salto dalla scheda al Déjà vu con la
+frase già compilata. `npx tsc`, `npm run lint`, `npm run build`: puliti.
+
+Resta orfano `src/lib/situazioni/daEventoV3.ts` (il ponte fatto v3 →
+situazione, usato solo dalla vecchia scheda): non è stato cancellato perché
+serve se un giorno si vorrà ridare quel collegamento al catalogo.

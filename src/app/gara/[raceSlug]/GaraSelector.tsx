@@ -1,14 +1,15 @@
 "use client";
 
-// Selettore delle 1125 gare (vista 6, sezione 7): ricerca testuale su anno,
-// nome gara e circuito. Le opzioni arrivano già ordinate per data
-// decrescente da page.tsx; qui si filtra e si tronca il risultato — 1125
-// righe tutte insieme sarebbero pesanti quanto la nuvola di vista 5 senza
-// nessuno dei suoi vantaggi (non è un'unica nuvola densa, sono 1125 righe
-// di testo interattive).
+// Cambia gara: una riga sola, non mezza schermata (roadmap D7.7). Prima
+// l'elenco delle 25 gare più recenti stava sempre aperto sotto la testata e
+// spingeva in fondo alla pagina il contenuto della gara che si era appena
+// aperta — cioè il motivo per cui si è lì.
+//
+// Le voci sono <a href> e non router.push: come i ritratti della home,
+// funzionano anche prima che React abbia idratato la pagina e si aprono in
+// una scheda nuova con cmd/ctrl+clic.
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface RaceOption {
   raceSlug: string;
@@ -23,59 +24,81 @@ interface Props {
   currentSlug: string;
 }
 
-const MAX_RESULTS = 25;
+const MAX_RESULTS = 30;
 
 export default function GaraSelector({ options, currentSlug }: Props) {
-  const router = useRouter();
+  const [aperto, setAperto] = useState(false);
   const [query, setQuery] = useState("");
+  const contenitore = useRef<HTMLDivElement | null>(null);
 
-  const filtered = useMemo(() => {
-    // Ogni parola della ricerca deve trovarsi da qualche parte (anno,
-    // nome gara o circuito): "2021 monaco" cerca ENTRAMBE le parole, non
-    // la frase esatta — altrimenti non troverebbe mai nulla, dato che
-    // "2021" e "Monaco" non compaiono mai nello stesso campo.
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const matches = words.length
+  useEffect(() => {
+    if (!aperto) return;
+    const fuori = (e: PointerEvent) => {
+      if (contenitore.current && !contenitore.current.contains(e.target as Node)) setAperto(false);
+    };
+    document.addEventListener("pointerdown", fuori, true);
+    return () => document.removeEventListener("pointerdown", fuori, true);
+  }, [aperto]);
+
+  const filtrate = useMemo(() => {
+    // Ogni parola della ricerca deve trovarsi da qualche parte (anno, nome
+    // gara o circuito): "2021 monaco" cerca ENTRAMBE le parole, non la frase
+    // esatta — "2021" e "Monaco" non compaiono mai nello stesso campo.
+    const parole = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const trovate = parole.length
       ? options.filter((o) => {
-          const haystack = `${o.anno} ${o.nomeGara} ${o.nomeCircuito}`.toLowerCase();
-          return words.every((w) => haystack.includes(w));
+          const testo = `${o.anno} ${o.nomeGara} ${o.nomeCircuito}`.toLowerCase();
+          return parole.every((w) => testo.includes(w));
         })
       : options;
-    return matches.slice(0, MAX_RESULTS);
+    return { righe: trovate.slice(0, MAX_RESULTS), totale: trovate.length };
   }, [options, query]);
 
   return (
-    <div>
-      <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-neutral-gray mb-3">
-        Cerca una gara (anno o nome)
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="es. 2021 monaco, brazilian grand prix..."
-          className="bg-panel border border-graphite text-white px-3 py-2 normal-case tracking-normal text-base"
-        />
-      </label>
-      <div className="border border-graphite max-h-80 overflow-y-auto">
-        {filtered.map((o) => (
-          <button
-            key={o.raceSlug}
-            onClick={() => router.push(`/gara/${o.raceSlug}`)}
-            className={`w-full text-left px-4 py-2 flex justify-between gap-4 border-b border-graphite/50 last:border-b-0 hover:bg-white/5 ${
-              o.raceSlug === currentSlug ? "bg-racing-red/10 text-white" : "text-neutral-gray"
-            }`}
-          >
-            <span>
-              {o.nomeGara} <span className="text-xs">· {o.nomeCircuito}</span>
-            </span>
-            <span className="shrink-0">{o.anno}</span>
-          </button>
-        ))}
-        {filtered.length === 0 && <div className="px-4 py-3 text-neutral-gray text-sm">Nessuna gara trovata.</div>}
-      </div>
-      {options.length > filtered.length && !query && (
-        <div className="text-xs text-neutral-gray mt-2">
-          Mostrate le {MAX_RESULTS} più recenti di {options.length} — cerca per vederne altre.
+    <div ref={contenitore} className="relative">
+      <button
+        type="button"
+        onClick={() => setAperto((a) => !a)}
+        aria-expanded={aperto}
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-gray border border-graphite hover:text-white hover:border-neutral-gray cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+      >
+        Cambia gara <span aria-hidden>▾</span>
+      </button>
+      {aperto && (
+        <div className="absolute right-0 top-full mt-1 z-40 w-[min(28rem,90vw)] bg-panel border border-graphite shadow-xl flex flex-col max-h-[24rem]">
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setAperto(false)}
+            placeholder="anno, gara o circuito — es. 2021 monaco"
+            aria-label="Cerca una gara"
+            className="shrink-0 w-full bg-graphite text-white px-3 py-2 text-sm outline-none border-b border-graphite focus:border-neutral-gray"
+          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {filtrate.righe.map((o) => (
+              <a
+                key={o.raceSlug}
+                href={`/gara/${o.raceSlug}`}
+                className={`px-3 py-1.5 flex justify-between gap-4 text-sm no-underline hover:bg-graphite ${
+                  o.raceSlug === currentSlug ? "text-white bg-graphite/60" : "text-neutral-gray"
+                }`}
+              >
+                <span className="truncate">
+                  {o.nomeGara} <span className="text-xs">· {o.nomeCircuito}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">{o.anno}</span>
+              </a>
+            ))}
+            {filtrate.righe.length === 0 && <div className="px-3 py-2 text-sm text-neutral-gray">Nessuna gara trovata.</div>}
+          </div>
+          {filtrate.totale > filtrate.righe.length && (
+            <div className="shrink-0 px-3 py-1.5 text-xs text-neutral-gray border-t border-graphite">
+              {filtrate.righe.length} di {filtrate.totale}
+              {query ? " che corrispondono" : ` — le più recenti delle ${options.length} gare`}: continua a scrivere per restringere.
+            </div>
+          )}
         </div>
       )}
     </div>

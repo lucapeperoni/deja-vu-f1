@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "preprocess": "ts-node scripts/preprocess.ts",
-    "build:world": "tsx scripts/build-world.ts"
+    "build:world": "tsx scripts/build-world.ts",
+    "build:status": "tsx scripts/build-status.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
