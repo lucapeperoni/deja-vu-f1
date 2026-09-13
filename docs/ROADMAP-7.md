@@ -697,6 +697,7 @@ niente soste, posizione condivisa) e Melbourne 2023 (tracce, soste, safety
 car, capitolo neutralizzazioni), più il salto dalla scheda al Déjà vu con la
 frase già compilata. `npx tsc`, `npm run lint`, `npm run build`: puliti.
 
-Resta orfano `src/lib/situazioni/daEventoV3.ts` (il ponte fatto v3 →
-situazione, usato solo dalla vecchia scheda): non è stato cancellato perché
-serve se un giorno si vorrà ridare quel collegamento al catalogo.
+`src/lib/situazioni/daEventoV3.ts` (il ponte fatto v3 → situazione, usato
+solo dalla vecchia scheda) è rimasto orfano ed è stato cancellato su
+indicazione di Luca (13 set 2026): nessun altro file lo importava. Se servisse
+di nuovo, è nella storia di git.
