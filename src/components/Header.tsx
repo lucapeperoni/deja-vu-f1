@@ -16,7 +16,7 @@ export default function Header() {
             Chiedi
           </Link>
           <div className="w-[1px] h-4 bg-graphite my-auto mx-2" />
-          <Link href="/gara/2024-monza" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
+          <Link href="/gare" className="text-sm font-medium text-text-secondary hover:text-white uppercase tracking-wider transition-colors">
             Gare
           </Link>
           <div className="w-[1px] h-4 bg-graphite my-auto mx-2" />

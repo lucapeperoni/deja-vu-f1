@@ -142,7 +142,13 @@ export default async function GaraPage({ params }: { params: Promise<{ raceSlug:
         <header className="border-b border-graphite pb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-racing-red font-condensed tracking-widest text-sm uppercase mb-2">La scheda gara</div>
+              <div className="font-condensed tracking-widest text-sm uppercase mb-2">
+                {/* torna all'elenco sulla stagione di questa gara, non sull'ultima */}
+                <Link href={`/gare?anno=${scheda.anno}`} className="text-neutral-gray hover:text-white">
+                  ← Gare {scheda.anno}
+                </Link>
+                <span className="text-racing-red ml-3">La scheda gara</span>
+              </div>
               <h1 className="font-condensed text-4xl md:text-5xl font-bold uppercase text-white">
                 {scheda.nome} <span className="text-neutral-gray">{scheda.anno}</span>
               </h1>

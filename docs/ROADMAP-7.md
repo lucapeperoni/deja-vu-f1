@@ -41,7 +41,7 @@ l'11 settembre 2026).
 
 Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
 D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
-D7.4, D7.5, D7.6, D7.7).
+D7.4, D7.5, D7.6, D7.7, D7.8).
 **Roadmap chiusa l'11 settembre 2026.**
 
 ---
@@ -701,3 +701,35 @@ frase già compilata. `npx tsc`, `npm run lint`, `npm run build`: puliti.
 solo dalla vecchia scheda) è rimasto orfano ed è stato cancellato su
 indicazione di Luca (13 set 2026): nessun altro file lo importava. Se servisse
 di nuovo, è nella storia di git.
+
+
+## D7.8 — La pagina "Gare"  ✅ FATTO (13 set 2026)
+
+Il menu "Gare" portava dritto a `/gara/2024-monza`: a chi prova il sito
+sembra un errore, e non c'era un posto da cui *scegliere* una gara. Rimasto
+aperto da D7.1; scelto con Luca (13 set 2026) fra le proposte dopo D7.7.
+
+Nuova pagina `/gare`, con le tre scelte fatte da Luca:
+- **una stagione alla volta** — si apre sul 2024, frecce ‹ › e menu per
+  cambiare anno; l'anno sta nell'indirizzo (`/gare?anno=1950`), così si può
+  condividere e la scheda gara ha un "← Gare 1950" che riporta alla stagione
+  giusta, non all'ultima;
+- **ogni riga dice nome, data e vincitore** ("vince Carlos Sainz (Ferrari)"),
+  con prova, località e paese; le vetture condivise degli anni Cinquanta
+  mostrano entrambi i vincitori;
+- **ricerca** su gara, circuito, paese, anno, vincitore e team: con il campo
+  pieno si cerca in *tutte* le stagioni e i risultati si dividono per anno
+  ("senna monaco" → le sei vittorie di Senna a Monaco, 1987 e 1989-1993).
+
+Pagina server (`src/app/gare/page.tsx`): voci e vincitori si ricavano dalle
+tabelle delle situazioni, al browser arriva solo l'elenco. Il componente
+client (`ElencoGare.tsx`) usa `<a href>` per ogni gara, come i ritratti.
+
+Provato: 2024 (24 gare), ricerca "senna monaco" (6), 1950 → Monza 1950 →
+"← Gare 1950" → di nuovo 1950, freccia a 1951 (8 gare, indirizzo
+aggiornato); a 375 px di larghezza niente scorrimento orizzontale.
+`npx tsc`, `npm run lint`, `npm run build`: puliti.
+
+Notato provando e lasciato al giro sul telefono (proposta 2): la **testata
+del sito** a 375 px non ci sta — "Déjà vu" va a capo e "Metodo" esce dallo
+schermo. È precedente a questa pagina.
