@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import Logo from './Logo';
 
 export default function Header() {
   return (
     <header className="border-b border-graphite bg-panel sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-6 h-6 bg-racing-red rounded-sm group-hover:bg-white transition-colors" />
+          <Logo size={30} className="text-neutral-gray group-hover:text-white transition-colors" />
           <span className="font-condensed font-extrabold text-2xl tracking-tight text-white group-hover:text-racing-red transition-colors">
             Déjà vu
           </span>
