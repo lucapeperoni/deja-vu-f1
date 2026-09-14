@@ -44,6 +44,41 @@ export default function ElencoGare({ voci, anni, annoIniziale }: Props) {
   const [anno, setAnno] = useState(annoIniziale);
   const [q, setQ] = useState("");
 
+  // parole su cui completare con Tab: gara, luogo, paese, vincitore, team,
+  // una per una ("Ayrton Senna" → "Ayrton" e "Senna"), non gli anni: un
+  // numero non si "completa"
+  const paroleNote = useMemo(() => {
+    const viste = new Set<string>();
+    const lista: string[] = [];
+    for (const v of voci) {
+      for (const testo of [v.nome, v.localita, v.paese, v.vincitore, v.team]) {
+        for (const parola of testo.split(/\s+/)) {
+          if (parola.length > 2 && !viste.has(parola)) {
+            viste.add(parola);
+            lista.push(parola);
+          }
+        }
+      }
+    }
+    return lista;
+  }, [voci]);
+
+  // completa solo l'ultima parola digitata: "gp di sen" → "gp di Senna"
+  const ultimaParola = q.match(/\S+$/)?.[0] ?? "";
+  const suggerimento = useMemo(() => {
+    if (!ultimaParola) return null;
+    const normUltima = normalizza(ultimaParola);
+    const trovata = paroleNote.find((p) => p.length > ultimaParola.length && normalizza(p).startsWith(normUltima));
+    return trovata ? q.slice(0, q.length - ultimaParola.length) + trovata : null;
+  }, [q, ultimaParola, paroleNote]);
+
+  function completaConTab(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Tab" && suggerimento) {
+      e.preventDefault();
+      setQ(suggerimento);
+    }
+  }
+
   function scegliAnno(a: number) {
     setAnno(a);
     const url = new URL(window.location.href);
@@ -72,14 +107,23 @@ export default function ElencoGare({ voci, anni, annoIniziale }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Cerca: gara, circuito, anno o vincitore — es. monaco, senna, 2008"
-          aria-label="Cerca una gara"
-          className="flex-1 min-w-[240px] bg-panel border border-graphite text-white px-3 py-2 outline-none focus:border-neutral-gray"
-        />
+        <div className="relative flex-1 min-w-[240px] bg-panel border border-graphite focus-within:border-neutral-gray">
+          {suggerimento && (
+            <div aria-hidden className="absolute inset-0 flex items-center px-3 py-2 pointer-events-none select-none whitespace-pre overflow-hidden">
+              <span className="text-transparent">{q}</span>
+              <span className="text-neutral-gray/50">{suggerimento.slice(q.length)}</span>
+            </div>
+          )}
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={completaConTab}
+            placeholder="Cerca: gara, circuito, anno o vincitore — es. monaco, senna, 2008"
+            aria-label="Cerca una gara"
+            className="relative w-full bg-transparent text-white px-3 py-2 outline-none"
+          />
+        </div>
         {!cercando && (
           <div className="flex items-center gap-1" role="group" aria-label="Stagione">
             <button
