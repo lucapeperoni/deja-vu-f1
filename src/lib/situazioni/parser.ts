@@ -126,6 +126,23 @@ export function analizza(testo: string, d: DizionariJson): Esito {
     for (let k = 0; k < n; k++) usato[da + k] = true;
   };
 
+  // l'ultima parola del testo, se non seguita da uno spazio, è ancora in
+  // scrittura: "hami" può diventare "hamilton", non serve finirla di
+  // digitare per farla riconoscere
+  const inScrittura = tokens.length > 0 && !/\s$/.test(testo);
+  const ultimoToken = tokens.length - 1;
+  const provaConPrefisso = (parole: string[], da: number) =>
+    parole.every((p, k) => {
+      if (usato[da + k]) return false;
+      const tok = tokens[da + k];
+      if (tok === undefined) return false;
+      if (inScrittura && da + k === ultimoToken && k === parole.length - 1) {
+        // la parola intera vale sempre ("v8"); il prefisso solo da 3 lettere
+        return tok === p || (tok.length >= 3 && p.startsWith(tok));
+      }
+      return tok === p;
+    });
+
   // 1. nomi (le voci più lunghe prima: "lewis hamilton" batte "hamilton",
   //    "spa francorchamps" batte "spa")
   const nomi = vociNomi(d).sort((a, b) => b.parole.length - a.parole.length);
@@ -134,7 +151,7 @@ export function analizza(testo: string, d: DizionariJson): Esito {
     if (usato[i]) continue;
     for (const v of nomi) {
       if (v.parole.length === 0 || slotPieno(v.slot)) continue;
-      if (prova(v.parole, i)) {
+      if (provaConPrefisso(v.parole, i)) {
         s = v.applica(s);
         segna(i, v.parole.length);
         letture.push({ slot: v.slot, testo: tokens.slice(i, i + v.parole.length).join(" "), valore: v.valore });
