@@ -530,5 +530,5 @@ Tailwind 4; Python 3.12 con pandas per la pipeline.
 **Dati:** Ergast (1950–2024) · OpenF1 (Safety Car e VSC, 2023–2024) ·
 Natural Earth (contorni).
 
-**Autori:** Luca Peperoni, Andrea Nardoni, Emilio Falco — Università degli
-Studi Roma Tre, corso di Visualizzazione delle Informazioni.
+**Autori:** Luca Peperoni, Emilio Falco — Università degli Studi Roma Tre,
+corso di Visualizzazione delle Informazioni.
