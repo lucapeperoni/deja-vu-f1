@@ -1,5 +1,7 @@
 # Box, box? — Roadmap del pivot (v2, per Notion)
 
+> **Roadmap storica (v2 "Box, box?").** Il progetto attuale è la v4 "Déjà vu": `docs/PROGETTAZIONE-v4.md`, `docs/ROADMAP-7.md`. Il lavoro di questa roadmap vive nel capitolo neutralizzazioni, `/race/[id]`.
+
 Contesto: il progetto v1 ("Chaos Discount") è completo — pipeline validata
 su 46 gare, tutte le viste implementate, storie, metodologia e numeri
 (task fino a 5.3 della ROADMAP v1; le checkbox lì non sono aggiornate, fa
@@ -9,7 +11,7 @@ fede il git log). Questa roadmap copre SOLO i delta del pivot deciso il
 Obiettivo: **tutto fatto per il prossimo ricevimento** — si porta il
 progetto completo riorientato, le correzioni si fanno dopo sul feedback.
 
-Regole invariate dalla v1: un task = una sessione di Claude Code aperta in
+Regole invariate dalla v1: un task = una sessione di lavoro aperta in
 `F1AnalyticsVisual`; il task è finito solo con tutte le voci spuntate;
 diff letto prima di ogni commit; mai accettare "dovrebbe funzionare".
 
@@ -37,8 +39,8 @@ secondarie, testi e storie.
 - [ ] C ha letto le stesse sezioni
 - [ ] Confermati i ruoli A/B/C (o ridistribuiti)
 
-Nessun prompt: si fa con gli occhi. Le decisioni del pivot (§3) non si
-ridiscutono nei prompt.
+Nessun codice da scrivere: si fa con gli occhi. Le decisioni del pivot (§3) non si
+ridiscutono nei task.
 
 ---
 
@@ -52,7 +54,7 @@ STOP.
 
 Dipende da: P0.1
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] La tabella pilota/snapshot/opzioni/scelta/esito è stata stampata
 - [x] Sanity check rientro previsto: per chi ha boxato sotto SC, la
       posizione prevista è entro 1-2 posizioni da `posAfter` reale nella
@@ -63,7 +65,7 @@ Dipende da: P0.1
 - [x] I 6 LOCKED_OUT di Jeddah risultano "scelta forzata" con motivazione
 - [x] Diff letto, commit e push (commit `c275fad`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 (modello della decisione) e §3 (regole
@@ -93,7 +95,7 @@ rientro previsto funziona o no; non nascondere risultati strani.
 
 Dipende da: P1.1 (per il formato dello snapshot)
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Lo scatter esiste con almeno 2 coppie di assi provate (7:
       margine-dietro×età-gomme, età-gomme×fase-gara, soste-fatte×
       età-gomme, margine-dietro×soste-fatte, margine-dietro×
@@ -172,9 +174,9 @@ natura del problema, v. `docs/PROGETTAZIONE.md` §5.6). Si procede così:
 3. P2.1 esporta anche `combinedIndex` (formula sopra) per ogni snapshot,
    non gli assi mai confermati.
 
-P2/P3 partono su questa base (v. prompt aggiornati sotto e in P2.1/P3.1).
+P2/P3 partono su questa base (v. specifiche aggiornate sotto e in P2.1/P3.1).
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6. Estendi lo spike del task P1.1
@@ -200,7 +202,7 @@ da sapere adesso).
 
 Dipende da: P1.2 (milestone)
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] `races/*.json` contengono il blocco `decisions` per ogni evento
       (767 snapshot totali su 46 gare; verificato via diff JSON che
       l'unica differenza sui file è l'aggiunta di questa chiave, nessun
@@ -216,10 +218,10 @@ Dipende da: P1.2 (milestone)
       ed expectedLoss identici riga per riga)
 - [x] Diff letto, commit e push (commit `ca71d56`)
 
-**Nota (verifica extra chiesta dal prompt): la correlazione combinedIndex/
+**Nota (verifica extra chiesta dal task): la correlazione combinedIndex/
 posDelta5 sull'intero dataset è uscita 0,284, sotto l'atteso 0,34-0,36 —
 indagato prima di chiudere il task, causa trovata e non è un bug.** Il
-prompt definisce `choice = BOX` per pit con contesto UNDER_SC **o**
+task definisce `choice = BOX` per pit con contesto UNDER_SC **o**
 UNDER_VSC; lo spike P1.2 contava solo UNDER_SC (limite dello spike, non
 notato prima). Isolando i soli eventi SC la correlazione torna a 0,342
 (n=133, come lo spike); sui soli eventi VSC scende a 0,102 (n=48). Non e'
@@ -233,7 +235,7 @@ della SC piena, §5.1). Da portare in metodologia (P4.1) e da valutare
 come filtro tipo evento nella mappa (P3.1) — non ancora deciso, segnalo
 qui perché non vada perso.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 e §6, e gli spike validati in
@@ -284,7 +286,7 @@ perché prima di andare avanti.
 
 Dipende da: P2.1
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Distribuzione scelta × esito stampata e plausibile
 - [x] Nessun snapshot con valori assurdi rimasto silenzioso: trovati 14
       snapshot (su 767) con gapAhead/gapBehind negativi, tutti concentrati
@@ -318,7 +320,7 @@ retroattivamente ai JSON già esportati con la stessa regola di
 `gap_reference_unreliable`, e verificato riga per riga uguale all'output
 precedente a meno della chiave aggiunta.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Lezione imparata nella v1 (ROADMAP v1, esito task 2.1): mai fidarsi del
@@ -341,7 +343,7 @@ silenzio). Riporta tutto, anche quello che non torna.
 
 Dipende da: P2.1
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok (`npm run build` + `tsc --noEmit` puliti), mappa visibile su
       dati veri (verificato in browser: 181 decisioni BOX guadagnato/perso,
       esclusi NOT_NEEDED e i 14 snapshot `unreliableGapReference` di P2.2)
@@ -365,7 +367,7 @@ Dipende da: P2.1
       `/race/2023-albert_park`)
 - [x] Diff letto, commit e push
 
-**Nota (bug trovato in fase di verifica, non nel prompt originale):** la
+**Nota (bug trovato in fase di verifica, non prevista dal task):** la
 prima versione del grafico sembrava ignorare il filtro piste (il conteggio
 delle tacche non calava mai) e in un caso le etichette delle medie
 restavano vuote. Causa: React StrictMode (dev) invoca l'effetto di redraw
@@ -381,7 +383,7 @@ avanzava le transizioni D3 quando il tab era in background
 `requestAnimationFrame`) — un limite dello strumento di verifica, non
 del sito; confermato portando il tab in primo piano.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 (in particolare la DECISIONE presa dopo
@@ -416,7 +418,7 @@ statistica"). Build e verifica.
 
 Dipende da: P2.1
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok, provato su Jeddah 2024 (verificato in browser: 3 colonne
       "Al deployment / Rientro previsto (se boxa) / +3 giri dopo la fine")
 - [x] Colonna centrale = rientro previsto, visivamente distinta (segmento
@@ -426,7 +428,7 @@ Dipende da: P2.1
 - [x] Hover coordinato invariato (context `useRaceInteraction` condiviso)
 - [x] Diff letto, commit e push (commit `ba628b0`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 e §7 (tabella pivot, vista 3). Estendi
@@ -446,7 +448,7 @@ prova su 2024-jeddah (14 box, 6 forzati: il caso più leggibile).
 
 Dipende da: P2.1 · in parallelo a P3.2
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok
 - [x] Celle rietichettate (scelta × esito, FORCED distinto — verificato
       in browser: "SI È FERMATO, HA GUADAGNATO/PERSO", "SCELTA FORZATA")
@@ -456,7 +458,7 @@ Dipende da: P2.1 · in parallelo a P3.2
       verificato in browser)
 - [x] Diff letto, commit e push (commit `dcf0e11`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 (inclusa la DECISIONE sull'indice
@@ -484,7 +486,7 @@ Hover coordinato invariato. Build e prova su una gara con più eventi
 
 Dipende da: P3.1, P3.2, P3.3
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok
 - [x] Le storie delle 3 gare-caso parlano di decisioni (chi doveva
       fermarsi, chi ha sbagliato), con numeri verificati sui dati
@@ -496,7 +498,7 @@ Dipende da: P3.1, P3.2, P3.3
       scelta non ce l'hai" (LOCKED_OUT/FORCED)
 - [x] Diff letto, commit e push (commit `f1ecba8`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §1-3 (nuovo frame), §5.6 e §9 (gare-caso).
@@ -522,7 +524,7 @@ La v1 ha già passato il task 5.2 (qualità visiva e accessibilità), ma
 mappa, slope a 3 colonne, matrice rietichettata e scheda decisione sono
 nate DOPO quella passata: va ripetuta solo sui delta.
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] L'elenco dei problemi trovati esiste: 5 problemi (font <11px,
       precisione a 2 decimali invece di 1, BOX/STAY solo su luminosità
       senza tenuta protanopia/deuteranopia, due grigi diversi per lo
@@ -536,7 +538,7 @@ nate DOPO quella passata: va ripetuta solo sui delta.
       hover senza scatti
 - [x] Build ok, diff letto, commit e push (commit `d40ef6e`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 (regole su colore e D3). Fai una passata
@@ -561,7 +563,7 @@ poi build.
 
 Dipende da: P2.1, P2.2
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok
 - [x] Il modello della decisione è spiegato per un lettore non tecnico
 - [x] Soglie e costanti lette da params.json, non scritte a mano
@@ -571,7 +573,7 @@ Dipende da: P2.1, P2.2
       NOT_NEEDED esclusi dalla mappa; casi bagnato)
 - [x] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.6 (inclusa la DECISIONE su indice
@@ -601,13 +603,13 @@ limiti v1 già dichiarati restano. Build.
 
 Dipende da: P2.2, P3.4
 
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] `docs/NUMERI.md` aggiornato con la sezione v2
 - [x] Ogni numero indica file e regola di provenienza
 - [x] I numeri coincidono con quelli citati nelle storie (P3.4)
 - [x] Diff letto, commit e push (commit `84af192`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §2 e §5.6, e docs/NUMERI.md attuale. Estendi
@@ -622,7 +624,7 @@ Per ogni numero: file e regola di calcolo, così è difendibile all'esame.
 Esegui e aggiorna docs/NUMERI.md.
 ```
 
-## P4.3 — Tutti · Prova generale per il ricevimento (a voce, senza prompt)
+## P4.3 — Tutti · Prova generale per il ricevimento (a voce, senza codice)
 
 - [x] La demo regge: home (mappa) → gara-caso (scheda decisione, slope a
       3 colonne) → "quando la scelta non ce l'hai" → metodologia

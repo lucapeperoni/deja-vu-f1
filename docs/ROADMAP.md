@@ -5,14 +5,14 @@
 > state aggiornate man mano, fa fede il git log). Dopo il feedback del
 > professore il progetto è stato riorientato (12 luglio 2026): la specifica
 > aggiornata è `docs/PROGETTAZIONE.md` (v2) e la roadmap attiva è
-> **`docs/ROADMAP-2.md`**. Questo file resta come archivio dei prompt e
+> **`docs/ROADMAP-2.md`**. Questo file resta come archivio delle specifiche e
 > delle lezioni imparate (esiti reali dei task 1.2, 2.1, 3.6).
 
-Regole rapide: un task = una sessione di Claude Code (Sonnet 5, reasoning
-medio) aperta nella cartella `F1AnalyticsVisual`. Ogni task qui sotto ha la
-sua checklist: si spunta ogni voce man mano, e il task è finito solo quando
-sono spuntate tutte. Se un criterio non è soddisfatto, si continua nella
-stessa sessione di Claude spiegando cosa non va, senza ricominciare.
+Regole rapide: un task = una sessione di lavoro nella cartella
+`F1AnalyticsVisual`. Ogni task qui sotto ha la sua checklist: si spunta ogni
+voce man mano, e il task è finito solo quando sono spuntate tutte. Se un
+criterio non è soddisfatto, si continua sullo stesso task correggendo quello
+che non va, senza ricominciare da capo.
 
 Persone: **A** = dati/pipeline · **B** = viste principali · **C** = viste
 secondarie e interazione.
@@ -39,18 +39,18 @@ secondarie e interazione.
 - [ ] C ha letto `docs/PROGETTAZIONE.md` per intero
 - [ ] Deciso chi è A, chi è B, chi è C
 
-Nessun prompt: si fa con gli occhi. Le decisioni prese nella specifica non
-si ridiscutono nei prompt.
+Nessun codice da scrivere: si fa con gli occhi. Le decisioni prese nella specifica non
+si ridiscutono nei task.
 
 ## 0.2 — A · Fotografia dello stato del repo
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] `docs/STATO.md` esiste
 - [ ] Dice fino a quale gara arrivano i dati Kaggle 2024
 - [ ] Distingue chiaramente cosa è mock e cosa è reale
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md (è la specifica del progetto). Poi esplora il
@@ -78,7 +78,7 @@ investire ore sulle viste.
 Dipende da: 0.2
 
 - [x] 0.2 completato
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] I test unitari passano (output visto con i propri occhi)
 - [x] La metrica legge i tempi giro dai CSV Ergast, non da OpenF1
 - [x] Ogni pit riceve l'etichetta di contesto (GREEN, UNDER_VSC, ecc.)
@@ -93,7 +93,7 @@ del pit stop. Il dettaglio, con i numeri della validazione, è in
 `docs/PROGETTAZIONE.md` §5.1 (aggiornata) e nel codice
 (`compute_field_reference_by_lap` in `effective_pit_loss.py`).
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, in particolare la sezione 5 (metriche). Il
@@ -131,7 +131,7 @@ di contesto, il caso JUST_BEFORE. Esegui i test e mostrami l'output.
 Dipende da: 1.1
 
 - [x] 1.1 completato
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] La tabella pilota/giro/etichetta/costo/sconto è stata stampata
 - [x] I giri totali Ergast e OpenF1 coincidono (62 giri, Singapore GP 2023)
 - [x] Pit in verde: costo 27-32 secondi — coerente (Singapore ha una pit
@@ -165,7 +165,7 @@ forte anche per il task 2.2 (§9 della specifica).
 
 Se i numeri non tornano: STOP. Non si va avanti, si sistema la pipeline.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 4, 5 e 10. Obiettivo: validare la
@@ -195,14 +195,14 @@ non va. Non nascondere risultati strani.
 
 Dipende da: niente (parte subito, in parallelo a 1.1)
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] `npm run build` passa
 - [ ] Nel componente non c'è JSX dentro l'SVG (tutto generato da D3)
 - [ ] Il redraw è incrementale (niente selectAll('*').remove())
 - [ ] La demo su /dev/chart-demo si vede
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezione 7 (regola sul D3). Nel progetto
@@ -228,7 +228,7 @@ Esegui la build (npm run build) e verifica che passi.
 Dipende da: 1.2 (milestone superata)
 
 - [x] Milestone 1.2 superata
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] `public/data/index.json` generato (46 gare, 10 KB)
 - [x] `public/data/races/` popolata (46 file, media 104 KB, massimo 136 KB)
 - [x] `public/data/aggregate.json` generato (1658 pit stop, 389 KB)
@@ -240,7 +240,7 @@ Dipende da: 1.2 (milestone superata)
 
 **Esito reale di questa esecuzione** (di nuovo più articolato di un
 semplice sì/no — verificare l'aggregato, non solo il report a schermo, ha
-fatto emergere due problemi non richiesti esplicitamente dal prompt ma
+fatto emergere due problemi non richiesti esplicitamente dal task ma
 necessari per fidarsi dei dati):
 
 1. **Bug di allineamento risolto**: Las Vegas si corre di notte, quindi
@@ -282,7 +282,7 @@ Prima di fidarsi del semplice "il report dice 0 saltate": **controllare
 sempre anche l'aggregato**, non solo il conteggio a schermo — è lì che si è
 visto il problema delle bandiere rosse, invisibile nel report per gara.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 5 e 6. La validazione sulla gara
@@ -319,7 +319,7 @@ quante neutralizzazioni totali trovate, dimensione dei file generati.
 Dipende da: 2.1
 
 - [x] 2.1 completato
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] La classifica delle gare per interesse è stata stampata (46 gare)
 - [x] Scelta la gara tipo "VSC breve a metà gara" — **Bahrain 2023**
 - [x] Scelta la gara tipo "SC che rimescola" — **Arabia Saudita 2024 (Jeddah)**
@@ -339,7 +339,7 @@ campo fosse arrivato al completo classificato in ogni gara candidata
 (altrimenti un punteggio alto potrebbe riflettere ritiri/incidenti invece
 che vera strategia di pit) — confermato per tutte e tre le gare scelte.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezione 9. Usando i dati generati in
@@ -368,7 +368,7 @@ della specifica; si collegano ai dati veri appena la 2.1 è finita.
 Dipende da: 1.3 · dati veri da 2.1
 
 - [ ] 1.3 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e vista provata su una gara vera
 - [ ] Si vede la SC che "compatta" le linee
 - [ ] I colori dei pit vengono da `src/lib/colors.ts`
@@ -377,7 +377,7 @@ Dipende da: 1.3 · dati veri da 2.1
 - [ ] Il mock non è più usato in questa vista
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 6 e 7 (vista 1 e regole su colore e
@@ -413,7 +413,7 @@ questa vista. Esegui la build e verifica su una delle gare generate.
 Dipende da: 1.3 · dati da 2.1
 
 - [ ] 1.3 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e matrice provata su una gara vera
 - [ ] I 5 colori degli esiti sono in `src/lib/colors.ts`
 - [ ] I tooltip spiegano l'esito in italiano
@@ -421,7 +421,7 @@ Dipende da: 1.3 · dati da 2.1
 - [ ] Legenda compatta presente
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 5.5, 6 (vista 4) e 7 (regole colore e
@@ -445,14 +445,14 @@ Tutto D3 dentro useEffect. Esegui la build e prova su una gara vera.
 Dipende da: 3.1 (per il contratto del brush)
 
 - [ ] 3.1 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e vista provata su una gara vera
 - [ ] Barre ordinate per valore, zero al centro
 - [ ] Il filtro dall'intervallo del brush funziona
 - [ ] Colori condivisi da `colors.ts`, prezzo di listino mostrato
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 5.3, 6 (vista 2) e 7. Riscrivi
@@ -475,14 +475,14 @@ Build e prova su una gara vera.
 Dipende da: 3.2 (palette esiti) · dati da 2.1
 
 - [ ] 3.2 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e vista provata su una gara vera
 - [ ] Il selettore di evento funziona (se la gara ne ha più di uno)
 - [ ] Chi sale e chi scende si distingue a colpo d'occhio
 - [ ] Hover coordinato via callback
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezione 6 (vista 3) e 7. Nel repo esiste
@@ -504,7 +504,7 @@ Build e prova su una gara vera.
 Dipende da: 3.2 · dati da 2.1
 
 - [ ] 3.2 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e vista provata su una gara vera
 - [ ] I double stack sono evidenziati con chi è passato per primo
 - [ ] L'interruttore contesto/team funziona (default: contesto)
@@ -512,7 +512,7 @@ Dipende da: 3.2 · dati da 2.1
 - [ ] JSON orfani rimossi da public/data
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 3 e 6 (vista 5). Il filone "rivalità
@@ -536,7 +536,7 @@ riferimenti rotti.
 Dipende da: 2.1
 
 - [x] 2.1 completato
-- [x] Prompt eseguito in una nuova sessione di Claude Code
+- [x] Task svolto
 - [x] Build ok
 - [x] Le due nuvole (pit verdi vs pit scontati) sono visibilmente separate
       → NON lo erano alla prima verifica: segnalato, era un problema di
@@ -546,7 +546,7 @@ Dipende da: 2.1
 - [x] Griglia delle gare presente, gare-caso in evidenza
 - [x] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 6 (vista 6) e 8 (arco narrativo in 3
@@ -580,7 +580,7 @@ Build e verifica.
 Dipende da: 3.1, 3.2, 3.3, 3.4, 3.5
 
 - [ ] Tutte le viste della pagina gara completate
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok
 - [ ] Hover su un pilota in QUALSIASI vista lo evidenzia in TUTTE
 - [ ] Il brush della trace filtra la vista sconti
@@ -588,7 +588,7 @@ Dipende da: 3.1, 3.2, 3.3, 3.4, 3.5
 - [ ] L'hover è fluido: nessun ridisegno completo dell'SVG
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 6 (interazione comune) e 8 (categorie
@@ -611,14 +611,14 @@ verifica che l'hover non causi il ridisegno completo. Build e prova.
 Dipende da: 2.1
 
 - [ ] 2.1 completato
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok
 - [ ] Un compagno di corso esterno la legge e capisce le regole
 - [ ] Le soglie vengono dalla config della pipeline, non scritte a mano
 - [ ] I limiti noti sono dichiarati
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 5 e 10. Riscrivi
@@ -648,7 +648,7 @@ caso chiedi ad A di aggiungerlo, o aggiungilo tu in build_all.py). Build.
 Dipende da: 4.1, 2.2
 
 - [ ] 4.1 e 2.2 completati
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] Build ok e provato su una gara-caso
 - [ ] I numeri citati nei testi corrispondono ai dati (verificato a mano
       su almeno 2 annotazioni)
@@ -656,7 +656,7 @@ Dipende da: 4.1, 2.2
 - [ ] Le gare senza storia funzionano come prima
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 8 (arco narrativo) e 9 (gare scelte).
@@ -677,7 +677,7 @@ funzionano come prima. Build e prova su una gara-caso.
 
 Dipende da: tutte le viste, 4.1
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] L'elenco dei problemi trovati esiste (se è vuoto, insospettirsi)
 - [ ] Tutti i colori vengono da `colors.ts`
 - [ ] Palette verificata per protanopia/deuteranopia
@@ -685,7 +685,7 @@ Dipende da: tutte le viste, 4.1
 - [ ] Hover senza scatti sulla pagina gara
 - [ ] Build ok, diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md, sezioni 7 e 8 (regole su colore e
@@ -707,13 +707,13 @@ poi build.
 
 Dipende da: 2.1, 2.2
 
-- [ ] Prompt eseguito in una nuova sessione di Claude Code
+- [ ] Task svolto
 - [ ] `docs/NUMERI.md` esiste
 - [ ] Ogni numero indica file e regola di provenienza
 - [ ] I numeri delle gare-caso coincidono con le storie della 5.1
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md per intero. Scrivi uno script
@@ -729,7 +729,7 @@ e con quale regola è stato calcolato, così è difendibile all'esame.
 Esegui e mostrami docs/NUMERI.md.
 ```
 
-## 5.4 — Tutti · Prova generale (a voce, senza prompt)
+## 5.4 — Tutti · Prova generale (a voce, senza codice)
 
 - [ ] La demo regge il percorso home → gara-caso → interazioni → metodologia
 - [ ] Tutti sanno rispondere a: "perché multiple line chart e non small
@@ -755,14 +755,12 @@ Esegui e mostrami docs/NUMERI.md.
 tutto → 5.2 → 5.4
 ```
 
-# Consigli d'uso di Claude Code
+# Come si lavora
 
-- Aprire Claude Code sempre nella cartella `F1AnalyticsVisual`.
-- Un prompt per sessione; se il risultato non va, correggere nella stessa
-  sessione spiegando cosa non torna.
-- Non accettare mai "dovrebbe funzionare": i prompt chiedono già di
-  eseguire build e test, pretendere l'output.
-- Prima del commit: leggere il diff. Se qualcosa non si capisce, chiedere
-  a Claude di spiegarlo — all'esame il codice va difeso.
+- Un task per volta, chiuso prima di aprire il successivo.
+- Non accettare mai "dovrebbe funzionare": ogni task chiede di eseguire
+  build e test, e l'output va guardato davvero.
+- Prima del commit: leggere il diff. Se una riga non si capisce, va capita
+  prima di committarla — all'esame il codice va difeso.
 - Se un task tocca file su cui lavora un altro (vedi dipendenze),
   coordinarsi prima su chi pusha per primo.

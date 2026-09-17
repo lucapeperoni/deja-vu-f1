@@ -46,3 +46,7 @@ __pycache__/
 *.pyc
 data-layer/race_dynamics.db
 data-layer/scripts/_*.json
+
+# materiale d'esame personale (non fa parte della consegna)
+/DISCORSO.md
+/docs/DISCORSO-ESAME.pdf

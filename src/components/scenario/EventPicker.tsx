@@ -38,7 +38,7 @@ type Level =
   | { tipo: "evento"; famigliaKey: EventFamily }
   | { tipo: "parametro"; famigliaKey: EventFamily; eventId: string };
 
-// Stessa costruzione dell'id concordata nel prompt: evento + parametri
+// Stessa costruzione dell'id concordata in roadmap: evento + parametri
 // serializzati, stabile perché parametri è già lo stesso oggetto che vive
 // nel catalogo (nessuna chiave viene riordinata a mano qui).
 function chipFromEntry(entry: CatalogEventEntry): EventoChip {

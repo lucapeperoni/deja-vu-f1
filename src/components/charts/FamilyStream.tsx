@@ -12,7 +12,7 @@
 // codifica la FAMIGLIA (familyColor, stessa palette di RarityScale/
 // EventCardsGrid), mai la quantità.
 //
-// Scelta dell'offset (motivata, come richiesto dal prompt T1.1): wiggle
+// Scelta dell'offset (motivata, come richiesto dal task T1.1): wiggle
 // (streamgraph "ThemeRiver" vero, non uno stacked-area a zero) con ordine
 // insideOut. Un asse Y con baseline a zero avrebbe richiesto un valore
 // assoluto preciso leggibile a occhio — cosa che QuandoStrip fa già bene per
@@ -42,9 +42,8 @@ import { familyColor, familyLabel, FAMILY_LEGEND } from "@/lib/colors";
 import ChartTooltip from "@/components/ChartTooltip";
 
 // Una riga per anno, una colonna per famiglia: la forma che d3.stack si
-// aspetta (vedi prompt T0.1). Il loader reale di T2 produrrà esattamente
-// questa struttura leggendo i 33 file evento; qui il tipo è già definito per
-// essere riusato senza modifiche quando arriveranno i dati veri.
+// aspetta (struttura fissata nel task T0.1). Il loader di T2 produce
+// esattamente questa struttura leggendo i 33 file evento.
 export type FamilyTimelinePoint = { anno: number } & Record<string, number>;
 
 interface Props {

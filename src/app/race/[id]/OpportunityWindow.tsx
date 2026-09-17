@@ -99,8 +99,8 @@ function decisionCategory(decision: RaceDecision | undefined): DecisionCellCateg
   return `${prefix}_${decision.outcome.verdict}` as DecisionCellCategory;
 }
 
-// Scheda decisione (§5.6) raccontata in italiano discorsivo, come nel
-// prompt: "aveva 19s di margine e gomme di 22 giri: si è fermato, previsto
+// Scheda decisione (§5.6) raccontata in italiano discorsivo, nella forma
+// decisa in progettazione: "aveva 19s di margine e gomme di 22 giri: si è fermato, previsto
 // P6, rientrato P7, dopo 3 giri P5". Nessun dato nuovo: solo gli stessi
 // campi del blocco decisions e di driver.pits (per la posizione di
 // rientro effettiva, non presente in decisions) raccontati a parole.

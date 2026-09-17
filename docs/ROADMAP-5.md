@@ -1,5 +1,7 @@
 # "È già successo?" — Roadmap "Nel tempo" (fiume delle famiglie)
 
+> **Roadmap storica (v3, chiusa).** Il progetto attuale è la v4 "Déjà vu": `docs/PROGETTAZIONE-v4.md`. Il fiume delle famiglie descritto qui è in `/esplora`.
+
 Contesto: dopo la roadmap R (vista a riquadri, `docs/ROADMAP-4.md`, chiusa), questo
 secondo miglioramento nasce dal confronto tra il progetto e le slide del corso di
 Visualizzazione delle Informazioni. Tra le tecniche viste (stream graph/ThemeRiver,
@@ -10,7 +12,7 @@ il sito non copre (la vista 1 risponde "quanto è raro", QuandoStrip nel
 compositore risponde "quando è successo *questo* evento", nessuna vista risponde
 "come si distribuiscono le famiglie di eventi lungo le stagioni").
 
-**Decisioni prese, non da rimettere in discussione a ogni prompt:**
+**Decisioni prese, non da rimettere in discussione a ogni task:**
 
 - **È una vista nuova a sé, non una modifica di QuandoStrip.** Uno stream graph
   ha senso solo con più serie impilate insieme (le famiglie); QuandoStrip mostra
@@ -33,11 +35,11 @@ compositore risponde "quando è successo *questo* evento", nessuna vista rispond
 - **D3 possiede l'intero `<svg>`** (scale, stack layout, area generator, data
   join, transizioni) dentro un unico `useEffect`, React tiene solo ref/stato di
   hover-tooltip — stessa convenzione di `RarityScale.tsx`.
-- **Responsive fin dal primo prompt**, non una larghezza fissa da correggere
+- **Responsive fin dal primo task**, non una larghezza fissa da correggere
   dopo: `RarityScale.tsx` ha già il pattern giusto da riusare (misura il
   contenitore con `ResizeObserver`, niente costante `WIDTH` indovinata a mano —
   vedi commit "Riduce lo spazio nero sprecato ai lati").
-- **Un task = un prompt qui sotto**, nell'ordine dato. Si legge il diff prima di
+- **Un task per volta**, nell'ordine qui sotto, nell'ordine dato. Si legge il diff prima di
   ogni commit. Si lavora su `main`, senza branch, salvo diversa indicazione tua.
 
 ---
@@ -50,7 +52,7 @@ compositore risponde "quando è successo *questo* evento", nessuna vista rispond
 - [x] Fase T3 — Integrazione in home (interruttore a 3 vie)
 - [x] Fase T4 — Interazione, rifinitura, verifica finale
 
-Ordine dei prompt: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
+Ordine dei task: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
 
 ---
 
@@ -58,10 +60,10 @@ Ordine dei prompt: T0.1 → T1.1 → T2.1 → T3.1 → T4.1.
 
 ## T0.1 — Lettura e piano dati
 
-Nessuna riga di codice in questo prompt: serve a confermare da dove vengono i
+Nessuna riga di codice in questo task: serve a confermare da dove vengono i
 dati e con che struttura, prima di scrivere il componente.
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Confermato che `perStagione` (occorrenze per anno) esiste per il
       parametro di default di ogni evento, in ciascuno dei 33 file
       `public/data/events/<eventId>.json`
@@ -72,7 +74,7 @@ dati e con che struttura, prima di scrivere il componente.
       `{ anno: number; famiglia: string; occorrenze: number }[]`, o una
       struttura già pronta per `d3.stack`), senza ancora scriverla nei file
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/components/charts/QuandoStrip.tsx per intero (è il riferimento più
@@ -96,7 +98,7 @@ Non scrivere ancora codice. Dimmi:
 3. Conferma che il colore di ogni fascia userà familyColor (stessa palette di
    RarityScale/EventCardsGrid), mai una scala quantitativa.
 
-Non toccare nessun file in questo prompt: è solo un allineamento.
+Non toccare nessun file in questo task: è solo un allineamento.
 ```
 
 ---
@@ -107,7 +109,7 @@ Non toccare nessun file in questo prompt: è solo un allineamento.
 
 Dipende da: T0.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `FamilyStream.tsx` disegna uno stream/stacked area chart con `d3.stack` +
       `d3.area` (curva morbida, es. `curveBasis` o `curveMonotoneX`), un livello
       per famiglia, colore `familyColor`, asse X anni 1950-2024
@@ -121,7 +123,7 @@ Dipende da: T0.1
       screenshot mostrato prima di dire che funziona
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md sezione 7 (regole su colore e D3) e
@@ -147,7 +149,7 @@ altre. Al passaggio del mouse su una fascia, un tooltip (riusa
 ChartTooltip.tsx) mostra anno, nome famiglia, numero di occorrenze.
 
 Riceve come prop dati già pronti: { anno: number; famiglia: string;
-occorrenze: number }[] (o la struttura che hai proposto nel prompt T0.1).
+occorrenze: number }[] (o la struttura che hai proposto nel task T0.1).
 
 Per ora usa dati finti plausibili (varie famiglie, 1950-2024, valori a
 piacere) in una pagina di prova temporanea src/app/dev/family-stream-demo,
@@ -164,7 +166,7 @@ finestra, mostrami gli screenshot prima di dirmi che funziona.
 
 Dipende da: T1.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Funzione/loader che legge i 33 file `public/data/events/<eventId>.json`
       (uno per eventId di `dedupeToDefaultParams`), estrae `perStagione` del
       parametro di default, e aggrega per famiglia×anno nella struttura decisa
@@ -179,7 +181,7 @@ Dipende da: T1.1
       perso, nessun doppio conteggio)
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/app/eventi/[eventId]/page.tsx (come legge più file JSON e aggrega
@@ -211,7 +213,7 @@ prima di procedere, poi uno screenshot del grafico con i dati veri.
 
 Dipende da: T2.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `HomeCatalogView.tsx` passa da un interruttore a 2 vie a 3 vie: "La scala
       della rarità" (default), "I riquadri", e la nuova vista — "Il fiume
       delle famiglie" (nome scelto per coerenza stilistica con le altre due
@@ -227,7 +229,7 @@ Dipende da: T2.1
 - [x] `npm run build` e `npm run lint` puliti
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/components/HomeCatalogView.tsx e src/app/page.tsx.
@@ -262,7 +264,7 @@ tre viste.
 
 Dipende da: T3.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Decisione esplicita presa (e motivata in un commento) su hover-evidenzia
       (come la legenda di `RarityScale`) vs click-isola-famiglia (come il
       filtro di `EventCardsGrid`) per la legenda di `FamilyStream` — scelto
@@ -280,7 +282,7 @@ Dipende da: T3.1
       largo ~2000px), nessun overflow di pagina
 - [x] `npm run build` e `npm run lint` puliti, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Ultimo giro per "Nel tempo". Fai queste cose e mostrami il diff prima di ogni

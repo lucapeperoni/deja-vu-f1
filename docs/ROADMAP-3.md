@@ -1,5 +1,7 @@
 # "È già successo?" — Roadmap del pivot v3
 
+> **Roadmap storica (pivot v3, chiusa).** Il progetto attuale è la v4 "Déjà vu": `docs/PROGETTAZIONE-v4.md`, `docs/ROADMAP-7.md`. Le viste v3 restano in `/esplora`, `/scenari`, `/eventi/[id]`; i conteggi "40 su 1125" qui sotto sono stime con la 500 Miglia (corretti: 37 su 1114).
+
 Contesto: dopo il ricevimento del 22 luglio 2026 il progetto cambia frame
 (vedi `docs/PROGETTAZIONE.md` v3 e `docs/CATALOGO-EVENTI.md`). La pipeline
 v2 delle neutralizzazioni resta viva come una famiglia del catalogo: non si
@@ -7,7 +9,7 @@ riscrive e non si butta.
 
 Regole invariate dalle roadmap precedenti:
 
-- **un task = una sessione di Claude Code** aperta in `F1AnalyticsVisual`;
+- **un task = una sessione di lavoro** aperta in `F1AnalyticsVisual`;
 - il task è finito solo con **tutte** le caselle spuntate;
 - **il diff si legge prima di ogni commit**;
 - mai accettare "dovrebbe funzionare": ogni task ha una verifica eseguibile;
@@ -27,7 +29,7 @@ Persone: **A** = dati e motore di eventi · **B** = viste principali ·
 - [ ] Fase E3 — Viste
 - [ ] Fase E4 — Consolidamento, metodologia, esame
 
-Ordine dei prompt: E0.1 → E1.1 → E1.2 → E2.1 → E2.2 → E2.3 → E3.1 → E3.2 →
+Ordine dei task: E0.1 → E1.1 → E1.2 → E2.1 → E2.2 → E2.3 → E3.1 → E3.2 →
 E3.3 → E3.4 → E3.5 → E3.6 → E4.1 → E4.2 → E4.3.
 E3.2/E3.3/E3.4 possono andare in parallelo su persone diverse **solo dopo**
 che E3.1 ha fissato le convenzioni comuni.
@@ -38,7 +40,7 @@ che E3.1 ha fissato le convenzioni comuni.
 
 ## E0.1 — Tutti · Lettura
 
-Task senza prompt: la lettura si fa con gli occhi. I documenti del pivot
+Task senza codice: la lettura si fa con gli occhi. I documenti del pivot
 sono già committati su `main` (commit `4267f5a`).
 
 - [ ] A, B, C hanno letto `docs/PROGETTAZIONE.md` v3 §1-3, §5, §7
@@ -62,7 +64,7 @@ spike fallisce, si aggiusta il modello **prima** di industrializzare.
 
 Dipende da: E0.1
 
-- [x] Prompt eseguito in una nuova sessione
+- [x] Task svolto
 - [x] Lo script gira e stampa la tabella dei 6 eventi
 - [x] I conteggi coincidono con `docs/CATALOGO-EVENTI.md` **una volta
       applicate le trappole** (le differenze rispetto ai numeri grezzi del
@@ -90,7 +92,7 @@ Dipende da: E0.1
       `doppio_ritiro_stessa_causa` e da ogni conteggio di "ritiro")
 - [ ] Diff letto, commit e push — non ancora fatto in questa sessione
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.1, §5.2 e §5.6, e docs/CATALOGO-EVENTI.md.
@@ -146,7 +148,7 @@ i numeri.
 
 Dipende da: E1.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Per almeno 3 gare di anni diversi il sistema stampa i fatti notevoli
       ordinati — 4 gare in `scripts/spike_facts.py` (1957, 1996, 2024 ×2,
       compresa la più recente del dataset)
@@ -168,7 +170,7 @@ Dipende da: E1.1
       più stringente per evento
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.3 e §5.4.
@@ -199,7 +201,7 @@ il problema è il numero di eventi o la formula del punteggio.
 
 Dipende da: E1.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Almeno **20 eventi** in almeno **5 famiglie** (soglia di
       PROGETTAZIONE §10, rischio 2) — **28 eventi in 8 famiglie**
 - [x] Ogni evento dichiara la sua finestra e i campi da cui dipende —
@@ -214,7 +216,7 @@ Dipende da: E1.2
       `data-layer/.venv`: pytest non era installato in questa sessione)
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/CATALOGO-EVENTI.md per intero: contiene i conteggi già
@@ -251,7 +253,7 @@ attesi per almeno 12 eventi, con i numeri presi da docs/CATALOGO-EVENTI.md
 
 Dipende da: E2.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] I file di `public/data/events/` esistono e rispettano il budget di
       300 KB per evento — **28/28 file, tutti sotto i 300 KB**.
       `ritiro_per_causa_specifica.json` (8 valori di parametro, 6.514
@@ -272,7 +274,7 @@ Dipende da: E2.1
       aggiunta solo la chiave `eventi` (pesi di notevolezza + trappole)
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §6.
@@ -301,7 +303,7 @@ notevole.
 
 Dipende da: E2.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Gli eventi SC/VSC compaiono nel catalogo con finestra 2023-2024 — 5
       eventi (`neutralizations.py`), tutti con `anno_da=2023, anno_a=2024`
 - [x] La rarità di questi eventi NON è confrontabile con quella degli altri
@@ -313,7 +315,7 @@ Dipende da: E2.2
       parte
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.5 e §12.
@@ -340,17 +342,17 @@ neutralizzazioni) e che build_events.py li esporti come tutti gli altri.
 
 Dipende da: E2.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] La home mostra tutti gli eventi del catalogo, ordinati per rarità
 - [x] La finestra di copertura è **visibile**, non solo scritta
 - [x] Verificata nel browser: nessun errore in console — ma il click porta
-      a `/eventi/<eventId>` (come dice il prompt copiato sotto), non al
-      compositore: questa riga di checklist e il prompt sono in
+      a `/eventi/<eventId>` (come dice la specifica qui sotto), non al
+      compositore: questa riga di checklist e la specifica sono in
       disaccordo. La scheda evento non esiste ancora, è un 404 atteso
-      finché non viene costruita (E3.2 o un prompt dedicato).
+      finché non viene costruita (E3.2 o un task dedicato).
 - [x] Diff letto, commit e push (commit `789216c`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 (in particolare le regole su colore e D3) e
@@ -381,7 +383,7 @@ funziona, e mostrami uno screenshot.
 
 Dipende da: E3.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Muovendo il parametro la risposta si aggiorna in transizione (numero
       tweenato + marker che si sposta sulla mini-scala di rarità,
       ParameterRarityTrack.tsx)
@@ -394,7 +396,7 @@ Dipende da: E3.1
       le 1125, vista 6)
 - [x] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 vista 2.
@@ -422,7 +424,7 @@ Verifica nel browser e mostrami uno screenshot.
 
 Dipende da: E3.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] La siccità si legge come spazio vuoto sulla striscia degli anni
       (QuandoStrip.tsx) — verificato su "tripletta 1-2-3": il vuoto
       1961→oggi (63 anni) si vede a colpo d'occhio
@@ -435,7 +437,7 @@ Dipende da: E3.2
       testati su più eventi (comuni, rari, con parametro categoriale)
 - [ ] Diff letto, commit e push — in attesa di conferma esplicita
 
-**Nota (non prevista dal prompt):** `docs/PROGETTAZIONE.md` §5.3 dà per
+**Nota (non prevista dal task):** `docs/PROGETTAZIONE.md` §5.3 dà per
 scontato che lat/lng dei circuiti siano "già nei JSON esportati" — non lo
 erano: `app/events/loader.py` non porta questi due campi e nessuno script
 li scriveva in `public/data/`. Aggiunto uno script a parte,
@@ -450,7 +452,7 @@ sotto Safety Car — mostrato inizialmente come "2000%", che sembrava un
 errore. Ora il formato dipende dall'unità dell'evento: percentuale solo per
 GARA, rapporto "×per gara" altrimenti (vedi `formatMetric` in DoveMappa.tsx).
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 viste 3 e 4, e §5.3.
@@ -476,7 +478,7 @@ D3 possiede l'SVG). Verifica nel browser e mostrami gli screenshot.
 
 Dipende da: E3.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Tutti i risultati con griglia e arrivo validi sono nella nuvola
       (15.518 di 26.354 hanno entrambe le coordinate; gli altri — griglia o
       arrivo mancante, es. non partito/non classificato — restano fuori,
@@ -495,7 +497,7 @@ Dipende da: E3.2
       lag visibile).
 - [x] Diff letto, commit e push — in attesa di conferma esplicita
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 vista 5 e §10 rischio 4.
@@ -521,7 +523,7 @@ Verifica nel browser e mostrami uno screenshot.
 
 Dipende da: E2.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Si sceglie una gara qualsiasi tra le 1125 e compaiono i fatti notevoli
 - [x] Ogni fatto porta rarità, finestra e link all'evento (con il
       parametro specifico in query string, non il default)
@@ -539,7 +541,7 @@ Dipende da: E2.2
 - [x] Verificata nel browser: nessun errore in console
 - [x] Diff letto, commit e push (commit `3d2032d`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §7 vista 6 e §5.4.
@@ -562,7 +564,7 @@ riportami il problema.
 
 Dipende da: E3.5
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Le viste v2 sono raggiungibili e hanno un'intestazione che dichiara
       la finestra di 46 gare, fonte OpenF1, e perché la copertura differisce
       dal resto del sito (banner in cima a src/app/race/[id]/page.tsx) —
@@ -577,7 +579,7 @@ Dipende da: E3.5
       (verificato assente sugli eventi delle altre famiglie)
 - [x] Diff letto, commit e push — in attesa di conferma esplicita
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.5, §7 vista 7 e §12.
@@ -605,13 +607,13 @@ come prima e mostrami gli screenshot.
 
 Dipende da: E3.6
 
-- [ ] Prompt eseguito
+- [ ] Task svolto
 - [ ] Le 5 trappole di §5.6 sono spiegate con i numeri veri
 - [ ] I pesi della notevolezza sono dichiarati e presi da `params.json`
 - [ ] Verificata nel browser
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md §5.2, §5.4, §5.6 e docs/CATALOGO-EVENTI.md §11.
@@ -637,12 +639,12 @@ Tieni la parte già scritta che resta valida invece di ricominciare da zero.
 
 Dipende da: E4.1
 
-- [ ] Prompt eseguito
+- [ ] Task svolto
 - [ ] `docs/NUMERI.md` aggiornato con la sezione v3
 - [ ] Ogni numero è riproducibile da uno script, nessuno scritto a mano
 - [ ] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/NUMERI.md e data-layer/scripts/report_numbers.py.
@@ -662,7 +664,7 @@ mano, tutti riproducibili rilanciando lo script.
 
 Dipende da: E4.2
 
-- [ ] Prompt eseguito
+- [ ] Task svolto
 - [ ] Codice morto rimosso (`export_frontend.py`,
       `app/api/routes/sessions.py`, `race-anatomy-mock.json` se ancora
       presente)
@@ -672,7 +674,7 @@ Dipende da: E4.2
       tre
 - [ ] Diff letto, commit e push su `main`
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Ultimo giro. Fai queste cose e mostrami il diff prima di ogni commit:

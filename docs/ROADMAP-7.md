@@ -4,7 +4,7 @@ Riferimento concettuale: `docs/PROGETTAZIONE-v4.md`. Mockup della pagina
 risultato: `docs/mockup-dejavu.html` (numeri reali, calcolati a mano dai CSV
 l'11 settembre 2026).
 
-**Decisioni prese, non da rimettere in discussione a ogni prompt:**
+**Decisioni prese, non da rimettere in discussione a ogni task:**
 
 - **La pipeline Python si tocca.** La regola "nessun dato nuovo" della roadmap
   S è la causa del fallimento della ricerca v3: si abroga. Le tabelle nuove
@@ -21,7 +21,7 @@ l'11 settembre 2026).
   /esplora.
 - **D3 possiede l'SVG**, React fa contenitore e stato. La frase a slot è
   HTML/CSS (non disegna scale).
-- **Un task = un prompt**, nell'ordine dato. Diff letto prima di ogni commit.
+- **Un task per volta**, nell'ordine dato. Diff letto prima di ogni commit.
   Si lavora su `main`.
 - **Niente si butta:** le viste v3 restano raggiungibili da /esplora; il
   capitolo neutralizzazioni resta sotto /race/[id].
@@ -39,7 +39,7 @@ l'11 settembre 2026).
 - [x] D6 — La nuova home, il nome, la scheda gara riletta, /esplora  ✅ FATTO (11 set 2026)
 - [x] D7 — Accessibilità, verifica finale, documenti d'esame  ✅ FATTO (11 set 2026)
 
-Ordine dei prompt: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
+Ordine dei task: D1.1 → D1.2 → D2.1 → D2.2 → D3.1 → D3.2 → D4.1 → D5.1 →
 D5.2 → D6.1 → D7.1, poi le rifiniture su segnalazione di Luca (D7.2, D7.3,
 D7.4, D7.5, D7.6, D7.7, D7.8).
 **Roadmap chiusa l'11 settembre 2026.**
@@ -72,7 +72,7 @@ Verifica obbligatoria (Python, stampata dallo script): vittorie da griglia
 ≥10 = **37 su 1114**; a Monza = **2 su 74**; Hamilton = 2 (2018 Hockenheim,
 2021 Interlagos); risultati con griglia e arrivo noti = **15.518**.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Peso grezzo e compresso dichiarato
 - [x] Diff letto
 
@@ -112,7 +112,7 @@ piloti (id, nome, cognome, anni di attività, sinonimi), team (con i nomi
 storici), circuiti (con paese e nomi comuni: "Monza", "Spa", "Silverstone"),
 fatti (id, etichetta, parametro, colonne, finestra, sinonimi per il parser).
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D1.2.** Nella stessa pipeline (`build_situazioni.py`), non in uno
@@ -140,7 +140,7 @@ l'intersezione delle finestre dei fatti; il denominatore è l'universo
 ristretto a chi/dove/quando e alla finestra. `scripts/verify-situazioni.ts`
 con i numeri di D1.1.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] verify-situazioni: tutti i numeri attesi
 - [x] Diff letto
 
@@ -180,7 +180,7 @@ compare nel gruppo più vicino in cui regge, una volta sola. Numeri attesi per
 *Hamilton · vince da 10° o peggio · a Monza*: uguale **0**; altro pilota a
 Monza **2**; Hamilton altrove **2**; chiunque ovunque **37**.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D2.2.** `src/lib/situazioni/reticolo.ts`: `costruisciReticolo(tab,
@@ -221,7 +221,7 @@ completamento per slot, parametro numerico digitabile, tastiera completa.
 Il colore dello slot è quello di `src/lib/colors.ts` → `SLOT_COLORS`.
 Demo isolata in `src/app/dev/frase-demo/`.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D3.1.** `src/components/situazioni/Frase.tsx` (client, controllato:
@@ -249,7 +249,7 @@ almeno 20 frasi scritte nel file di test (es. "hamilton vince monza dalla
 decima", "leclerc podio da p5 a spa 2019", "verstappen ritiro giro 1"). La
 barra riempie gli slot e mostra cosa non ha capito, senza indovinare.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D3.2.** `src/lib/situazioni/parser.ts` (`analizza(testo, dizionari)`
@@ -281,7 +281,7 @@ disegnata con "mai successo", brush sul tempo che aggiorna i conteggi,
 transizione dei punti tra righe quando uno slot cambia. `ResizeObserver`.
 Tooltip e click come in PROGETTAZIONE-v4 §7.3.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Verificata nel browser (DOM: 9 righe, 48 punti, righe vuote dichiarate)
 - [x] Diff letto
 
@@ -311,7 +311,7 @@ nelle etichette del reticolo ora passano da `paeseIt` ("in Italia").
 gruppo, scale condivise, dati da `tracce/<raceId>.json` a richiesta. Per gare
 pre-1996 il ritratto è griglia → arrivo (due punti e un segmento), dichiarato.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D5.1.** `src/components/charts/Ritratto.tsx` (un small multiple,
@@ -333,7 +333,7 @@ regole del compilatore React rispettate dopo il primo lint: niente
 `DoveMappa.tsx` riceve le occorrenze del reticolo; click su circuito riempie
 lo slot "dove". Tasso normalizzato per gare ospitate.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D5.2.** `DoveMappa.tsx` (v3) ha tre prop opzionali in più —
@@ -355,7 +355,7 @@ Titolo del sito "Déjà vu", metadati e testata aggiornati (via "Box, box?",
 situazione cliccabile. /esplora invariato. Il compositore v3 (`/eventi/...`)
 resta raggiungibile da /esplora.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D6.1.** `src/app/page.tsx` (server: legge tabelle, dizionari, pesi,
@@ -389,7 +389,7 @@ scuro; `prefers-reduced-motion`. `npm run build` e `npm run lint` puliti.
 `verify-situazioni.ts` tutto verde. Aggiornare `NUMERI.md`, `DOMANDE-ESAME.md`,
 `/methodology`. PROGETTAZIONE.md (v3) resta come storia.
 
-- [x] Prompt eseguito (11 set 2026)
+- [x] Task svolto (11 set 2026)
 - [x] Diff letto
 
 **Esito D7.1.** `prefers-reduced-motion` azzera le transizioni della linea

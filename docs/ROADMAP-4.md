@@ -1,5 +1,7 @@
 # "È già successo?" — Roadmap vista 1 a riquadri (post E4)
 
+> **Roadmap storica (v3, chiusa).** Il progetto attuale è la v4 "Déjà vu": `docs/PROGETTAZIONE-v4.md`. La vista a riquadri descritta qui è in `/esplora`.
+
 Contesto: il progetto (v3, `docs/PROGETTAZIONE.md`) è chiuso e consegnato
 (fasi E0→E4). Questa roadmap copre un solo miglioramento mirato, deciso
 dopo la consegna: la home (vista 1, "la scala della rarità") resta
@@ -9,7 +11,7 @@ colorato e con una risposta già pronta più un piccolo controllo che
 aggiorna il numero sul posto. Un interruttore in home fa scegliere tra
 le due.
 
-**Decisioni prese, non da rimettere in discussione a ogni prompt:**
+**Decisioni prese, non da rimettere in discussione a ogni task:**
 
 - **Si affianca, non si sostituisce.** `RarityScale.tsx` (asse
   logaritmico) resta intatto; nasce un componente nuovo accanto, non una
@@ -34,7 +36,7 @@ le due.
   violazione della "regola sul D3" del corso, perché il riquadro non
   disegna assi/scale/data-join — è una card di testo con un piccolo
   stato locale.
-- **Un task = un prompt qui sotto**, nell'ordine dato. Si legge il diff
+- **Un task per volta**, nell'ordine qui sotto, nell'ordine dato. Si legge il diff
   prima di ogni commit (stessa regola delle roadmap precedenti). Si
   lavora su `main`, senza branch, salvo diversa indicazione tua.
 
@@ -48,7 +50,7 @@ le due.
 - [x] Fase R3 — L'interruttore in home
 - [x] Fase R4 — Rifinitura, accessibilità, verifica finale
 
-Ordine dei prompt: R0.1 → R1.1 → R1.2 → R2.1 → R3.1 → R4.1 → R4.2.
+Ordine dei task: R0.1 → R1.1 → R1.2 → R2.1 → R3.1 → R4.1 → R4.2.
 
 ---
 
@@ -56,11 +58,11 @@ Ordine dei prompt: R0.1 → R1.1 → R1.2 → R2.1 → R3.1 → R4.1 → R4.2.
 
 ## R0.1 — Lettura e piano dei dati
 
-Nessuna riga di codice in questo prompt: serve a far leggere a Claude
-Code i file giusti e a fargli confermare, prima di scrivere, da dove
-vengono i dati di ogni riquadro (niente nuove richieste di rete).
+Nessuna riga di codice in questo task: serve a leggere i file giusti e a
+fissare per iscritto, prima di scrivere, da dove vengono i dati di ogni
+riquadro (niente nuove richieste di rete).
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Confermato che ogni riquadro usa solo dati già in
       `public/data/events/index.json` (una voce per ogni combinazione
       evento+parametro, già tutte precalcolate)
@@ -70,7 +72,7 @@ vengono i dati di ogni riquadro (niente nuove richieste di rete).
       `unitLabel`, `dedupeToDefaultParams`, `familyColor`, `familyLabel`,
       `FAMILY_LEGEND` (`src/lib/eventCatalog.ts`, `src/lib/colors.ts`)
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/app/page.tsx, src/components/charts/RarityScale.tsx e
@@ -93,7 +95,7 @@ Non scrivere ancora codice. Dimmi:
    famiglia (una Map<famiglia, CatalogEventEntry[]> o simile), ordinata
    per rarità dentro ogni famiglia — senza ancora scriverla nei file.
 
-Non toccare nessun file in questo prompt: è solo un allineamento.
+Non toccare nessun file in questo task: è solo un allineamento.
 ```
 
 ---
@@ -104,7 +106,7 @@ Non toccare nessun file in questo prompt: è solo un allineamento.
 
 Dipende da: R0.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `EventCard` mostra: nome evento (+ suffisso parametro corrente),
       famiglia (colore), risposta grande (`formatBigAnswer`), finestra
       (`formatWindow`), siccità se presente (`formatDrought`)
@@ -120,7 +122,7 @@ Dipende da: R0.1
       pagina di prova) prima di passare a R2
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/PROGETTAZIONE.md sezione 7 e src/lib/eventCatalog.ts.
@@ -160,7 +162,7 @@ che funziona.
 
 Dipende da: R1.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Eventi SENZA parametro (parametriDisponibili vuoto) non mostrano
       bottoni fantasma e la card resta comunque ben proporzionata
       rispetto a quelle con bottoni (griglia non deve "saltare")
@@ -171,7 +173,7 @@ Dipende da: R1.1
       inclusa: tab per navigare i bottoni, invio per attivarli)
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/components/EventCard.tsx che hai appena scritto.
@@ -201,7 +203,7 @@ Mostrami screenshot dei tre casi.
 
 Dipende da: R1.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Una sezione per famiglia, nello stesso ordine di `FAMILY_LEGEND`,
       con intestazione che usa `familyLabel`/`familyColor`
 - [x] Dentro ogni sezione, le card ordinate per rarità (dal più comune
@@ -213,7 +215,7 @@ Dipende da: R1.2
       carica `index.json` in `src/app/page.tsx`
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/app/page.tsx (come legge e passa gli eventi oggi a
@@ -243,7 +245,7 @@ mobile) e mostrami entrambi gli screenshot.
 
 Dipende da: R2.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Un interruttore ben visibile in home fa scegliere tra "La scala
       della rarità" (RarityScale, esistente) e "I riquadri"
       (EventCardsGrid, nuovo)
@@ -259,7 +261,7 @@ Dipende da: R2.1
 - [x] `npm run build` e `npm run lint` puliti
 - [x] Diff letto
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/app/page.tsx e i due componenti RarityScale.tsx ed
@@ -291,7 +293,7 @@ screenshot di entrambe le viste.
 
 Dipende da: R3.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Contrasto testo/sfondo verificato per tutti i colori di famiglia
       usati nelle intestazioni (non solo a occhio: controllo dei valori)
 - [x] Nessun evento del catalogo manca dalla griglia a riquadri (stesso
@@ -301,7 +303,7 @@ Dipende da: R3.1
       niente D3 nelle card, dove sta l'analisi profonda)
 - [x] Diff letto, commit e push
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Ultimo giro per la vista a riquadri. Fai queste cose e mostrami il diff
@@ -327,13 +329,13 @@ prima di ogni commit:
 
 Dipende da: R4.1, solo se vuoi anche potere nascondere/isolare famiglie
 
-- [x] Prompt eseguito, solo se richiesto esplicitamente
+- [x] Task svolto, solo se richiesto esplicitamente
 - [x] Pulsanti per famiglia sopra la griglia (stesso stile del
       hover-per-evidenziare già usato nella legenda di RarityScale, ma
       qui filtra invece di solo evidenziare)
 - [x] Nessuna famiglia nascosta di default all'apertura della pagina
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi src/components/EventCardsGrid.tsx.

@@ -1,5 +1,7 @@
 # "È già successo?" — Roadmap "La ricerca" (il compositore di scenari)
 
+> **Roadmap storica (roadmap S, superata l'11 settembre 2026).** La ricerca a chip costruita qui è stata sostituita dalla frase a slot della v4 "Déjà vu" (`docs/PROGETTAZIONE-v4.md`, `docs/ROADMAP-7.md`); il compositore resta raggiungibile in `/scenari`.
+
 Contesto: le roadmap R (riquadri) e T (fiume delle famiglie) hanno aggiunto modi
 di **esplorare** il catalogo. Questa roadmap aggiunge la cosa che manca: un modo
 di **interrogarlo in fretta**, guidato da uno scenario d'uso preciso.
@@ -12,7 +14,7 @@ c'è nel catalogo", il compositore risponde su **un** evento alla volta, e non
 esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 **+** "a Monza".
 
-**Decisioni prese, non da rimettere in discussione a ogni prompt:**
+**Decisioni prese, non da rimettere in discussione a ogni task:**
 
 - **Tutto è un "pezzo" (chip) tipizzato.** Cinque tipi: `evento`, `pilota`,
   `team`, `circuito`, `era`. L'ingresso è indifferente — si può partire dal
@@ -71,9 +73,9 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
   React fa contenitore/stato — `D3Chart.tsx` come base. Il composer a chip è
   HTML/CSS puro: non disegna scale né assi, quindi non viola la regola del
   corso (stessa motivazione già accettata per `EventCardsGrid`).
-- **Responsive dal primo prompt** (`ResizeObserver`, pattern di
+- **Responsive dal primo task** (`ResizeObserver`, pattern di
   `RarityScale.tsx`), mai una costante `WIDTH` indovinata a mano.
-- **Un task = un prompt**, nell'ordine dato. Si legge il diff prima di ogni
+- **Un task per volta**, nell'ordine dato. Si legge il diff prima di ogni
   commit. Si lavora su `main`, senza branch.
 
 ---
@@ -88,7 +90,7 @@ esiste modo di mettere insieme "vittoria da lontano" **+** "sotto Safety Car"
 - [x] Fase S5 — La nuova home e l'area "Esplora" (S5.1 fatto)
 - [x] Fase S6 — Rifinitura, accessibilità, verifica finale (S6.1 fatto)
 
-Ordine dei prompt: S0.1 → S1.1 → S1.2 → S2.1 → S2.2 → S3.1 → S4.1 → S5.1 → S6.1.
+Ordine dei task: S0.1 → S1.1 → S1.2 → S2.1 → S2.2 → S3.1 → S4.1 → S5.1 → S6.1.
 Prossimo: **roadmap chiusa.**
 
 ---
@@ -149,7 +151,7 @@ Esito, **verificato a mano sui dati** — decisioni chiuse, non da ridiscutere:
 - **Confermato: nessuna modifica a `data-layer/` o `scripts/`.** Un roster
   `raceId × driverId × constructorId` risolverebbe il caso 3, ma è fuori scope.
 
-- [x] Prompt eseguito
+- [x] Task svolto
 
 # Fase S1 — L'indice delle occorrenze e il motore di match
 
@@ -203,7 +205,7 @@ server**. Oggi `EventPicker.tsx` (client) importa da `scenarioMatch` solo un
 `type`, che sparisce in compilazione — ma basta un import di valore da un
 componente client per rompere la build. Da sistemare insieme al peso.
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Diff letto
 
 ## S1.2 — Il motore di match a cascata  ✅ FATTO (1 set 2026)
@@ -246,7 +248,7 @@ Controprove dopo la correzione: 30 risultati / 30 gare distinte; Monza 2 su
 1016; chip team → `non_calcolabile`; un chip solo → 37 su 1114, identico a
 `index.json`.
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Diff letto
 
 # Fase S2 — Il compositore a chip
@@ -328,7 +330,7 @@ occorrenza per occorrenza su **402 scenari** (ogni variante da sola, con
 ciascuno dei quattro tipi di chip di contesto, e a coppie): **zero
 differenze**, entry comprese (17.208 su 17.208 identiche).
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `scenarioMatch.ts` separato: logica pura (client) vs lettura file (server)
 - [x] Indice compatto colonnare, verificato ≤ 200 KB grezzi (187,2 KB; più
       69,3 KB di piano dei risultati, dichiarati sopra)
@@ -373,7 +375,7 @@ rapporto:**
   chip evento; piloti/team/circuiti/ere hanno il pallino grigio (regola del
   colore rispettata).
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi docs/ROADMAP-6.md (le decisioni in cima e le fasi S1.1, S1.2, S2.1 gia'
@@ -423,7 +425,7 @@ numeri del punto 1 prima di dire che funziona.
 
 Dipende da: S1.2, S2.2
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `src/components/charts/ScaffaleCorrispondenze.tsx`: x = tempo 1950-2024
       (stessa scala e stesso stile di `QuandoStrip`), y = numero di chip
       soddisfatti (K in alto, 1 in basso), un punto per occorrenza, colore =
@@ -508,7 +510,7 @@ cambiare nessun numero di regressione** (il round non entra nel match). In
 alternativa: passare la mappa `slugByRaceId` già pronta come prop dalla pagina
 server. Prima scelta preferita: tiene tutto dentro l'indice.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi in docs/ROADMAP-6.md le decisioni in cima e le fasi gia' chiuse S1.1,
@@ -586,7 +588,7 @@ che funziona.
 Dipende da: S3.1. Tutto in `src/components/scenario/ScenarioComposer.tsx`,
 nessuna modifica al motore né allo scaffale.
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] Frase in chiaro sopra lo scaffale: eventi uniti da " e " (label del
       catalogo), contesto come complementi ("a &lt;circuito&gt;", "negli anni
       &lt;decennio&gt;", "con &lt;pilota&gt;", "con la &lt;team&gt;")
@@ -623,7 +625,7 @@ nessuna modifica al motore né allo scaffale.
   3→6, 2→35, 1→230, tutte le righe disegnate.
 - Console pulita (solo il websocket HMR, artefatto dell'ambiente).
 
-**Nota per l'esecutore (dal coordinatore):** il motore è già pronto per il
+**Nota per chi svolge il task (dal coordinatore):** il motore è già pronto per il
 toggle. `matchScenario(index, chips, joinMode?)` in `src/lib/scenarioEngine.ts`
 accetta un `joinMode` esplicito e restituisce `joinMode` (quello usato),
 `joinModeDedotto` (il default) e `joinModeEsplicita` (bool). L'ambiguità è
@@ -635,12 +637,12 @@ Lo stato del toggle vive in `ScenarioComposer.tsx` (un `useState<JoinMode |
 null>`), si passa a `matchScenario` e si azzera quando i chip cambiano in modo
 da far sparire l'ambiguità.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi in docs/ROADMAP-6.md le decisioni in cima (soprattutto quella su
 "Ambiguità stessa gara vs stesso pilota" e quella sulla finestra di copertura)
-e le fasi chiuse S2.2 e S3.1, compresa la "Nota per l'esecutore" in fondo a
+e le fasi chiuse S2.2 e S3.1, compresa la "Nota per chi svolge il task" in fondo a
 S4.1. Leggi poi:
 - src/lib/scenarioEngine.ts (matchScenario accetta gia' joinMode? e torna
   joinMode / joinModeDedotto / joinModeEsplicita; JoinMode = "stessa gara" |
@@ -699,7 +701,7 @@ di regressione di S2.2/S3.1 cambia, e' un bug: fermati e dimmelo.
 
 Dipende da: S4.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `src/app/esplora/page.tsx` (`git mv` da `page.tsx`): tiene la lettura di
       `index.json`, `loadFamilyYearSources`, `buildFamilyTimeline`, l'hero e la
       sezione "La scala della rarità" con `<HomeCatalogView>`. `HomeCatalogView`
@@ -740,7 +742,7 @@ prerenderizzate statiche. Provato in browser: `/` compositore (30/350/544),
 `/gara/2002-catalunya`, `/race/2023-bahrain`, `/methodology` (link "← Torna al
 catalogo" → `/esplora`) tutte OK, console pulita.
 
-**Nota per l'esecutore (dal coordinatore):**
+**Nota per chi svolge il task (dal coordinatore):**
 
 - La route nuova si chiama **`/esplora`** (`src/app/esplora/page.tsx`).
 - Il `page.tsx` attuale va spostato **quasi tutto** in `/esplora`: la lettura
@@ -759,13 +761,13 @@ catalogo" → `/esplora`) tutte OK, console pulita.
 - `src/app/methodology/page.tsx:430` ha un link `← Torna alla home` a `/`: ora
   "/" è il compositore, non il catalogo. Decidere: o lo si lascia (è la home)
   o lo si punta a `/esplora` con testo "← Torna al catalogo". Scelta
-  dell'esecutore, purché il link non resti fuorviante.
+  di chi svolge il task, purché il link non resti fuorviante.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
 Leggi in docs/ROADMAP-6.md la decisione "Diventa la home" in cima, le fasi
-chiuse S2.2/S3.1/S4.1 e la "Nota per l'esecutore" in fondo a S5.1. Leggi poi
+chiuse S2.2/S3.1/S4.1 e la "Nota per chi svolge il task" in fondo a S5.1. Leggi poi
 src/app/page.tsx, src/app/dev/scenario-composer-demo/page.tsx,
 src/components/Header.tsx, src/components/HomeCatalogView.tsx (solo per
 capirlo, NON modificarlo) e src/app/methodology/page.tsx intorno alla riga 430.
@@ -814,7 +816,7 @@ scaffale: se un numero di S2.2/S3.1/S4.1 cambia e' un bug, fermati e dimmelo.
 
 Dipende da: S5.1
 
-- [x] Prompt eseguito
+- [x] Task svolto
 - [x] `src/app/dev/scenario-composer-demo/` rimossa (`git rm`). Nessun import
       la citava — solo riferimenti in `docs/ROADMAP-6.md`. Le altre demo
       `dev/` restano.
@@ -879,21 +881,21 @@ Dipende da: S5.1
   2. i circuiti fuori da `circuits-geo.json` (es. "galvez") si mostrano col
      `circuitRef` grezzo nella lista come già nel tooltip di S3.1 — cosmetico,
      stesso ripiego dichiarato.
-- L'esecutore ha **committato da solo** (`57e69b7`, come `emiliofalco`) invece
-  di lasciare il diff al coordinatore. Il lavoro è comunque stato riverificato
-  a mano qui: nessuna correzione necessaria.
+- Il task è stato **committato direttamente** (`57e69b7`, come `emiliofalco`)
+  invece di lasciare il diff alla revisione. Il lavoro è comunque stato
+  riverificato a mano qui: nessuna correzione necessaria.
 
 ---
 
 **La roadmap S è completa.** S0→S6 chiuse e verificate. La home è il
 compositore di scenari; il catalogo è sotto `/esplora`; il motore
 (`scenarioEngine.ts` puro + `scenarioIndexServer.ts` colonnare) ha i suoi
-numeri di regressione bloccati in `scripts/verify-s22.ts` e in cima a
-`RUOLO-COORDINATORE.md`.
+numeri di regressione bloccati in `scripts/verify-s22.ts` e in
+`docs/REGOLE-PROGETTO.md`.
 
 ---
 
-**Nota storica (la nota per l'esecutore di S6.1, ormai consumata):**
+**Nota storica (la nota di apertura di S6.1, ormai consumata):**
 
 - `docs/PROGETTAZIONE.md` **§7 "Le viste"** è ancora la struttura v3: home =
   scala della rarità, vista 2 = compositore di un evento solo. Va riscritta la
@@ -931,13 +933,13 @@ numeri di regressione bloccati in `scripts/verify-s22.ts` e in cima a
   focalizzabili. O li si rende raggiungibili da tastiera (tabindex + Enter),
   oppure si aggiunge sotto lo scaffale una lista compatta dei casi del livello
   K su K con link `/gara/<slug>` — e la si dichiara come la via da tastiera.
-  Scelta dell'esecutore.
+  Scelta di chi svolge il task.
 
-**Prompt da copiare:**
+**Specifica del task:**
 
 ```
-Sei l'ultima fase (S6.1) della roadmap docs/ROADMAP-6.md. Leggi le decisioni
-in cima, le fasi chiuse S2.2/S3.1/S4.1/S5.1 e la "Nota per l'esecutore" in
+Questo è l'ultimo task (S6.1) della roadmap docs/ROADMAP-6.md. Leggi le decisioni
+in cima, le fasi chiuse S2.2/S3.1/S4.1/S5.1 e la "Nota per chi svolge il task" in
 fondo a S6.1. Leggi docs/PROGETTAZIONE.md (§7 e §8), docs/DOMANDE-ESAME.md,
 docs/NUMERI.md, src/components/scenario/ScenarioComposer.tsx e
 src/components/charts/ScaffaleCorrispondenze.tsx.
@@ -977,5 +979,5 @@ Fai, in quest'ordine:
    4/4 identico. Se un numero di regressione cambia, e' un bug: fermati.
 
 Verifica con screenshot: il flusso da tastiera, il tempo cronometrato, e le
-tre sezioni di doc aggiornate (incolla i paragrafi nuovi nella risposta).
+tre sezioni di doc aggiornate (riporta i paragrafi nuovi).
 ```
