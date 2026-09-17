@@ -1,5 +1,12 @@
 # È già successo? — Documento di progettazione (v3)
 
+> **Documento storico.** La versione attuale del progetto è la v4 "Déjà vu",
+> descritta in `docs/PROGETTAZIONE-v4.md` (11 settembre 2026). Questo file resta
+> come storia del pivot v3 e come riferimento per le viste ancora nel sito
+> sotto `/esplora`, `/scenari`, `/eventi/[id]` e `/race/[id]`. La scheda gara
+> descritta qui (vista 6, fatti ordinati per notevolezza) è stata sostituita:
+> vedi PROGETTAZIONE-v4 §7.6. Numeri riallineati al motore il 14 settembre 2026.
+
 Progetto per il corso di Visualizzazione delle Informazioni.
 Gruppo di 3 studenti. Visualizzazione interattiva in D3.js su dati reali di
 Formula 1.
@@ -334,11 +341,11 @@ ribalta la classifica, che è di per sé una lezione di lettura dei dati.
 Alternativa a barre ordinate sempre disponibile, perché la mappa è bella ma
 la barra è precisa.
 
-**Vista 5 — Il piano griglia × arrivo.** Tutti i 26.759 risultati come
-nuvola densa (posizione di partenza × posizione di arrivo); le occorrenze
+**Vista 5 — Il piano griglia × arrivo.** I 15.518 risultati con griglia e
+arrivo noti (su 26.759) come nuvola densa (posizione di partenza × posizione di arrivo); le occorrenze
 dell'evento selezionato si illuminano. Serve a rispondere alla domanda che
-viene subito dopo "quante volte?": **perché** è raro. Le 40 vittorie da
-oltre la decima piazza si vedono come una manciata di punti in un angolo
+viene subito dopo "quante volte?": **perché** è raro. Le 37 vittorie partendo
+dalla decima piazza o peggio si vedono come una manciata di punti in un angolo
 quasi vuoto.
 
 **Vista 6 — La scheda gara.** Si sceglie una gara tra le 1125 e il sistema
@@ -439,10 +446,11 @@ ricevimento e per l'esame, scelte perché coprono i tre modi di usare lo
 strumento:
 
 1. **La domanda mirata** (vista 2): *"quante volte si è vinto partendo
-   oltre la decima piazza?"* → 40 su 1125, l'ultima San Paolo 2024
-   (Verstappen dalla 17ª), massima concentrazione a Spa. Poi si alza la
-   soglia a 15 (9 volte) e a 20 (una sola volta, Long Beach 1983): la
-   rarità che si vede muovendo uno slider.
+   10° o peggio?"* → 37 su 1114, l'ultima San Paolo 2024
+   (Verstappen dalla 17ª). Poi si alza la
+   soglia a 15 (8 volte) e a 20 (una sola volta, Watson a Long Beach 1983): la
+   rarità che si vede muovendo uno slider. (Le prime stime, 40 su 1125 e 9
+   a soglia 15, contavano anche la 500 Miglia: `docs/CATALOGO-EVENTI.md`.)
 2. **La domanda che non sapevi di avere** (vista 6): si apre una gara e si
    legge il fatto più notevole che il sistema ha trovato da solo.
 3. **Il limite dichiarato** (vista 1 + `/methodology`): due eventi con

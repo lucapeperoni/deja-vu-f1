@@ -412,7 +412,7 @@ export default function LineaDejaVu({ reticolo, finestra, gare, dizionari, onSce
           <div className="mt-1" style={{ color: tt.riga.colore }}>
             {tt.riga.esatto ? "tutti gli slot reggono" : `cambia: ${tt.riga.etichetta}`}
           </div>
-          {onScegli && <div className="text-neutral-gray mt-1">Clic per il ritratto →</div>}
+          {onScegli && <div className="text-neutral-gray mt-1">Clic per la scheda gara →</div>}
         </ChartTooltip>
       )}
     </div>

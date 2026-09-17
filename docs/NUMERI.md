@@ -1,11 +1,21 @@
-# Numeri chiave — Chaos Discount
+# Numeri chiave — Déjà vu
 
-Generato automaticamente da `data-layer/scripts/report_numbers.py` a partire
-dai JSON in `public/data/` (l'output della pipeline, task 2.1) e da
-`data/raw/drivers.csv` (solo per i nomi dei piloti). Ogni numero indica il
-file sorgente e la regola con cui e' stato calcolato, cosi' e' verificabile
-e difendibile all'esame. Definizioni complete in `docs/PROGETTAZIONE.md`
-sezione 5.
+Ogni numero indica il file sorgente e la regola con cui è stato calcolato,
+così è verificabile e difendibile all'esame. Il documento segue la storia del
+progetto:
+
+- **§10 — v4 "Déjà vu", la versione attuale.** Numeri verificati a mano con
+  pandas e ripetuti da `scripts/verify-situazioni.ts` e
+  `scripts/verify-parser.ts`. Sezione scritta a mano.
+- **§9 — v3 "È già successo?"**, il catalogo dei 33 eventi (ancora in
+  `/esplora`).
+- **§1-8 — v2 "Box, box?"**, le neutralizzazioni 2023-2024 (capitolo
+  `/race/[id]`).
+
+Le sezioni 1-9 sono generate da `data-layer/scripts/report_numbers.py` a
+partire dai JSON in `public/data/` e da `data/raw/drivers.csv` (solo per i
+nomi dei piloti); definizioni in `docs/PROGETTAZIONE.md` sezione 5. Lo script
+non produce la §10: se lo si riesegue, la §10 va conservata.
 
 ## 1. Dimensione del campione
 
@@ -214,10 +224,12 @@ e ripetuti da `scripts/verify-situazioni.ts` (motore + reticolo) e
 - **26.759 risultati** pilota×gara, **1125 gare** (1114 senza le 11 Indy 500 1950-60).
   Fonte: `public/data/situazioni/risultati.json` e `gare.json`, `righe`.
 - **15.518 risultati** con griglia e arrivo noti (identico al denominatore v3 di `rimonta_almeno_n_posizioni`).
-- **45 fatti** nel vocabolario (34 sul risultato, 11 sulla gara). Fonte: `src/lib/situazioni/fatti.ts`.
+- **48 fatti** nel vocabolario (37 sul risultato, 11 sulla gara), in 9 famiglie. Fonte: `src/lib/situazioni/fatti.ts` (erano 45 in D2.1, poi saliti a 48 entro D7.3).
 - Finestre per colonna: base 1950-2024; tempi sul giro 1996-2024 (**544 gare** con tracce); soste 2011-2024; qualifiche 1994-2024; giro veloce 2004-2024; neutralizzazioni 2023-2024.
 - **Vittorie partendo 10° o peggio: 37 su 1114 gare** (3,3%); a Monza **2 su 74** (Gethin 1971, Gasly 2020); Hamilton **2 su 356** GP (Hockenheim 2018, Interlagos 2021); Hamilton a Monza **0 su 18** (partito ≥10° tre volte: 2008, 2013, 2022 → 7°, 9°, 5°).
 - Regressione contro la v3: **doppietta + nessun cambio di leader = 30 gare su 544** (1996-2024), identico a S1.2/S2.2 di ROADMAP-6.
 - **Vittorie al debutto: 2** (Farina 1950, Baghetti 1961); Parsons alla 500 Miglia 1950 è esclusa (trappola 1).
-- Peso: `risultati.json` 1.858 KB grezzi / **177 KB gzip**, `gare.json` 17 KB gzip, `dizionari.json` 26,5 KB gzip. Decodifica 20 ms; una valutazione **0,8 ms**; un reticolo (15 gruppi) **14 ms**.
+- Peso: `risultati.json` 1.858 KB grezzi / **177 KB gzip**, `gare.json` 17 KB gzip, `dizionari.json` 26,5 KB gzip. Decodifica 20 ms; una valutazione **0,8-1,0 ms**; un reticolo (15 gruppi) **12-14 ms** (misure dell'11 e del 14 settembre 2026).
 - Pesi del reticolo (`params.json` → `situazioni.pesiAllentamento`): chi 1,0 · dove 0,8 · stesso paese 0,4 · quando 0,5 · stesso decennio 0,25 · parametro 0,6 per grado · togliere un fatto 0,9 · al massimo 2 slot.
+- `risultati.json` spedisce **21 colonne**; le colonne di carriera e l'ordine del compagno si ricalcolano nel browser. `dizionari.json`: **861 piloti, 211 team, 77 circuiti**. `status.json`: 139 cause di ritiro, 133 in italiano.
+- Altri numeri calcolati con `valuta()` il 14 settembre 2026 (usati nella demo): vince partendo 15° o peggio **8 su 1114** (ultima Verstappen, Interlagos 2024); 20° o peggio **1** (Watson, Long Beach 1983); doppietta **314 su 1114**, tripletta **14** (ultima Aintree 1961); vince guidando solo l'ultimo giro **6 su 544** (1996-2024); almeno una Safety Car o VSC **25 su 46** (2023-2024); vince senza fermarsi **1 su 286** (Spa 2021, gara di fatto non disputata); margine sotto 1 s **95 su 1088**.

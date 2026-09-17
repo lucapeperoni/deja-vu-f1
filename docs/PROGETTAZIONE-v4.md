@@ -4,10 +4,11 @@ Progetto per il corso di Visualizzazione delle Informazioni. Gruppo di 3.
 Visualizzazione interattiva in D3.js su dati reali di Formula 1 (Ergast,
 1950-2024, 1125 gare, 26.759 risultati, 589.081 tempi sul giro).
 
-Data: 11 settembre 2026. Questa versione **sostituisce** la v3 ("È già
-successo?") nel concetto, nell'interfaccia e nel nome. I dati, la pipeline e
-le viste v3 non si buttano (regola d'oro del progetto): vengono riletti dentro
-lo schema nuovo, spiegato in §9.
+Data: 11 settembre 2026, allineato al codice il 14 settembre 2026 (dopo le
+rifiniture D7.2–D7.8 di `docs/ROADMAP-7.md`). Questa versione **sostituisce**
+la v3 ("È già successo?") nel concetto, nell'interfaccia e nel nome. I dati,
+la pipeline e le viste v3 non si buttano (regola d'oro del progetto): vengono
+riletti dentro lo schema nuovo, spiegato in §10.
 
 ---
 
@@ -109,6 +110,12 @@ Un fatto è un predicato con al più un parametro, valutato su una colonna della
 gare**. Non è precalcolato per valore: si calcola sul momento, in memoria, nel
 browser (§6). Ogni fatto dichiara la finestra dei campi da cui dipende.
 
+Il vocabolario implementato (`src/lib/situazioni/fatti.ts`) conta **48
+fatti**: 37 sul risultato e 11 sulla gara, divisi in 9 famiglie (come finisce,
+come parte, se non finisce, qualifica e giro veloce, contro il compagno,
+momenti di carriera, cosa fa in gara, soste, com'è la gara). Le tabelle qui
+sotto ne danno i tipi, non l'elenco completo: fa fede il file.
+
 **Fatti sul risultato (unità: pilota×gara):**
 
 | Fatto | Parametro | Colonne | Finestra |
@@ -117,7 +124,8 @@ browser (§6). Ogni fatto dichiara la finestra dei campi da cui dipende.
 | arriva P / arriva P o meglio / P o peggio | P | arrivo | 1950-2024 |
 | parte P / P o meglio / P o peggio / dalla pole / dalla pit lane / prima fila | P | griglia | 1950-2024 |
 | guadagna almeno N posizioni / perde almeno N | N | griglia, arrivo | 1950-2024 |
-| si ritira / per causa X (tassonomia v3) / al giro L o prima | X, L | stato, giri | 1950-2024 |
+| si ritira / per incidente / per guasto (tassonomia v3) / entro il giro L / non prende il via | L | stato, giri | 1950-2024 |
+| va a punti / al GP numero N in carriera | N | punti, contatori di carriera | 1950-2024 |
 | giro veloce | — | rank giro veloce | 2004-2024 |
 | batte il compagno / battuto dal compagno | — | arrivo compagno | 1950-2024 |
 | primo GP / vince al debutto / prima vittoria / primo podio / prima pole | — | contatori di carriera | 1950-2024 |
@@ -129,8 +137,10 @@ browser (§6). Ogni fatto dichiara la finestra dei campi da cui dipende.
 
 **Fatti sulla gara (unità: gara)** — qui rientrano i 33 eventi v3, riletti:
 doppietta, tripletta, nessun cambio di leader, almeno N leader diversi,
-vittoria all'ultimo giro, meno di N classificati, nessun ritiro, margine
-sotto S secondi, almeno N neutralizzazioni (2023-2024), ecc.
+cambio di leader all'ultimo giro, meno di N classificati, nessun ritiro,
+almeno N ritiri, margine sotto S secondi, margine sopra S secondi, almeno N
+neutralizzazioni (2023-2024). Sono 11. Il parametro S è in secondi interi: "vinta
+con meno di un decimo" non si può chiedere (limite dichiarato).
 
 Una situazione può contenere più fatti sul risultato (si applicano allo stesso
 pilota, nella stessa gara) e più fatti sulla gara (contesto). L'ambiguità
@@ -142,11 +152,20 @@ contesto.
 
 Ereditata dalla v3 e resa più severa. Il denominatore M è:
 
-- l'universo dell'unità (risultati con griglia e arrivo noti: 15.518; gare non
-  Indy 500: 1114), ristretto a
+- l'universo dell'unità, Indy 500 esclusa (gare: 1114; risultati: 26.354),
+  ristretto a
 - gli slot di contesto (dove, quando, chi), ristretto a
 - l'**intersezione delle finestre** dei fatti coinvolti (un fatto sulle soste
-  porta tutto a 2011-2024).
+  porta tutto a 2011-2024), ristretto a
+- le righe in cui ogni fatto è **valutabile**: un fatto risponde vero, falso o
+  null (dato mancante), e le righe null escono dal denominatore e si contano a
+  parte. Per questo un fatto che usa griglia e arrivo lavora di fatto sui
+  15.518 risultati in cui entrambi sono noti.
+
+L'unità in cui M si legge (decisa in D2.1, in cima a `motore.ts`): con chi =
+pilota "gare del pilota"; con chi = team "risultati del team"; senza chi e con
+un fatto che in una gara regge per una riga sola (vince, pole, giro veloce)
+"gare"; senza chi altrimenti "risultati"; con soli fatti sulla gara "gare".
 
 La finestra si stampa accanto al numero, sempre, mai in tooltip, e la barra
 del tempo (§7.3) la mostra come banda: ciò che è fuori finestra è grigio,
@@ -159,17 +178,28 @@ restano in vigore, documentate in /metodologia.
 Sito statico, nessun backend a runtime. La pipeline Python produce due tabelle
 colonnari (stesso schema di `results-plane.json`) più i dizionari:
 
-- `situazioni/risultati.json`: 26.759 righe × ~24 colonne (gara, pilota,
-  team, griglia, arrivo, ordine, stato, giri, giro veloce, posizione dopo giro
-  1, giri al comando, primo giro al comando, posizione peggiore/migliore in
-  gara, soste, posizione in qualifica, arrivo del compagno, numero GP in
-  carriera, vittorie/podi/pole fin lì). Stima: 300-400 KB grezzi, ~80 KB
-  compressi.
-- `situazioni/gare.json`: 1125 righe × ~15 colonne (anno, round, circuito,
-  paese, classificati, ritiri, cambi di leader, margine, doppietta, ...).
+- `situazioni/risultati.json`: 26.759 righe × 21 colonne spedite (gara per
+  differenza, pilota, team, griglia, pit lane, arrivo, ordine, categoria di
+  stato, statusId, giri, rank del giro veloce, distacco in decimi, posizione
+  dopo il giro 1, giri al comando, primo giro al comando, posizione
+  peggiore/migliore, soste, giro della prima sosta, posizione in qualifica,
+  punti). **Misurato: 1.858 KB grezzi, 177 KB gzip** (la stima iniziale era
+  ~80 KB). Le colonne *derivabili* — GP in carriera, vittorie/podi/pole prima
+  della gara, vittorie sul circuito prima, ordine del compagno — non si
+  spediscono: il motore le ricalcola alla decodifica (D1.1).
+- `situazioni/gare.json`: 1125 righe (anno, round, circuito, paese, Indy,
+  partiti, classificati, ritiri, doppietta, tripletta, margine, cambi di
+  leader, leader diversi, cambio all'ultimo giro, neutralizzazioni), 17 KB gzip.
 - `situazioni/tracce/<raceId>.json`: posizioni per giro di tutti i piloti di
-  una gara (1996+), caricato **a richiesta** per il ritratto (§7.5).
-- dizionari piloti/team/circuiti con sinonimi per il parser (§7.1).
+  una gara (544 gare, 1996+, 2,7 MB in tutto), caricato **a richiesta** per il
+  ritratto (§7.5) e per il giro per giro della scheda gara (§7.6).
+- `situazioni/dizionari.json`: 861 piloti, 211 team, 77 circuiti con sinonimi
+  per il parser (§7.1), 26,5 KB gzip.
+- `situazioni/status.json`: le 139 cause di ritiro Ergast in italiano (133
+  tradotte), per la scheda gara.
+
+Prestazioni misurate: decodifica 20 ms, una valutazione ~1 ms, un reticolo
+(15 gruppi) 12-14 ms.
 
 Il motore (`src/lib/situazioni/`) è TypeScript puro, nel browser: filtra le
 colonne, conta, costruisce il reticolo. Uno script di verifica con conteggi
@@ -217,10 +247,11 @@ esatta).
 ### 7.3 La linea dei déjà vu (vista portante, D3)
 
 **Cosa:** x = tempo 1950-2024; una riga per gruppo (§3.1); un punto per
-occorrenza. Colore = **lo slot che cambia** (variabile nominale, 5 valori:
-nessuno, chi, dove, quando, cosa). La riga "uguale" in alto, enfatizzata;
-una riga vuota resta disegnata con la scritta "mai successo". La banda grigia
-fuori finestra dice dove i dati non arrivano.
+occorrenza. Colore = **lo slot che cambia** (variabile nominale: rosso per
+"uguale", poi chi, dove, quando, cosa; i gruppi a due allentamenti sono fusi in
+un'ultima riga grigia "cambiano due slot"). La riga "uguale" in alto,
+enfatizzata; una riga vuota resta disegnata con la scritta "mai successo". La
+banda grigia fuori finestra dice dove i dati non arrivano.
 **Perché:** risponde a "quando" e "quanto è lontano" con una sola occhiata;
 la posizione verticale codifica la distanza (ordinale), il colore la natura
 della differenza (nominale). La rarità è sulla posizione, mai sulla tinta
@@ -228,8 +259,11 @@ della differenza (nominale). La rarità è sulla posizione, mai sulla tinta
 **Come:** D3 possiede l'SVG (scale, assi, data join, brush sul tempo,
 transizioni quando uno slot cambia: i punti *migrano* tra le righe invece di
 ridisegnarsi, così si vede cosa un allentamento sposta). Hover: anno, gara,
-pilota, e lo slot che cambia in chiaro. Click: apre il ritratto (§7.5).
-Brush: restringe la finestra e aggiorna i conteggi, che restano visibili.
+pilota, e lo slot che cambia in chiaro. Click: apre la scheda della gara
+(§7.6). Brush: i punti fuori dal periodo sbiadiscono e ogni riga scrive "k nel
+periodo · n su m"; il denominatore resta quello della finestra piena (scelta
+dichiarata sotto la vista: il brush esplora, per cambiare l'universo si usa lo
+slot Quando). Jitter verticale deterministico dentro la riga; x esatto.
 
 ### 7.4 I dove (D3, geografica)
 
@@ -238,8 +272,12 @@ normalizzato per quante gare ha ospitato ognuno.
 **Perché:** "è successo ma non qui" ha bisogno di una mappa; la
 normalizzazione evita il trabocchetto "Monza ha più casi perché ha più gare".
 **Come:** riuso di `DoveMappa.tsx` (v3) collegata al reticolo: cliccando un
-circuito lo slot "dove" si riempie e la frase si aggiorna. È l'unica vista dove
-il colore è sequenziale (tasso), come già dichiarato in v3.
+circuito lo slot "dove" si riempie e la frase si aggiorna. Contorno delle terre
+emerse (Natural Earth 1:110m, `world-land.json`) sotto una proiezione
+equirettangolare adattata ai circuiti; alternativa a barre ordinate;
+interruttore conteggio ↔ tasso. Raggio = conteggio grezzo, colore = scala
+sequenziale sulla metrica scelta: è l'unica vista dove il colore è
+sequenziale, come già dichiarato in v3.
 
 ### 7.5 Il ritratto dell'occorrenza (D3, small multiples)
 
@@ -247,34 +285,61 @@ il colore è sequenziale (tasso), come già dichiarato in v3.
 pilota (1996+), con griglia e arrivo evidenziati; per le gare senza tempi sul
 giro, solo griglia → arrivo.
 **Perché:** il telecronista non vuole solo "è successo nel 2020": vuole vedere
-*come* (Gasly a Monza 2020: decimo per 18 giri, poi la bandiera rossa, poi
-primo). I ritratti affiancati sono il confronto: stesse scale, stessa forma.
-**Come:** small multiples con scale condivise (y = posizione 1..20, x = giro
-normalizzato 0-100%); i dati arrivano dal file per gara a richiesta. Click sul
-ritratto → scheda gara.
+*come* (Gasly a Monza 2020: partito 10°, 15° al giro 20, primo dal giro 28
+dopo la bandiera rossa). I ritratti affiancati sono il confronto: stesse scale,
+stessa forma.
+**Come:** small multiples con scale condivise (y = posizione 1..20, le
+posizioni oltre la 20ª restano sul bordo; x = giro normalizzato 0-100%); i dati
+arrivano dal file per gara a richiesta. Ogni ritratto è un link vero
+(`<a href>`) alla scheda gara, così funziona anche prima dell'idratazione.
 
-### 7.6 La scheda gara (esistente, riletta)
+### 7.6 La scheda gara (riscritta in D7.7)
 
-Data una gara, i fatti notevoli generati in automatico, ordinati per
-notevolezza (v3). Ogni fatto è ora **una situazione già compilata**: click →
-la frase si riempie e si torna al motore. È l'ingresso per chi non sa cosa
-chiedere.
+**Cosa:** per una gara qualsiasi delle 1125: testata (circuito, data, giri, al
+via, classificati, ritiri), podio con casella di partenza e distacco, pole e
+giro veloce, "la gara in numeri" (margine, ritiri, piloti e cambi al comando,
+soste medie, safety car), **la gara giro per giro** (D3, tracce 1996+, podio in
+evidenza e le altre linee grigie), **griglia → arrivo** (slopegraph, per tutte
+le gare), ordine d'arrivo completo, "quel giorno, per la prima volta" (debutti,
+prime vittorie, primi podi, prime pole), e **"l'hai già visto?"**: domande già
+scritte negli slot che riaprono la home con la frase compilata. Link al
+capitolo neutralizzazioni per le 46 gare 2023-2024.
+**Perché:** dettaglio a richiesta di un caso, e ingresso per chi non sa cosa
+chiedere. La prima versione mostrava i fatti notevoli del catalogo v3
+(statistiche globali ordinate per notevolezza) e non diceva nemmeno chi avesse
+vinto: sostituita. Il generatore v3 resta nella pipeline
+(`public/data/facts/`) ma nessuna pagina ne mostra più l'output.
+**Come:** pagina server che estrae una sola gara dalle tabelle delle situazioni
+(`schedaGara.ts`, puro) e manda al browser una ventina di righe. Il giro per
+giro è D3; lo slopegraph è SVG scritto da React (due colonne di posizioni e
+segmenti, nessuna scala da gestire né transizione: stessa deroga dei riquadri
+v3). Cause di ritiro in italiano da `status.json`.
 
 ### 7.7 Esplora (esistente)
 
 Le tre viste v3 (scala della rarità, riquadri per famiglia, fiume delle
 famiglie) restano in /esplora come panoramica del vocabolario dei fatti sulla
-gara. Nessuna modifica.
+gara. Nessuna modifica. Da /esplora si raggiungono anche il compositore a chip
+v3 (`/scenari`) e le schede evento (`/eventi/[id]`).
+
+### 7.8 Le gare (D7.8)
+
+`/gare`: una stagione alla volta (anno nell'indirizzo), ogni riga con data e
+vincitore, ricerca su gara, circuito, paese, anno, vincitore e team in tutte
+le stagioni, con completamento della parola a Tab. È navigazione, non una
+visualizzazione: HTML, niente D3.
 
 ## 8. Interazione (Yi et al.) e task (Amar et al.)
 
-- *Select*: click su punto/ritratto. *Explore*: brush sul tempo. *Reconfigure*:
-  l'ordine dei gruppi segue la distanza; i pesi sono in `params.json`.
-  *Encode*: il colore per slot è fisso, non c'è un interruttore (la coerenza
-  vale più della scelta). *Abstract/Elaborate*: frase → linea → ritratto →
-  scheda gara. *Filter*: ogni slot è un filtro; la mappa filtra "dove".
-  *Connect*: la frase, la linea, la mappa e i ritratti sono collegati in
-  entrambe le direzioni (brushing & linking).
+- *Select*: click su punto/ritratto/circuito. *Explore*: brush sul tempo.
+  *Reconfigure*: mappa ↔ barre; l'ordine dei gruppi segue la distanza (pesi in
+  `params.json`), ed è l'intento più debole della v4. *Encode*: conteggio ↔
+  tasso sulla mappa; il colore per slot invece è fisso, senza interruttore (la
+  coerenza vale più della scelta). *Abstract/Elaborate*: frase → linea →
+  ritratto → scheda gara. *Filter*: ogni slot è un filtro; la mappa filtra
+  "dove". *Connect*: la frase, la linea, la mappa e i ritratti sono collegati
+  (colore condiviso, clic sulla mappa che riempie Dove), e la scheda gara
+  riapre la home con la frase compilata.
 - Task: *retrieve value* (N su M), *filter* (slot), *find extremum* ("la
   rimonta più lunga"), *characterize distribution* (la linea dei déjà vu),
   *cluster* (i gruppi del reticolo), *correlate* (griglia × arrivo, in
@@ -292,7 +357,8 @@ Il nome dice esattamente cosa fa lo strumento e sopravvive alla traduzione.
   gruppo "uguale". Mai su bottoni, mai su link, mai su titoli.
 - **Colore degli slot** (nominale, palette Tol "muted" già validata in v3 per
   daltonismo): chi = verde acqua #44AA99, dove = ciano #88CCEE, quando = rosa
-  antico #CC6677, cosa = oliva #999933. Lo stesso colore sullo slot nella
+  antico #CC6677, cosa = oliva chiaro #B8B04A (l'oliva Tol #999933 aveva
+  contrasto 4,2:1 sul fondo scuro, schiarito in D7.1). Lo stesso colore sullo slot nella
   frase, sulla riga nella linea dei déjà vu, sul bordo del ritratto: **il
   colore lega la differenza al suo slot** in tutte le viste. Le famiglie v3
   restano colorate a modo loro solo in /esplora.
@@ -316,8 +382,9 @@ Il nome dice esattamente cosa fa lo strumento e sopravvive alla traduzione.
 | scaffale delle corrispondenze | linea dei déjà vu (righe = gruppi, colore = slot) |
 | scala/riquadri/fiume | /esplora, invariati |
 | mappa dei circuiti | §7.4, collegata alla frase |
-| scheda gara con fatti | §7.6, ogni fatto è una situazione cliccabile |
-| capitolo neutralizzazioni 2023-2024 | fatti sulla gara con finestra 2023-2024 |
+| scheda gara con fatti notevoli (notevolezza) | §7.6, riscritta: racconta la gara dalle tabelle v4; il generatore v3 resta nella pipeline ma non si mostra |
+| compositore a chip | /scenari, invariato |
+| capitolo neutralizzazioni 2023-2024 | fatto sulla gara con finestra 2023-2024, e /race/[id] invariato |
 | regola della finestra, 5 trappole, D3 possiede l'SVG | invariate |
 
 ## 11. Cosa il progetto non è

@@ -226,7 +226,7 @@ export default function MethodologyPage() {
           <p className="text-xl text-text-secondary leading-relaxed">
             Questa pagina spiega come arriviamo ai numeri che il resto del sito mostra: come si calcola quanto è raro
             un evento, perché ogni numero porta sempre con sé la finestra di dati su cui è valido, dove i dati stessi
-            fanno trappola, e come funziona — senza fingersi un modello — il generatore automatico di fatti notevoli.
+            fanno trappola, e come la versione precedente ordinava i fatti di una gara — senza fingersi un modello.
           </p>
         </header>
 
@@ -379,7 +379,7 @@ export default function MethodologyPage() {
         {/* 4. Il punteggio di notevolezza */}
         <section className="space-y-6">
           <h2 className="font-condensed text-3xl font-bold text-racing-red uppercase tracking-wider">
-            Il punteggio di notevolezza
+            Il punteggio di notevolezza (v3)
           </h2>
           <p className="text-text-secondary leading-relaxed">
             Data una gara, il generatore automatico valuta tutti gli eventi del catalogo e restituisce quelli
@@ -401,6 +401,11 @@ export default function MethodologyPage() {
           <p className="text-text-secondary leading-relaxed">
             <strong className="text-white">Non è un modello</strong>: è una regola di ordinamento trasparente e
             ispezionabile, e va presentata così — è la differenza tra uno strumento onesto e una scatola nera.
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            Questo punteggio appartiene al catalogo della v3. Dalla v4 la scheda di una gara non elenca più fatti
+            ordinati per notevolezza: racconta la gara (podio, giro per giro, griglia → arrivo, prime volte) a partire
+            dalle tabelle delle situazioni, e da lì si torna alla frase a slot con le domande già compilate.
           </p>
         </section>
 

@@ -111,8 +111,8 @@ export function formatRarityPercent(rarita: number): string {
   return pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(2)}%`;
 }
 
-// "La risposta grande" del compositore (sezione 7, vista 2: "40 volte su
-// 1125 gare (3,6%)"), fissata qui perché è la stessa frase che il tooltip
+// "La risposta grande" del compositore (sezione 7, vista 2: es. "37 volte su
+// 1114 gare (3,3%)"), fissata qui perché è la stessa frase che il tooltip
 // (sotto) e la scheda gara futura (vista 6) dovranno riusare parola per
 // parola — un solo posto dove cambiare il formato, non uno per vista.
 export function formatBigAnswer(entry: Pick<CatalogEventEntry, "occorrenze" | "denominatore" | "unita" | "rarita">): string {

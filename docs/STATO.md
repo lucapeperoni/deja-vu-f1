@@ -1,5 +1,7 @@
 # Stato del repository — fotografia onesta
 
+> **Fotografia storica della v1 (luglio 2026).** Non descrive il progetto attuale: per quello vedi `docs/PROGETTAZIONE-v4.md` e il README.
+
 Scritto leggendo il codice e i dati presenti, senza modificare nulla.
 Serve come punto di partenza per la Fase 1 della roadmap (`docs/ROADMAP.md`).
 Riferimento: `docs/PROGETTAZIONE.md`.

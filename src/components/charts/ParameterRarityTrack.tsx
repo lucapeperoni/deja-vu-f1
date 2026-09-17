@@ -2,7 +2,8 @@
 
 // Mini-vista del compositore (docs/PROGETTAZIONE.md, sezione 7, vista 2):
 // "muovendo la soglia, [...] è qui che si vede la rarità DIVENTARE rarità
-// (10° o peggio: 40 volte; 15°: 9; 20°: 1)". Stesso idioma visivo della
+// (10° o peggio: 40 volte; 15°: 9; 20°: 1)" — stime iniziali con la 500
+// Miglia; con la Indy esclusa sono 37, 8, 1. Stesso idioma visivo della
 // vista 1 (RarityScale.tsx) — asse di rarità logaritmico, dal più comune a
 // sinistra al più raro a destra — ma con una sola riga: tutti i valori
 // precalcolati del parametro corrente come tacche, quello selezionato come

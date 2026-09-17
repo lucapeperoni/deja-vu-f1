@@ -136,7 +136,7 @@ def main():
     def w(line: str = ""):
         lines.append(line)
 
-    w("# Numeri chiave — Chaos Discount")
+    w("# Numeri chiave — Déjà vu")
     w()
     w("Generato automaticamente da `data-layer/scripts/report_numbers.py` a partire")
     w("dai JSON in `public/data/` (l'output della pipeline, task 2.1) e da")
