@@ -9,9 +9,7 @@ import type { CatalogEventEntry } from "@/lib/eventCatalog";
 // a slot e questo compositore a chip resta qui, sotto /scenari, raggiungibile
 // da /esplora — niente si butta, si sposta.
 //
-// Stessa lettura file della vecchia demo isolata
-// (src/app/dev/scenario-composer-demo/page.tsx): questa pagina (server) legge
-// i file e costruisce l'indice COMPATTO; il compositore (client) fa il match
+// Questa pagina (server) legge i file e costruisce l'indice COMPATTO; il compositore (client) fa il match
 // in memoria, senza backend a runtime e senza tornare al server a ogni tasto.
 
 function readJson<T>(...segmenti: string[]): T {

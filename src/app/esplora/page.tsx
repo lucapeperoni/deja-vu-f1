@@ -5,9 +5,8 @@ import HomeCatalogView from "@/components/HomeCatalogView";
 import { dedupeToDefaultParams, type CatalogEventEntry } from "@/lib/eventCatalog";
 import { buildFamilyTimeline, type FamilyYearSource } from "@/lib/familyTimeline";
 
-// Stessa chiave canonica di src/app/eventi/[eventId]/page.tsx e di
-// src/app/dev/family-stream-demo/page.tsx: fa corrispondere la variante di
-// default (index.json) alla entry giusta dentro perParametro del file di
+// Stessa chiave canonica di src/app/eventi/[eventId]/page.tsx: fa
+// corrispondere la variante di default (index.json) alla entry giusta dentro perParametro del file di
 // dettaglio, indipendentemente dall'ordine in cui compaiono nei due file.
 function paramsKey(parametri: Record<string, number | string>): string {
   return JSON.stringify(Object.entries(parametri).sort(([a], [b]) => a.localeCompare(b)));
